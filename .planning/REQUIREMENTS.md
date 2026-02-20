@@ -118,31 +118,31 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-09 | Phase 2 | Pending |
 | AUTH-10 | Phase 2 | Pending |
 | AUTH-11 | Phase 2 | Pending |
-| SHAD-01 | Phase 3 | Pending |
-| SHAD-02 | Phase 3 | Pending |
-| SHAD-03 | Phase 3 | Pending |
-| SHAD-04 | Phase 3 | Pending |
-| SHAD-05 | Phase 3 | Pending |
-| SHAD-06 | Phase 3 | Pending |
 | DUPL-01 | Phase 2 | Pending |
 | DUPL-02 | Phase 2 | Pending |
 | DUPL-03 | Phase 2 | Pending |
 | DUPL-04 | Phase 2 | Pending |
-| UI-01 | Phase 4 | Pending |
-| UI-02 | Phase 4 | Pending |
-| UI-03 | Phase 4 | Pending |
-| UI-04 | Phase 4 | Pending |
-| UI-05 | Phase 4 | Pending |
-| UI-06 | Phase 4 | Pending |
-| UI-07 | Phase 4 | Pending |
-| UI-08 | Phase 4 | Pending |
+| UI-01 | Phase 3 | Pending |
+| UI-02 | Phase 3 | Pending |
+| UI-03 | Phase 3 | Pending |
+| UI-04 | Phase 3 | Pending |
+| UI-05 | Phase 3 | Pending |
+| UI-06 | Phase 3 | Pending |
+| UI-07 | Phase 3 | Pending |
+| UI-08 | Phase 3 | Pending |
+| SHAD-01 | Phase 4 | Pending |
+| SHAD-02 | Phase 4 | Pending |
+| SHAD-03 | Phase 4 | Pending |
+| SHAD-04 | Phase 4 | Pending |
+| SHAD-05 | Phase 4 | Pending |
+| SHAD-06 | Phase 4 | Pending |
 
 **Coverage:**
-- v1 requirements: 33 total
-- Mapped to phases: 33
-- Unmapped: 0 ✓
+- v1 requirements: 36 total
+- Mapped to phases: 36
+- Unmapped: 0
 
 ---
 
 *Requirements defined: 2026-02-20*
-*Last updated: 2026-02-20 after initial definition*
+*Last updated: 2026-02-20 after roadmap creation — traceability updated, UI moved to Phase 3, SHAD to Phase 4, DUPL grouped with AUTH in Phase 2*
