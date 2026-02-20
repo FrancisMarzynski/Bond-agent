@@ -29,12 +29,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. User can see how many articles and chunks are currently in the corpus
   4. System warns the user when the corpus contains fewer than 10 articles
   5. A similarity query against the corpus returns relevant style fragments (retrieval quality verifiable before any LLM generation runs)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: ChromaDB collection setup, embedding model selection, and ingestion pipeline (paste + file upload)
-- [ ] 01-02: Google Drive connector and blog URL scraper ingestion paths
-- [ ] 01-03: Corpus status UI (article count, chunk count, low-corpus warning), source tagging, and retrieval quality smoke test
+- [ ] 01-01-PLAN.md — Project setup, shared foundation (config, models, ChromaDB store, article log, chunker), text paste and file upload ingestion
+- [ ] 01-02-PLAN.md — Blog URL scraper (trafilatura) and Google Drive folder connector ingestion paths
+- [ ] 01-03-PLAN.md — Corpus status endpoint (article/chunk count, low-corpus warning), retrieval smoke test with two-pass own-before-external weighting, human verification checkpoint
 
 ### Phase 2: Author Mode Backend
 **Goal**: The complete Author mode pipeline — from topic input through research, HITL approval, draft generation, RAG style injection, and metadata save — works correctly in Python before any frontend exists
