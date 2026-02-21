@@ -83,11 +83,11 @@ Plans:
   2. The agent compares the submitted text against the style corpus and produces concrete, inline correction annotations
   3. User sees two outputs side by side: the annotated original and the fully corrected version
   4. User can reject the suggestions with a reason; the agent regenerates alternative corrections (max 3 iterations) without losing the original text or session context
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: Shadow branch nodes — shadow_analyze (corpus comparison) and shadow_annotate (inline annotation generation + corrected version output)
-- [ ] 04-02: Shadow HITL reject/regenerate loop, frontend integration (dual-output display in MarkdownEditor), and end-to-end Shadow mode smoke test
+- [ ] 04-01-PLAN.md — BondState extension + Shadow branch nodes (shadow_analyze, shadow_annotate, graph dual-branch routing, AuthorState alias)
+- [ ] 04-02-PLAN.md — Shadow HITL checkpoint node, full branch wiring, FastAPI shadow state init, frontend ShadowPanel + AnnotationList + useSyncScroll, end-to-end smoke test
 
 ## Progress
 
