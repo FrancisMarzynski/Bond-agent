@@ -10,30 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 1 of 4 (RAG Corpus Onboarding)
-Plan: 0 of 3 in current phase
-Status: Ready to plan
-Last activity: 2026-02-20 — Roadmap created, ready to begin Phase 1 planning
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-21 — Completed 01-01-PLAN.md (project setup and ingestion foundation)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 33%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: -
-- Total execution time: 0 hours
+- Total plans completed: 1
+- Average duration: 16 min
+- Total execution time: 0.3 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01-rag-corpus-onboarding | 1 | 16 min | 16 min |
 
 **Recent Trend:**
-- Last 5 plans: -
-- Trend: -
-
-*Updated after each plan completion*
+- Last 5 plans: 16 min
+- Trend: First plan completed
 
 ## Accumulated Context
 
@@ -47,6 +45,9 @@ Recent decisions affecting current work:
 - [Init]: ChromaDB + paraphrase-multilingual-MiniLM-L12-v2 for Polish-language embeddings
 - [Init]: Exa (not Tavily) for web research — returns full article text, not snippets
 - [Init]: Author mode backend proved in Python before streaming frontend is added
+- [01-01]: Singleton pattern for ChromaDB PersistentClient to avoid re-initializing 420MB embedding model
+- [01-01]: SQLite for article log (not ChromaDB metadata) for efficient article-level counting
+- [01-01]: 1875 chars chunk size (~500 tokens for Polish text) with 10% overlap
 
 ### Pending Todos
 
@@ -61,6 +62,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-20
-Stopped at: Roadmap created and written to disk; REQUIREMENTS.md traceability updated; ready to begin Phase 1 planning
+Last session: 2026-02-21
+Stopped at: Completed 01-01-PLAN.md (project setup and ingestion foundation)
 Resume file: None
