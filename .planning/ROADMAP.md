@@ -47,15 +47,13 @@ Plans:
   4. User can approve or reject the stylized draft at Checkpoint 2 (max 3 feedback iterations); approval saves topic and date to Metadata Log
   5. Before research begins, the system checks for duplicate topics by embedding similarity and informs the user of any match with title and publication date; user can override the warning
   6. Web search results are cached within a session so repeating the same topic does not trigger a second Exa API call
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 02-01: LangGraph StateGraph skeleton — single graph, dual-branch routing, SqliteSaver checkpointer, env var schema, Metadata Log schema
-- [ ] 02-02: Duplicate detection node (embedding similarity vs Metadata Log, DUPLICATE_THRESHOLD env var)
-- [ ] 02-03: Researcher node (Exa integration, report generation, session caching, cascaded model selection)
-- [ ] 02-04: Structure proposal node and Checkpoint 1 HITL interrupt (approve/reject with feedback, regeneration loop)
-- [ ] 02-05: Writer node (SEO-compliant draft, context budget enforcement) and RAG style injection node (3-5 exemplar fragments)
-- [ ] 02-06: Checkpoint 2 HITL interrupt (approve/reject loop max 3 iterations) and metadata save node
+- [ ] 02-01-PLAN.md — LangGraph StateGraph skeleton (AuthorState, graph wiring with stubs, SqliteSaver, Metadata Log SQLite schema), Phase 2 dependencies and env vars
+- [ ] 02-02-PLAN.md — Duplicate check node (ChromaDB embedding similarity, HITL interrupt, DUPLICATE_THRESHOLD) and Researcher node (Exa integration, session cache, report formatting)
+- [ ] 02-03-PLAN.md — Structure node (H1/H2/H3 proposal from research report), Checkpoint 1 HITL node (approve/reject with edited structure feedback), Writer node (SEO-compliant draft, RAG few-shot injection, auto-retry validation)
+- [ ] 02-04-PLAN.md — Checkpoint 2 HITL node (targeted section feedback, soft-cap iterations), metadata save node (dual-write SQLite + ChromaDB), CLI test harness, human verification of end-to-end flow
 
 ### Phase 3: Streaming API and Frontend
 **Goal**: Users can run the complete Author mode workflow in a browser, seeing tokens stream progressively and approving or rejecting at each checkpoint through a dedicated UI
@@ -99,6 +97,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. RAG Corpus Onboarding | 0/3 | Not started | - |
-| 2. Author Mode Backend | 0/6 | Not started | - |
+| 2. Author Mode Backend | 0/4 | Not started | - |
 | 3. Streaming API and Frontend | 0/4 | Not started | - |
 | 4. Shadow Mode | 0/2 | Not started | - |
