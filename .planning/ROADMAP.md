@@ -66,13 +66,14 @@ Plans:
   4. Approve and Reject buttons appear at each checkpoint; Reject reveals a feedback text field; the session resumes correctly from the checkpoint after the user acts
   5. The "Approve and Save" button saves metadata to the Metadata Log and marks the topic as used
   6. The corpus management section is accessible from the UI, showing article count, chunk count, and allowing new article ingestion
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] 03-01: FastAPI application — /api/chat/stream (SSE, astream_events), /api/chat/resume (HITL resume), /api/corpus/ingest endpoints; SSE event schema (token, node_complete, hitl_pause)
-- [ ] 03-02: Next.js App Router project setup, ChatInterface, ModeToggle, ProgressIndicator components
-- [ ] 03-03: MarkdownEditor with preview, ApproveRejectPanel with feedback input, thread ID persistence in sessionStorage
-- [ ] 03-04: Corpus management UI (status view, ingestion forms for all four input types)
+- [ ] 03-01-PLAN.md — FastAPI app scaffold (lifespan, CORS, AsyncSqliteSaver) + /api/chat/stream, /api/chat/resume, /api/corpus/ingest, /api/corpus/status endpoints
+- [ ] 03-02-PLAN.md — Next.js 15 project bootstrap, Zustand chatStore, SSEParser, useStream and useSession hooks
+- [ ] 03-03-PLAN.md — App layout (sidebar, header), ModeToggle (Author/Shadow switch), StageProgress stepper (Research → Structure → Writing)
+- [ ] 03-04-PLAN.md — ChatInterface, EditorPane (@uiw/react-md-editor streaming), CheckpointPanel (Approve/Reject/Approve+Save), main page layout
+- [ ] 03-05-PLAN.md — Corpus management page (/corpus route), CorpusStatus, IngestionForm (4 stacked cards), sidebar navigation, human verification checkpoint
 
 ### Phase 4: Shadow Mode
 **Goal**: Users can submit an existing text and receive both an annotated version (inline correction suggestions) and a corrected version, with the ability to reject and regenerate alternatives
