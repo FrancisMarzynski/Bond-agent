@@ -1,0 +1,35 @@
+[project]
+name = "bond"
+version = "0.1.0"
+description = "Bond — Agent Redakcyjny"
+authors = [{name = "Your Name", email = "your.email@example.com"}]
+dependencies = [
+    "chromadb==1.5.1",
+    "sentence-transformers>=3.0",
+    "langchain-text-splitters",
+    "trafilatura==2.0.0",
+    "pymupdf",
+    "python-docx",
+    "google-api-python-client>=2.0",
+    "google-auth>=2.0",
+    "google-auth-oauthlib",
+    "fastapi>=0.115",
+    "uvicorn[standard]",
+    "python-multipart",
+    "pydantic>=2.0",
+    "pydantic-settings",
+    "python-dotenv",
+    "langgraph-checkpoint-sqlite",
+    "requests",
+]
+requires-python = ">=3.11"
+readme = "README.md"
+license = {text = "MIT"}
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "ruff",
+    "httpx",
+]
