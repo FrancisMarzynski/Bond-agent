@@ -11,8 +11,8 @@
 
 - [x] **CORP-01**: Użytkownik może dodać artykuł do bazy stylów przez wklejenie tekstu bezpośrednio w interfejsie
 - [x] **CORP-02**: Użytkownik może dodać artykuły do bazy stylów przez upload pliku (PDF, DOCX, TXT)
-- [ ] **CORP-03**: Użytkownik może zasilić bazę stylów ze wskazanego folderu Google Drive
-- [ ] **CORP-04**: Użytkownik może zasilić bazę stylów podając URL bloga (agent scrape'uje wpisy)
+- [x] **CORP-03**: Użytkownik może zasilić bazę stylów ze wskazanego folderu Google Drive
+- [x] **CORP-04**: Użytkownik może zasilić bazę stylów podając URL bloga (agent scrape'uje wpisy)
 - [x] **CORP-05**: Użytkownik może oznaczać źródło jako "własne teksty" lub "zewnętrzny bloger (wzorzec)"
 - [ ] **CORP-06**: Użytkownik widzi liczbę artykułów i fragmentów w bazie stylów (status corpus)
 - [ ] **CORP-07**: System informuje użytkownika gdy corpus zawiera mniej niż 10 artykułów (niska jakość stylizacji)
@@ -102,8 +102,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | CORP-01 | Phase 1 | Complete |
 | CORP-02 | Phase 1 | Complete |
-| CORP-03 | Phase 1 | Pending |
-| CORP-04 | Phase 1 | Pending |
+| CORP-03 | Phase 1 | Complete |
+| CORP-04 | Phase 1 | Complete |
 | CORP-05 | Phase 1 | Complete |
 | CORP-06 | Phase 1 | Pending |
 | CORP-07 | Phase 1 | Pending |
@@ -145,4 +145,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 ---
 
 *Requirements defined: 2026-02-20*
-*Last updated: 2026-02-20 after roadmap creation — traceability updated, UI moved to Phase 3, SHAD to Phase 4, DUPL grouped with AUTH in Phase 2*
+*Last updated: 2026-02-22 after 01-02 completion — CORP-03, CORP-04 marked complete*

@@ -32,8 +32,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Project setup, shared foundation (config, models, ChromaDB store, article log, chunker), text paste and file upload ingestion
-- [ ] 01-02-PLAN.md — Blog URL scraper (trafilatura) and Google Drive folder connector ingestion paths
+- [x] 01-01-PLAN.md — Project setup, shared foundation (config, models, ChromaDB store, article log, chunker), text paste and file upload ingestion
+- [x] 01-02-PLAN.md — Blog URL scraper (trafilatura) and Google Drive folder connector ingestion paths
 - [ ] 01-03-PLAN.md — Corpus status endpoint (article/chunk count, low-corpus warning), retrieval smoke test with two-pass own-before-external weighting, human verification checkpoint
 
 ### Phase 2: Author Mode Backend
@@ -97,7 +97,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. RAG Corpus Onboarding | 0/3 | Not started | - |
+| 1. RAG Corpus Onboarding | 2/3 | In progress | - |
 | 2. Author Mode Backend | 0/4 | Not started | - |
 | 3. Streaming API and Frontend | 0/4 | Not started | - |
 | 4. Shadow Mode | 0/2 | Not started | - |

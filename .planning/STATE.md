@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 1 of 4 (RAG Corpus Onboarding)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-21 — Completed 01-01-PLAN.md (project setup and ingestion foundation)
+Last activity: 2026-02-22 — Completed 01-02-PLAN.md (blog URL scraper and Drive connector)
 
-Progress: [██░░░░░░░░] 33%
+Progress: [████░░░░░░] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 16 min
-- Total execution time: 0.3 hours
+- Total plans completed: 2
+- Average duration: 10 min
+- Total execution time: 0.33 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-rag-corpus-onboarding | 1 | 16 min | 16 min |
+| 01-rag-corpus-onboarding | 2 | 20 min | 10 min |
 
 **Recent Trend:**
-- Last 5 plans: 16 min
-- Trend: First plan completed
+- Last 5 plans: 16 min, 4 min
+- Trend: Fast execution on task 2 (code already partially in place)
 
 ## Accumulated Context
 
@@ -48,6 +48,9 @@ Recent decisions affecting current work:
 - [01-01]: Singleton pattern for ChromaDB PersistentClient to avoid re-initializing 420MB embedding model
 - [01-01]: SQLite for article log (not ChromaDB metadata) for efficient article-level counting
 - [01-01]: 1875 chars chunk size (~500 tokens for Polish text) with 10% overlap
+- [01-02]: Pydantic models for URL/Drive requests added to bond/models.py (not inline in router) for reuse
+- [01-02]: Drive auth failure caught at service build time and returned as warnings — /ingest/drive never returns 500
+- [01-02]: sitemap_search fallback to [url] list for single-post mode when no sitemap found
 
 ### Pending Todos
 
@@ -62,6 +65,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-21
-Stopped at: Completed 01-01-PLAN.md (project setup and ingestion foundation)
+Last session: 2026-02-22
+Stopped at: Completed 01-02-PLAN.md (blog URL scraper and Drive connector — all 4 ingestion endpoints done)
 Resume file: None
