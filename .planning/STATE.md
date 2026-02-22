@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 1 of 4 (RAG Corpus Onboarding)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-22 — Completed 01-02-PLAN.md (blog URL scraper and Drive connector)
+Plan: 3 of 3 in current phase (at checkpoint — awaiting human verify)
+Status: In progress — paused at human-verify checkpoint
+Last activity: 2026-02-22 — 01-03 Task 1 complete (status + smoke-test endpoints), awaiting checkpoint approval
 
-Progress: [████░░░░░░] 50%
+Progress: [█████░░░░░] 60%
 
 ## Performance Metrics
 
@@ -66,5 +66,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 01-02-PLAN.md (blog URL scraper and Drive connector — all 4 ingestion endpoints done)
+Stopped at: 01-03 Task 1 complete — paused at human-verify checkpoint (corpus status + smoke-test endpoints)
 Resume file: None
