@@ -12,7 +12,7 @@ Bond is built in four sequential phases, each unlocking the next. Phase 1 popula
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: RAG Corpus Onboarding** - Users can populate and validate the style corpus that all generation depends on
+- [x] **Phase 1: RAG Corpus Onboarding** - Users can populate and validate the style corpus that all generation depends on
 - [ ] **Phase 2: Author Mode Backend** - The full research-to-approved-draft pipeline works end-to-end in Python with HITL checkpoints
 - [ ] **Phase 3: Streaming API and Frontend** - Users can run the complete Author mode workflow in a browser with streaming output and approval UI
 - [ ] **Phase 4: Shadow Mode** - Users can submit existing text for style analysis and receive annotated corrections against their style corpus
@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 - [x] 01-01-PLAN.md — Project setup, shared foundation (config, models, ChromaDB store, article log, chunker), text paste and file upload ingestion
 - [x] 01-02-PLAN.md — Blog URL scraper (trafilatura) and Google Drive folder connector ingestion paths
-- [ ] 01-03-PLAN.md — Corpus status endpoint (article/chunk count, low-corpus warning), retrieval smoke test with two-pass own-before-external weighting, human verification checkpoint
+- [x] 01-03-PLAN.md — Corpus status endpoint (article/chunk count, low-corpus warning), retrieval smoke test with two-pass own-before-external weighting, human verification checkpoint
 
 ### Phase 2: Author Mode Backend
 **Goal**: The complete Author mode pipeline — from topic input through research, HITL approval, draft generation, RAG style injection, and metadata save — works correctly in Python before any frontend exists
@@ -97,7 +97,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. RAG Corpus Onboarding | 2/3 | In progress | - |
+| 1. RAG Corpus Onboarding | 3/3 | Complete | 2026-02-22 |
 | 2. Author Mode Backend | 0/4 | Not started | - |
 | 3. Streaming API and Frontend | 0/4 | Not started | - |
 | 4. Shadow Mode | 0/2 | Not started | - |

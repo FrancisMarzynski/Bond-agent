@@ -14,8 +14,8 @@
 - [x] **CORP-03**: Użytkownik może zasilić bazę stylów ze wskazanego folderu Google Drive
 - [x] **CORP-04**: Użytkownik może zasilić bazę stylów podając URL bloga (agent scrape'uje wpisy)
 - [x] **CORP-05**: Użytkownik może oznaczać źródło jako "własne teksty" lub "zewnętrzny bloger (wzorzec)"
-- [ ] **CORP-06**: Użytkownik widzi liczbę artykułów i fragmentów w bazie stylów (status corpus)
-- [ ] **CORP-07**: System informuje użytkownika gdy corpus zawiera mniej niż 10 artykułów (niska jakość stylizacji)
+- [x] **CORP-06**: Użytkownik widzi liczbę artykułów i fragmentów w bazie stylów (status corpus)
+- [x] **CORP-07**: System informuje użytkownika gdy corpus zawiera mniej niż 10 artykułów (niska jakość stylizacji)
 
 ### Author Mode — Generowanie Artykułu
 
@@ -105,8 +105,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CORP-03 | Phase 1 | Complete |
 | CORP-04 | Phase 1 | Complete |
 | CORP-05 | Phase 1 | Complete |
-| CORP-06 | Phase 1 | Pending |
-| CORP-07 | Phase 1 | Pending |
+| CORP-06 | Phase 1 | Complete |
+| CORP-07 | Phase 1 | Complete |
 | AUTH-01 | Phase 2 | Pending |
 | AUTH-02 | Phase 2 | Pending |
 | AUTH-03 | Phase 2 | Pending |
@@ -145,4 +145,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 ---
 
 *Requirements defined: 2026-02-20*
-*Last updated: 2026-02-22 after 01-02 completion — CORP-03, CORP-04 marked complete*
+*Last updated: 2026-02-22 after 01-03 completion — CORP-06, CORP-07 marked complete (all Phase 1 requirements done)*
