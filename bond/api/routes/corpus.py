@@ -1,4 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from pydantic import BaseModel
 from bond.models import (
     IngestTextRequest,
     IngestResult,
@@ -12,8 +13,23 @@ from bond.corpus.sources.file_source import extract_text
 from bond.corpus.ingestor import CorpusIngestor
 from bond.corpus.sources.url_source import ingest_blog
 from bond.corpus.sources.drive_source import ingest_drive_folder
+from bond.store.article_log import get_article_count, get_chunk_count
+from bond.corpus.smoke_test import run_smoke_test, DEFAULT_QUERY
+from bond.config import settings
 
 router = APIRouter(prefix="/api/corpus", tags=["corpus"])
+
+
+class CorpusStatus(BaseModel):
+    article_count: int
+    chunk_count: int
+    low_corpus_warning: str | None = None
+
+
+class SmokeTestResult(BaseModel):
+    query: str
+    results: list[dict]
+    result_count: int
 
 
 @router.post("/ingest/text", response_model=IngestResult)
@@ -107,4 +123,44 @@ async def ingest_drive_endpoint(request: IngestDriveRequest):
         total_chunks=result["total_chunks"],
         source_type=request.source_type.value,
         warnings=result.get("warnings", []),
+    )
+
+
+@router.get("/status", response_model=CorpusStatus)
+async def corpus_status_endpoint():
+    """
+    CORP-06: Return article count and chunk count.
+    CORP-07: Include low_corpus_warning when article count < LOW_CORPUS_THRESHOLD.
+    """
+    article_count = get_article_count()
+    chunk_count = get_chunk_count()
+
+    warning = None
+    if article_count < settings.low_corpus_threshold:
+        warning = (
+            f"Corpus contains only {article_count} article(s). "
+            f"Recommend at least {settings.low_corpus_threshold} articles for reliable style retrieval."
+        )
+
+    return CorpusStatus(
+        article_count=article_count,
+        chunk_count=chunk_count,
+        low_corpus_warning=warning,
+    )
+
+
+@router.get("/smoke-test", response_model=SmokeTestResult)
+async def smoke_test_endpoint(
+    query: str = DEFAULT_QUERY,
+    n: int = 5,
+):
+    """
+    Run retrieval smoke test against the corpus.
+    Returns top-N fragments with cosine similarity scores and source metadata.
+    """
+    results = run_smoke_test(query=query, n_results=n)
+    return SmokeTestResult(
+        query=query,
+        results=results,
+        result_count=len(results),
     )
