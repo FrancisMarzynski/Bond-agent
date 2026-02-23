@@ -9,18 +9,12 @@ from bond.graph.nodes.researcher import researcher_node as _researcher_node
 from bond.graph.nodes.structure import structure_node as _structure_node
 from bond.graph.nodes.checkpoint_1 import checkpoint_1_node as _checkpoint_1_node
 from bond.graph.nodes.writer import writer_node as _writer_node
-
-
-def _checkpoint_2_node(state: AuthorState) -> dict:
-    raise NotImplementedError("checkpoint_2_node not yet implemented (Plan 04)")
-
-
-def _save_metadata_node(state: AuthorState) -> dict:
-    raise NotImplementedError("save_metadata_node not yet implemented (Plan 04)")
+from bond.graph.nodes.checkpoint_2 import checkpoint_2_node as _checkpoint_2_node
+from bond.graph.nodes.save_metadata import save_metadata_node as _save_metadata_node
 
 
 # ---------------------------------------------------------------------------
-# Dynamic node loader — Plans 02-04 register real implementations
+# Dynamic node loader — all 7 real implementations
 # ---------------------------------------------------------------------------
 
 _node_registry: dict = {
