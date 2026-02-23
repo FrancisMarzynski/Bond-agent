@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 2 of 4 (Author Mode Backend) — IN PROGRESS
-Plan: 3 of 4 in current phase — COMPLETE
-Status: 02-03 complete — structure_node, checkpoint_1_node, writer_node implemented, ready for Plan 04
-Last activity: 2026-02-23 — 02-03 complete (structure_node, checkpoint_1_node, writer_node with RAG injection and SEO validation)
+Plan: 4 of 4 in current phase — PAUSED AT CHECKPOINT
+Status: 02-04 Tasks 1+2 complete (checkpoint_2_node, save_metadata_node, harness.py); paused at Task 3 human-verify checkpoint — requires EXA_API_KEY and LLM API keys in .env for live end-to-end pipeline run
+Last activity: 2026-02-23 — 02-04 Tasks 1+2 complete (all 7 nodes implemented, CLI harness ready)
 
-Progress: [█████████░] 92%
+Progress: [█████████░] 97%
 
 ## Performance Metrics
 
@@ -66,6 +66,10 @@ Recent decisions affecting current work:
 - [02-03]: RAG exemplar injection as system prompt prefix (soft prompt technique) — provides strongest style transfer signal vs user message injection
 - [02-03]: Low-corpus gate: corpus count checked before any LLM call; interrupt() with warning when < 10 articles; user confirms True/False to proceed or abort
 - [02-03]: Writer auto-retry cp2_feedback only on attempt 0; subsequent retries fall back to fresh draft to avoid compounding revision errors
+- [02-04]: checkpoint_2 soft cap is warning only — after 3 iterations interrupt payload gains "warning" field but does not hard-block; user can still approve or reject
+- [02-04]: save_metadata_node generates published_date at call time (not from state) — ensures accurate SQLite and ChromaDB persistence timestamp
+- [02-04]: Harness duplicate checkpoint returns bool True (not dict) — matches resume shape expected by duplicate_check_node
+- [02-04]: Harness max_interrupts=20 safety limit prevents infinite HITL loop if graph state is misconfigured
 
 ### Pending Todos
 
@@ -81,5 +85,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: 02-03 complete — structure_node, checkpoint_1_node, writer_node implemented; beginning 02-04
+Stopped at: 02-04 Tasks 1+2 complete; paused at Task 3 human-verify checkpoint (checkpoint:human-verify) — waiting for live end-to-end pipeline run with real API keys
 Resume file: None
