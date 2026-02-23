@@ -50,7 +50,7 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — LangGraph StateGraph skeleton (AuthorState, graph wiring with stubs, SqliteSaver, Metadata Log SQLite schema), Phase 2 dependencies and env vars
+- [x] 02-01-PLAN.md — LangGraph StateGraph skeleton (AuthorState, graph wiring with stubs, SqliteSaver, Metadata Log SQLite schema), Phase 2 dependencies and env vars
 - [ ] 02-02-PLAN.md — Duplicate check node (ChromaDB embedding similarity, HITL interrupt, DUPLICATE_THRESHOLD) and Researcher node (Exa integration, session cache, report formatting)
 - [ ] 02-03-PLAN.md — Structure node (H1/H2/H3 proposal from research report), Checkpoint 1 HITL node (approve/reject with edited structure feedback), Writer node (SEO-compliant draft, RAG few-shot injection, auto-retry validation)
 - [ ] 02-04-PLAN.md — Checkpoint 2 HITL node (targeted section feedback, soft-cap iterations), metadata save node (dual-write SQLite + ChromaDB), CLI test harness, human verification of end-to-end flow
@@ -98,6 +98,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. RAG Corpus Onboarding | 3/3 | Complete | 2026-02-22 |
-| 2. Author Mode Backend | 0/4 | Not started | - |
+| 2. Author Mode Backend | 1/4 | In progress | - |
 | 3. Streaming API and Frontend | 0/4 | Not started | - |
 | 4. Shadow Mode | 0/2 | Not started | - |
