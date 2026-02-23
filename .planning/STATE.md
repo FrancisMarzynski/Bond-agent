@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 2 of 4 (Author Mode Backend) — IN PROGRESS
-Plan: 1 of 4 in current phase — COMPLETE
-Status: 02-01 complete — graph infrastructure bootstrapped, ready for Plan 02
-Last activity: 2026-02-23 — 02-01 complete (AuthorState, graph wiring with SqliteSaver, Metadata Log module)
+Plan: 2 of 4 in current phase — COMPLETE
+Status: 02-02 complete — duplicate_check_node and researcher_node implemented, ready for Plan 03
+Last activity: 2026-02-23 — 02-02 complete (duplicate_check_node, researcher_node with Exa session cache, metadata_log ChromaDB collection)
 
-Progress: [████████░░] 80%
+Progress: [█████████░] 90%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
+- Total plans completed: 5
 - Average duration: 8 min
 - Total execution time: 0.6 hours
 
@@ -28,10 +28,10 @@ Progress: [████████░░] 80%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-rag-corpus-onboarding | 3 | 30 min | 10 min |
-| 02-author-mode-backend | 1 | 2 min | 2 min |
+| 02-author-mode-backend | 2 | 5 min | 2.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 16 min, 4 min, 10 min, 2 min
+- Last 5 plans: 4 min, 10 min, 2 min, 3 min
 - Trend: Consistent, fast for infrastructure plans
 
 ## Accumulated Context
@@ -59,6 +59,9 @@ Recent decisions affecting current work:
 - [02-01]: Two separate SQLite files (bond_checkpoints.db for LangGraph SqliteSaver, bond_metadata.db for article metadata_log) to avoid LangGraph internal schema conflicts
 - [02-01]: Schema-on-connect pattern (_get_conn() runs CREATE TABLE IF NOT EXISTS on every open) — zero-config migration for simple schema
 - [02-01]: check_same_thread=False for both SQLite connections — required for LangGraph async execution across thread boundaries
+- [02-02]: ChromaDB cosine DISTANCE conversion: similarity = 1.0 - distance; distance range 0-2 maps to similarity 1.0-(-1.0), threshold of 0.85 catches near-identical topics
+- [02-02]: interrupt() payload contains existing_title, existing_date, similarity_score — frontend HITL surface shape is locked
+- [02-02]: Text stripped from Exa session cache after report synthesis — slim_results keeps only title/url/summary to prevent SqliteSaver state bloat
 
 ### Pending Todos
 
@@ -67,12 +70,12 @@ None yet.
 ### Blockers/Concerns
 
 - [Phase 2]: LangGraph SqliteSaver import resolved — path is `langgraph.checkpoint.sqlite` with `langgraph-checkpoint-sqlite>=3.0.3`
-- [Phase 2]: Exa API Polish-language query parameters need live verification before Researcher node implementation
+- [Phase 2]: Exa API Polish-language query parameters pending live verification — EXA_API_KEY not set in .env
 - [Phase 2]: astream_events version="v2" needs Context7 confirmation
 - [Phase 2]: RAG corpus quality threshold (10 articles, 0.85 cosine similarity for duplicates) are recommendations, not validated values — budget time for tuning
 
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: 02-01 complete — graph infrastructure bootstrapped, beginning 02-02
+Stopped at: 02-02 complete — duplicate_check_node and researcher_node implemented, beginning 02-03
 Resume file: None

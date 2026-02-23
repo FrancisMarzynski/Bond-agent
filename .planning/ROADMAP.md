@@ -98,6 +98,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. RAG Corpus Onboarding | 3/3 | Complete | 2026-02-22 |
-| 2. Author Mode Backend | 1/4 | In progress | - |
+| 2. Author Mode Backend | 2/4 | In Progress|  |
 | 3. Streaming API and Frontend | 0/4 | Not started | - |
 | 4. Shadow Mode | 0/2 | Not started | - |
