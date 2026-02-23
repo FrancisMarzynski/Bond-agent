@@ -15,18 +15,18 @@ async def _call_exa_mcp(query: str, keywords: list[str], num_results: int = 8) -
 
     search_query = f"{query} {' '.join(keywords)}" if keywords else query
 
-    async with MultiServerMCPClient(
+    client = MultiServerMCPClient(
         {"exa": {"url": EXA_MCP_URL, "transport": "streamable_http"}}
-    ) as client:
-        tools = client.get_tools()
-        web_search = next((t for t in tools if t.name == "web_search_exa"), None)
-        if web_search is None:
-            available = [t.name for t in tools]
-            raise RuntimeError(
-                f"web_search_exa not found in Exa MCP. Available: {available}"
-            )
-        result = await web_search.ainvoke({"query": search_query, "numResults": num_results})
-        return result if isinstance(result, str) else str(result)
+    )
+    tools = await client.get_tools()
+    web_search = next((t for t in tools if t.name == "web_search_exa"), None)
+    if web_search is None:
+        available = [t.name for t in tools]
+        raise RuntimeError(
+            f"web_search_exa not found in Exa MCP. Available: {available}"
+        )
+    result = await web_search.ainvoke({"query": search_query, "numResults": num_results})
+    return result if isinstance(result, str) else str(result)
 
 
 def _format_research_report(raw_results: str, topic: str, keywords: list[str]) -> str:
