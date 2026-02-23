@@ -10,25 +10,25 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 2 of 4 (Author Mode Backend) — IN PROGRESS
-Plan: 2 of 4 in current phase — COMPLETE
-Status: 02-02 complete — duplicate_check_node and researcher_node implemented, ready for Plan 03
-Last activity: 2026-02-23 — 02-02 complete (duplicate_check_node, researcher_node with Exa session cache, metadata_log ChromaDB collection)
+Plan: 3 of 4 in current phase — COMPLETE
+Status: 02-03 complete — structure_node, checkpoint_1_node, writer_node implemented, ready for Plan 04
+Last activity: 2026-02-23 — 02-03 complete (structure_node, checkpoint_1_node, writer_node with RAG injection and SEO validation)
 
-Progress: [█████████░] 90%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
+- Total plans completed: 6
 - Average duration: 8 min
-- Total execution time: 0.6 hours
+- Total execution time: 0.7 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-rag-corpus-onboarding | 3 | 30 min | 10 min |
-| 02-author-mode-backend | 2 | 5 min | 2.5 min |
+| 02-author-mode-backend | 3 | 10 min | 3.3 min |
 
 **Recent Trend:**
 - Last 5 plans: 4 min, 10 min, 2 min, 3 min
@@ -62,6 +62,10 @@ Recent decisions affecting current work:
 - [02-02]: ChromaDB cosine DISTANCE conversion: similarity = 1.0 - distance; distance range 0-2 maps to similarity 1.0-(-1.0), threshold of 0.85 catches near-identical topics
 - [02-02]: interrupt() payload contains existing_title, existing_date, similarity_score — frontend HITL surface shape is locked
 - [02-02]: Text stripped from Exa session cache after report synthesis — slim_results keeps only title/url/summary to prevent SqliteSaver state bloat
+- [02-03]: cp1_feedback concatenates edited_structure + optional note into single string; structure_node reads this as strong prior on re-run
+- [02-03]: RAG exemplar injection as system prompt prefix (soft prompt technique) — provides strongest style transfer signal vs user message injection
+- [02-03]: Low-corpus gate: corpus count checked before any LLM call; interrupt() with warning when < 10 articles; user confirms True/False to proceed or abort
+- [02-03]: Writer auto-retry cp2_feedback only on attempt 0; subsequent retries fall back to fresh draft to avoid compounding revision errors
 
 ### Pending Todos
 
@@ -77,5 +81,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: 02-02 complete — duplicate_check_node and researcher_node implemented, beginning 02-03
+Stopped at: 02-03 complete — structure_node, checkpoint_1_node, writer_node implemented; beginning 02-04
 Resume file: None

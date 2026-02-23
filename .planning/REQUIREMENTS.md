@@ -20,15 +20,15 @@
 ### Author Mode — Generowanie Artykułu
 
 - [x] **AUTH-01**: Użytkownik może uruchomić tryb Author podając temat i słowa kluczowe
-- [ ] **AUTH-02**: Agent wykonuje web research (Exa) i generuje raport: lista źródeł z tytułami, linkami i streszczeniami
-- [ ] **AUTH-03**: Agent proponuje strukturę nagłówków (H1/H2/H3) na podstawie researchu
-- [ ] **AUTH-04**: Użytkownik zatwierdza lub odrzuca raport i strukturę nagłówków (Checkpoint 1)
-- [ ] **AUTH-05**: Po zatwierdzeniu Checkpoint 1, agent generuje pełny draft z zasadami SEO: słowo kluczowe w H1 i pierwszym akapicie, poprawna hierarchia nagłówków, meta-description 150–160 znaków, minimum 800 słów
-- [ ] **AUTH-06**: Agent stylizuje draft wstrzykując 3–5 fragmentów wzorcowych z bazy wektorowej (RAG Few-Shot)
+- [x] **AUTH-02**: Agent wykonuje web research (Exa) i generuje raport: lista źródeł z tytułami, linkami i streszczeniami
+- [x] **AUTH-03**: Agent proponuje strukturę nagłówków (H1/H2/H3) na podstawie researchu
+- [x] **AUTH-04**: Użytkownik zatwierdza lub odrzuca raport i strukturę nagłówków (Checkpoint 1)
+- [x] **AUTH-05**: Po zatwierdzeniu Checkpoint 1, agent generuje pełny draft z zasadami SEO: słowo kluczowe w H1 i pierwszym akapicie, poprawna hierarchia nagłówków, meta-description 150–160 znaków, minimum 800 słów
+- [x] **AUTH-06**: Agent stylizuje draft wstrzykując 3–5 fragmentów wzorcowych z bazy wektorowej (RAG Few-Shot)
 - [ ] **AUTH-07**: Użytkownik zatwierdza lub odrzuca stylizowany draft (Checkpoint 2)
-- [ ] **AUTH-08**: Użytkownik może podać feedback przy odrzuceniu — agent regeneruje draft bez utraty kontekstu sesji (max 3 iteracje)
+- [x] **AUTH-08**: Użytkownik może podać feedback przy odrzuceniu — agent regeneruje draft bez utraty kontekstu sesji (max 3 iteracje)
 - [ ] **AUTH-09**: Po zatwierdzeniu, system zapisuje metadane artykułu do Metadata Log (temat, data, tryb)
-- [ ] **AUTH-10**: Wyniki web search są cache'owane w sesji — powtórne zapytanie o ten sam temat nie wywołuje ponownego API call
+- [x] **AUTH-10**: Wyniki web search są cache'owane w sesji — powtórne zapytanie o ten sam temat nie wywołuje ponownego API call
 - [x] **AUTH-11**: Modele LLM są konfigurowane przez zmienne środowiskowe (RESEARCH_MODEL dla research/analizy, DRAFT_MODEL dla final draft)
 
 ### Shadow Mode — Korekta Stylu
@@ -42,9 +42,9 @@
 
 ### Duplicate Detection
 
-- [ ] **DUPL-01**: Przed uruchomieniem researchu, agent sprawdza czy podobny temat nie był poruszany (embedding similarity vs Metadata Log)
-- [ ] **DUPL-02**: Gdy wykryto podobny temat, agent informuje użytkownika: tytuł istniejącego artykułu + data publikacji
-- [ ] **DUPL-03**: Użytkownik może przesłonić ostrzeżenie i kontynuować (temat uznany za wystarczająco różny)
+- [x] **DUPL-01**: Przed uruchomieniem researchu, agent sprawdza czy podobny temat nie był poruszany (embedding similarity vs Metadata Log)
+- [x] **DUPL-02**: Gdy wykryto podobny temat, agent informuje użytkownika: tytuł istniejącego artykułu + data publikacji
+- [x] **DUPL-03**: Użytkownik może przesłonić ostrzeżenie i kontynuować (temat uznany za wystarczająco różny)
 - [x] **DUPL-04**: Próg podobieństwa tematów jest konfigurowalny przez zmienną środowiskową (DUPLICATE_THRESHOLD)
 
 ### Chat Interface
@@ -108,19 +108,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CORP-06 | Phase 1 | Complete |
 | CORP-07 | Phase 1 | Complete |
 | AUTH-01 | Phase 2 | Complete |
-| AUTH-02 | Phase 2 | Pending |
-| AUTH-03 | Phase 2 | Pending |
-| AUTH-04 | Phase 2 | Pending |
-| AUTH-05 | Phase 2 | Pending |
-| AUTH-06 | Phase 2 | Pending |
+| AUTH-02 | Phase 2 | Complete |
+| AUTH-03 | Phase 2 | Complete |
+| AUTH-04 | Phase 2 | Complete |
+| AUTH-05 | Phase 2 | Complete |
+| AUTH-06 | Phase 2 | Complete |
 | AUTH-07 | Phase 2 | Pending |
-| AUTH-08 | Phase 2 | Pending |
+| AUTH-08 | Phase 2 | Complete |
 | AUTH-09 | Phase 2 | Pending |
-| AUTH-10 | Phase 2 | Pending |
+| AUTH-10 | Phase 2 | Complete |
 | AUTH-11 | Phase 2 | Complete |
-| DUPL-01 | Phase 2 | Pending |
-| DUPL-02 | Phase 2 | Pending |
-| DUPL-03 | Phase 2 | Pending |
+| DUPL-01 | Phase 2 | Complete |
+| DUPL-02 | Phase 2 | Complete |
+| DUPL-03 | Phase 2 | Complete |
 | DUPL-04 | Phase 2 | Complete |
 | UI-01 | Phase 3 | Pending |
 | UI-02 | Phase 3 | Pending |
