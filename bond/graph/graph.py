@@ -4,14 +4,12 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 
 from bond.graph.state import AuthorState
 from bond.config import settings
+from bond.graph.nodes.duplicate_check import duplicate_check_node as _duplicate_check_node
 
 
 # ---------------------------------------------------------------------------
 # Stub node implementations — replaced in Plans 02-04
 # ---------------------------------------------------------------------------
-
-def _duplicate_check_node(state: AuthorState) -> dict:
-    raise NotImplementedError("duplicate_check_node not yet implemented (Plan 02)")
 
 
 def _researcher_node(state: AuthorState) -> dict:
