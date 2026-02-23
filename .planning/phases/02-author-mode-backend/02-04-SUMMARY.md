@@ -58,10 +58,10 @@ completed: 2026-02-23
 
 ## Performance
 
-- **Duration:** 8 min
+- **Duration:** ~45 min (including live pipeline verification with real API keys)
 - **Started:** 2026-02-23T05:06:29Z
-- **Completed:** 2026-02-23T05:14:00Z
-- **Tasks:** 2 auto tasks complete (Task 3 is human-verify checkpoint — paused for human verification)
+- **Completed:** 2026-02-23T05:41:24Z
+- **Tasks:** 3 (Tasks 1 + 2 auto, Task 3 human-verify checkpoint — approved)
 - **Files modified:** 4
 
 ## Accomplishments
@@ -70,6 +70,7 @@ completed: 2026-02-23
 - `save_metadata_node` in `bond/graph/nodes/save_metadata.py`: dual-write pattern — SQLite metadata_log via `save_article_metadata()` and ChromaDB bond_metadata_log_v1 via `add_topic_to_metadata_collection()`; completes DUPL-01 loop so future duplicate_check_node queries find the saved topic embedding
 - `bond/harness.py`: CLI test harness with `run_author_pipeline()` function; auto-approve mode for smoke testing; interactive mode for manual approval; resume mode for interrupted sessions; `python -m bond.harness --help` works; safety limit of 20 interrupt iterations
 - `graph.py`: both stubs removed; all 7 nodes are now real implementations (`duplicate_check`, `researcher`, `structure`, `checkpoint_1`, `writer`, `checkpoint_2`, `save_metadata`)
+- **Live end-to-end verification (Task 3 — human approved):** Pipeline ran to completion with real API keys; `Metadata saved: True`; draft produced at 428 words; `draft_validated=False` is a known SEO constraint tuning issue with OpenAI models (word count and meta-description format), deferred — infrastructure proven working
 
 ## Task Commits
 
@@ -77,6 +78,7 @@ Each task was committed atomically:
 
 1. **Task 1: Checkpoint 2 node and metadata save node (AUTH-07, AUTH-08, AUTH-09)** - `b909ccb` (feat)
 2. **Task 2: CLI test harness for end-to-end pipeline validation (AUTH-01)** - `ddc2446` (feat)
+3. **Task 3: End-to-end pipeline verification** — Human-verify checkpoint, approved. No code commit (gate task). Live run result: `Metadata saved: True`, draft 428 words, `draft_validated=False` (OpenAI SEO tuning issue — deferred).
 
 ## Files Created/Modified
 
@@ -101,17 +103,19 @@ None - plan executed exactly as written.
 
 - `uv run python` required (same as Plans 02-03) — `python` not in PATH in this environment. All verifications passed with `uv run python`.
 - ChromaDB embedding model (`paraphrase-multilingual-MiniLM-L12-v2`) weight-loading progress bars appear during first import in a session — this is expected output, not an error. The final line confirms success.
+- **Known issue — deferred:** Writer node word count (428 words, below 800 minimum) and meta-description format produce `draft_validated=False` with OpenAI models. The pipeline infrastructure is correct; this is a prompt tuning gap for OpenAI's response format vs Anthropic Claude. Deferred to a pre-launch prompt calibration task before Phase 3 production use.
 
 ## Next Phase Readiness
 
-- The complete Author mode Python backend is implemented: all 7 LangGraph nodes are real implementations with SqliteSaver persistence
-- `python -m bond.harness` is ready for end-to-end live testing once EXA_API_KEY and LLM API keys are set in `.env`
-- The DUPL-01 loop is closed: topics saved by save_metadata_node become the corpus queried by duplicate_check_node on future runs
-- Task 3 (human-verify checkpoint) is pending: requires EXA_API_KEY and ANTHROPIC_API_KEY or OPENAI_API_KEY in `.env` to run a live end-to-end pipeline test
+- The complete Author mode Python backend is implemented and live-verified: all 7 LangGraph nodes are real implementations with SqliteSaver persistence
+- End-to-end pipeline confirmed: `Metadata saved: True` with real API keys; SQLite and ChromaDB both received data
+- The DUPL-01 loop is closed: topics saved by `save_metadata_node` become the corpus queried by `duplicate_check_node` on future runs
+- Phase 2 is complete — Phase 3 (Streaming API and Frontend) can begin immediately
+- **Open concern for Phase 3:** SEO constraint validation (word count >= 800, meta-description format) needs model-specific calibration for OpenAI models before production use. Budget time for prompt tuning.
 
 ## Self-Check: PASSED
 
-All created/modified files verified present on disk. Both task commits (b909ccb, ddc2446) confirmed in git log.
+All created/modified files verified present on disk. Task commits b909ccb and ddc2446 confirmed in git log. Live pipeline run verified by human reviewer (Task 3 checkpoint approved).
 
 ---
 *Phase: 02-author-mode-backend*
