@@ -8,10 +8,7 @@ from bond.graph.nodes.duplicate_check import duplicate_check_node as _duplicate_
 from bond.graph.nodes.researcher import researcher_node as _researcher_node
 from bond.graph.nodes.structure import structure_node as _structure_node
 from bond.graph.nodes.checkpoint_1 import checkpoint_1_node as _checkpoint_1_node
-
-
-def _writer_node(state: AuthorState) -> dict:
-    raise NotImplementedError("writer_node not yet implemented (Plan 03)")
+from bond.graph.nodes.writer import writer_node as _writer_node
 
 
 def _checkpoint_2_node(state: AuthorState) -> dict:
