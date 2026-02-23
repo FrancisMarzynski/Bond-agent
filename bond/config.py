@@ -11,4 +11,13 @@ class Settings(BaseSettings):
     google_auth_method: str = "oauth"
     google_credentials_path: str = "./credentials.json"
 
+    # Phase 2: Author Mode Backend
+    checkpoint_db_path: str = "./data/bond_checkpoints.db"
+    metadata_db_path: str = "./data/bond_metadata.db"
+    exa_api_key: str = ""
+    research_model: str = "claude-3-5-haiku-20241022"
+    draft_model: str = "claude-3-5-sonnet-20241022"
+    min_word_count: int = 800
+    duplicate_threshold: float = 0.85
+
 settings = Settings()
