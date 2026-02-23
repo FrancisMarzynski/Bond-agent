@@ -16,7 +16,7 @@ Usage:
 """
 
 import argparse
-import json
+import asyncio
 import uuid
 from typing import Optional
 
@@ -87,23 +87,26 @@ def _handle_interrupt(result: dict, interactive: bool) -> dict:
         return {"approved": False, "feedback": feedback}
 
     elif "warning" in interrupt_data:
-        # Duplicate detection checkpoint
-        print(f"\n[DUPLIKAT] {interrupt_data.get('warning')}")
-        print(f"Istniejący artykuł: {interrupt_data.get('existing_title')}")
-        print(f"Data publikacji: {interrupt_data.get('existing_date')}")
-        print(f"Podobieństwo: {interrupt_data.get('similarity_score')}")
+        # Duplicate detection or low-corpus checkpoint
+        print(f"\n[OSTRZEŻENIE] {interrupt_data.get('warning')}")
+        if interrupt_data.get("existing_title"):
+            print(f"Istniejący artykuł: {interrupt_data.get('existing_title')}")
+            print(f"Data publikacji: {interrupt_data.get('existing_date')}")
+            print(f"Podobieństwo: {interrupt_data.get('similarity_score')}")
+        if interrupt_data.get("corpus_count") is not None:
+            print(f"Artykułów w korpusie: {interrupt_data.get('corpus_count')} (próg: {interrupt_data.get('threshold')})")
 
         if not interactive:
-            print("\n[AUTO] Kontynuuję (override=True).")
-            return True  # proceed
+            print("\n[AUTO] Kontynuuję.")
+            return True
 
-        user_input = input("\nKontynuować pomimo podobieństwa? [t/n]: ").strip().lower()
+        user_input = input("\nKontynuować? [t/n]: ").strip().lower()
         return user_input == "t"
 
     return {"approved": True}  # fallback
 
 
-def run_author_pipeline(
+async def run_author_pipeline(
     topic: str = "Jak zwiększyć ruch na blogu firmowym",
     keywords: Optional[list[str]] = None,
     thread_id: Optional[str] = None,
@@ -140,11 +143,9 @@ def run_author_pipeline(
     print(f"{'Resume' if resume else 'Fresh run'}")
 
     if resume:
-        # Resume from last checkpoint — pass Command(resume=None) to trigger re-evaluation
         print("\nResuming from last checkpoint...")
-        result = graph.invoke(Command(resume={"approved": True}), config=config)
+        result = await graph.ainvoke(Command(resume={"approved": True}), config=config)
     else:
-        # Fresh run
         initial_state = {
             "topic": topic,
             "keywords": keywords,
@@ -164,14 +165,14 @@ def run_author_pipeline(
             "cp2_approved": None,
             "cp2_feedback": None,
         }
-        result = graph.invoke(initial_state, config=config)
+        result = await graph.ainvoke(initial_state, config=config)
 
     # Handle interrupt chain — loop until graph finishes or exits
     max_interrupts = 20  # safety limit
     interrupt_count = 0
     while result.get("__interrupt__") and interrupt_count < max_interrupts:
         resume_value = _handle_interrupt(result, interactive)
-        result = graph.invoke(Command(resume=resume_value), config=config)
+        result = await graph.ainvoke(Command(resume=resume_value), config=config)
         interrupt_count += 1
 
     # Final state
@@ -198,10 +199,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     keywords = [k.strip() for k in args.keywords.split(",")]
-    run_author_pipeline(
+    asyncio.run(run_author_pipeline(
         topic=args.topic,
         keywords=keywords,
         thread_id=args.thread_id,
         interactive=args.interactive,
         resume=args.resume,
-    )
+    ))
