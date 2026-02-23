@@ -11,7 +11,8 @@ requires:
 
 provides:
   - AuthorState TypedDict with all 15 pipeline fields (topic, keywords, thread_id, duplicate_match, duplicate_override, search_cache, research_report, heading_structure, cp1_approved, cp1_feedback, cp1_iterations, draft, draft_validated, cp2_approved, cp2_feedback, cp2_iterations, metadata_saved)
-  - bond/graph/graph.py with build_author_graph() and compile_graph() using SqliteSaver; all 7 nodes wired with conditional routing
+  - bond/graph/graph.py with build_author_graph() and compile_graph(); all 7 nodes wired with conditional routing
+  - NOTE: compile_graph() was later changed to an async context manager using AsyncSqliteSaver (required when researcher_node became async in 02-02). Phase 3 must use: `async with compile_graph() as graph:`
   - bond/db/metadata_log.py with create-table-on-connect, save_article_metadata(), get_recent_articles() CRUD against separate SQLite file
   - bond/config.py extended with 7 Phase 2 settings fields
 
@@ -109,7 +110,16 @@ Each task was committed atomically:
 
 ## Deviations from Plan
 
-None - plan executed exactly as written.
+1. **compile_graph() API changed post-plan:** Initially implemented with sync `SqliteSaver` as written. Later in the phase, `researcher_node` was made async (Exa MCP requires async), which forced a switch to `AsyncSqliteSaver` and an async context manager pattern. The final signature is:
+   ```python
+   @asynccontextmanager
+   async def compile_graph():
+       async with AsyncSqliteSaver.from_conn_string(...) as checkpointer:
+           yield builder.compile(checkpointer=checkpointer)
+   ```
+   **Phase 3 impact:** All graph usage must use `async with compile_graph() as graph:` — not `graph = compile_graph()`.
+
+2. **exa-py replaced by langchain-mcp-adapters:** Plan specified `exa-py>=2.4.0` dep and `EXA_API_KEY` in settings. Replaced with `langchain-mcp-adapters` + Exa MCP server (no API key in code). `exa_api_key` field removed from `bond/config.py`.
 
 ## Issues Encountered
 None — `python` command not in PATH in this environment; used `uv run python` for all verification commands. All verifications passed.

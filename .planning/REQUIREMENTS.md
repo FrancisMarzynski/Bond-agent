@@ -25,9 +25,9 @@
 - [x] **AUTH-04**: Użytkownik zatwierdza lub odrzuca raport i strukturę nagłówków (Checkpoint 1)
 - [x] **AUTH-05**: Po zatwierdzeniu Checkpoint 1, agent generuje pełny draft z zasadami SEO: słowo kluczowe w H1 i pierwszym akapicie, poprawna hierarchia nagłówków, meta-description 150–160 znaków, minimum 800 słów
 - [x] **AUTH-06**: Agent stylizuje draft wstrzykując 3–5 fragmentów wzorcowych z bazy wektorowej (RAG Few-Shot)
-- [ ] **AUTH-07**: Użytkownik zatwierdza lub odrzuca stylizowany draft (Checkpoint 2)
+- [x] **AUTH-07**: Użytkownik zatwierdza lub odrzuca stylizowany draft (Checkpoint 2)
 - [x] **AUTH-08**: Użytkownik może podać feedback przy odrzuceniu — agent regeneruje draft bez utraty kontekstu sesji (max 3 iteracje)
-- [ ] **AUTH-09**: Po zatwierdzeniu, system zapisuje metadane artykułu do Metadata Log (temat, data, tryb)
+- [x] **AUTH-09**: Po zatwierdzeniu, system zapisuje metadane artykułu do Metadata Log (temat, data, tryb)
 - [x] **AUTH-10**: Wyniki web search są cache'owane w sesji — powtórne zapytanie o ten sam temat nie wywołuje ponownego API call
 - [x] **AUTH-11**: Modele LLM są konfigurowane przez zmienne środowiskowe (RESEARCH_MODEL dla research/analizy, DRAFT_MODEL dla final draft)
 
@@ -113,9 +113,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-04 | Phase 2 | Complete |
 | AUTH-05 | Phase 2 | Complete |
 | AUTH-06 | Phase 2 | Complete |
-| AUTH-07 | Phase 2 | Pending |
+| AUTH-07 | Phase 2 | Complete |
 | AUTH-08 | Phase 2 | Complete |
-| AUTH-09 | Phase 2 | Pending |
+| AUTH-09 | Phase 2 | Complete |
 | AUTH-10 | Phase 2 | Complete |
 | AUTH-11 | Phase 2 | Complete |
 | DUPL-01 | Phase 2 | Complete |
