@@ -6,19 +6,8 @@ from bond.graph.state import AuthorState
 from bond.config import settings
 from bond.graph.nodes.duplicate_check import duplicate_check_node as _duplicate_check_node
 from bond.graph.nodes.researcher import researcher_node as _researcher_node
-
-
-# ---------------------------------------------------------------------------
-# Stub node implementations — replaced in Plans 02-04
-# ---------------------------------------------------------------------------
-
-
-def _structure_node(state: AuthorState) -> dict:
-    raise NotImplementedError("structure_node not yet implemented (Plan 03)")
-
-
-def _checkpoint_1_node(state: AuthorState) -> dict:
-    raise NotImplementedError("checkpoint_1_node not yet implemented (Plan 03)")
+from bond.graph.nodes.structure import structure_node as _structure_node
+from bond.graph.nodes.checkpoint_1 import checkpoint_1_node as _checkpoint_1_node
 
 
 def _writer_node(state: AuthorState) -> dict:
