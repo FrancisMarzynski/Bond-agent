@@ -20,8 +20,12 @@ dependencies = [
     "pydantic>=2.0",
     "pydantic-settings",
     "python-dotenv",
-    "langgraph-checkpoint-sqlite",
+    "langgraph-checkpoint-sqlite>=3.0.3",
     "requests",
+    "langgraph>=0.2",
+    "exa-py>=2.4.0",
+    "langchain-openai>=0.2",
+    "langchain-anthropic>=0.2",
 ]
 
 [dependency-groups]
