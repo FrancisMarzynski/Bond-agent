@@ -21,6 +21,7 @@ dependencies = [
     "pydantic-settings",
     "python-dotenv",
     "langgraph-checkpoint-sqlite>=3.0.3",
+    "aiosqlite",
     "requests",
     "langgraph>=0.2",
     "langchain-mcp-adapters>=0.1",

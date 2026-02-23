@@ -1,6 +1,7 @@
-import sqlite3
+import os
+from contextlib import asynccontextmanager
 from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 from bond.graph.state import AuthorState
 from bond.config import settings
@@ -95,12 +96,15 @@ def build_author_graph() -> StateGraph:
     return builder
 
 
-def compile_graph():
-    """Compile the graph with SqliteSaver. check_same_thread=False is required."""
-    import os
+@asynccontextmanager
+async def compile_graph():
+    """Async context manager — yields a compiled graph with AsyncSqliteSaver.
+
+    Usage:
+        async with compile_graph() as graph:
+            result = await graph.ainvoke(...)
+    """
     os.makedirs(os.path.dirname(os.path.abspath(settings.checkpoint_db_path)), exist_ok=True)
-    builder = build_author_graph()
-    checkpointer = SqliteSaver(
-        sqlite3.connect(settings.checkpoint_db_path, check_same_thread=False)
-    )
-    return builder.compile(checkpointer=checkpointer)
+    async with AsyncSqliteSaver.from_conn_string(settings.checkpoint_db_path) as checkpointer:
+        builder = build_author_graph()
+        yield builder.compile(checkpointer=checkpointer)

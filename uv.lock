@@ -168,6 +168,7 @@ name = "bond"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "aiosqlite" },
     { name = "chromadb" },
     { name = "fastapi" },
     { name = "google-api-python-client" },
@@ -201,6 +202,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aiosqlite" },
     { name = "chromadb", specifier = "==1.5.1" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "google-api-python-client", specifier = ">=2.0" },

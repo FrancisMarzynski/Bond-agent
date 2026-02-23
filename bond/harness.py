@@ -133,7 +133,6 @@ async def run_author_pipeline(
         thread_id = str(uuid.uuid4())
 
     config = {"configurable": {"thread_id": thread_id}}
-    graph = compile_graph()
 
     print(f"\nAuthor Mode Pipeline")
     print(f"Topic: {topic}")
@@ -142,38 +141,39 @@ async def run_author_pipeline(
     print(f"Mode: {'Interactive' if interactive else 'Auto-approve'}")
     print(f"{'Resume' if resume else 'Fresh run'}")
 
-    if resume:
-        print("\nResuming from last checkpoint...")
-        result = await graph.ainvoke(Command(resume={"approved": True}), config=config)
-    else:
-        initial_state = {
-            "topic": topic,
-            "keywords": keywords,
-            "thread_id": thread_id,
-            "search_cache": {},
-            "cp1_iterations": 0,
-            "cp2_iterations": 0,
-            "metadata_saved": False,
-            "duplicate_match": None,
-            "duplicate_override": None,
-            "research_report": None,
-            "heading_structure": None,
-            "cp1_approved": None,
-            "cp1_feedback": None,
-            "draft": None,
-            "draft_validated": None,
-            "cp2_approved": None,
-            "cp2_feedback": None,
-        }
-        result = await graph.ainvoke(initial_state, config=config)
+    async with compile_graph() as graph:
+        if resume:
+            print("\nResuming from last checkpoint...")
+            result = await graph.ainvoke(Command(resume={"approved": True}), config=config)
+        else:
+            initial_state = {
+                "topic": topic,
+                "keywords": keywords,
+                "thread_id": thread_id,
+                "search_cache": {},
+                "cp1_iterations": 0,
+                "cp2_iterations": 0,
+                "metadata_saved": False,
+                "duplicate_match": None,
+                "duplicate_override": None,
+                "research_report": None,
+                "heading_structure": None,
+                "cp1_approved": None,
+                "cp1_feedback": None,
+                "draft": None,
+                "draft_validated": None,
+                "cp2_approved": None,
+                "cp2_feedback": None,
+            }
+            result = await graph.ainvoke(initial_state, config=config)
 
-    # Handle interrupt chain — loop until graph finishes or exits
-    max_interrupts = 20  # safety limit
-    interrupt_count = 0
-    while result.get("__interrupt__") and interrupt_count < max_interrupts:
-        resume_value = _handle_interrupt(result, interactive)
-        result = await graph.ainvoke(Command(resume=resume_value), config=config)
-        interrupt_count += 1
+        # Handle interrupt chain — loop until graph finishes or exits
+        max_interrupts = 20  # safety limit
+        interrupt_count = 0
+        while result.get("__interrupt__") and interrupt_count < max_interrupts:
+            resume_value = _handle_interrupt(result, interactive)
+            result = await graph.ainvoke(Command(resume=resume_value), config=config)
+            interrupt_count += 1
 
     # Final state
     print(f"\n{'='*60}")
