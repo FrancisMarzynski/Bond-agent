@@ -1,106 +1,76 @@
-import time
-
-from exa_py import Exa
+import asyncio
 
 from bond.config import settings
 from bond.graph.state import AuthorState
 
-
-def _call_exa_with_retry(exa: Exa, query: str, keywords: list[str], max_retries: int = 3) -> list[dict]:
-    """Call Exa search_and_contents with exponential backoff on rate limit errors."""
-    for attempt in range(max_retries):
-        try:
-            response = exa.search_and_contents(
-                query=f"{query} {' '.join(keywords)}",
-                num_results=8,
-                type="auto",                          # neural + keyword blend
-                text={"max_characters": 2000},        # for synthesis; stripped from cache after
-                summary={"query": query},             # abstractive summary per result
-            )
-            return [
-                {
-                    "title": r.title or "Brak tytułu",
-                    "url": r.url or "",
-                    "summary": r.summary or "",
-                    "text": r.text or "",             # used for synthesis; stripped from cache after
-                }
-                for r in response.results
-                if r.url  # filter results with no URL
-            ]
-        except Exception as e:
-            err_str = str(e).lower()
-            if "rate" in err_str or "429" in err_str:
-                wait = 2 ** attempt
-                print(f"Exa rate limit hit, waiting {wait}s (attempt {attempt + 1}/{max_retries})")
-                time.sleep(wait)
-                continue
-            raise  # non-rate-limit errors propagate immediately
-    raise RuntimeError(f"Exa API rate limit exceeded after {max_retries} retries")
+EXA_MCP_URL = "https://mcp.exa.ai/mcp"
 
 
-def _format_research_report(results: list[dict], topic: str, keywords: list[str]) -> str:
+async def _call_exa_mcp(query: str, keywords: list[str], num_results: int = 8) -> str:
     """
-    Format results into Markdown report.
+    Call Exa web_search_exa tool via MCP HTTP.
+    Returns the raw formatted results string.
+    """
+    from langchain_mcp_adapters.client import MultiServerMCPClient
+
+    search_query = f"{query} {' '.join(keywords)}" if keywords else query
+
+    async with MultiServerMCPClient(
+        {"exa": {"url": EXA_MCP_URL, "transport": "streamable_http"}}
+    ) as client:
+        tools = client.get_tools()
+        web_search = next((t for t in tools if t.name == "web_search_exa"), None)
+        if web_search is None:
+            available = [t.name for t in tools]
+            raise RuntimeError(
+                f"web_search_exa not found in Exa MCP. Available: {available}"
+            )
+        result = await web_search.ainvoke({"query": search_query, "numResults": num_results})
+        return result if isinstance(result, str) else str(result)
+
+
+def _format_research_report(raw_results: str, topic: str, keywords: list[str]) -> str:
+    """
+    Format raw MCP search results into a structured Markdown report.
 
     Structure (per locked user decision):
     1. Synthesis section: 2-3 paragraphs summarizing key themes across sources
-    2. Numbered source list: Title / URL / 2-3 sentence summary per source
+    2. Numbered source list extracted from results
     """
     from langchain_anthropic import ChatAnthropic
     from langchain_openai import ChatOpenAI
 
     research_model = settings.research_model
 
-    # Build context for synthesis from article texts
-    source_texts = "\n\n".join(
-        f"### {r['title']}\nURL: {r['url']}\n{r['text'][:1000]}"
-        for r in results
-        if r.get("text")
-    )
+    synthesis_prompt = f"""Jesteś redaktorem. Na podstawie poniższych wyników wyszukiwania napisz:
 
-    synthesis_prompt = f"""Jesteś redaktorem. Na podstawie poniższych artykułów napisz krótką syntezę (2-3 akapity)
-głównych tematów i trendów dotyczących: "{topic}" (słowa kluczowe: {', '.join(keywords)}).
-Pisz po polsku. Nie cytuj źródeł bezpośrednio — syntezuj idee.
+1. SYNTEZA (2-3 akapity): krótkie podsumowanie głównych tematów i trendów dotyczących "{topic}" (słowa kluczowe: {', '.join(keywords)}). Pisz po polsku. Nie cytuj źródeł bezpośrednio — syntezuj idee.
 
-ARTYKUŁY:
-{source_texts}
+2. ŹRÓDŁA: wypisz ponumerowaną listę artykułów z wyników. Format każdej pozycji:
+N. **Tytuł**
+   URL
+   2-3 zdania streszczenia
 
-SYNTEZA:"""
+WYNIKI WYSZUKIWANIA:
+{raw_results}
 
-    # Select LLM based on RESEARCH_MODEL env var
-    if "claude" in research_model.lower() or "anthropic" in research_model.lower():
-        llm = ChatAnthropic(model=research_model, max_tokens=600)
+Odpowiedź zacznij od nagłówka "### Synteza", a listę źródeł od "### Źródła"."""
+
+    if "claude" in research_model.lower():
+        llm = ChatAnthropic(model=research_model, max_tokens=1200)
     else:
-        llm = ChatOpenAI(model=research_model, max_tokens=600)
+        llm = ChatOpenAI(model=research_model, max_tokens=1200)
 
-    synthesis = llm.invoke(synthesis_prompt).content.strip()
+    formatted = llm.invoke(synthesis_prompt).content.strip()
 
-    # Build numbered source list
-    source_lines = []
-    for i, r in enumerate(results, 1):
-        summary = r.get("summary") or r.get("text", "")[:300]
-        source_lines.append(f"{i}. **{r['title']}**  \n   {r['url']}  \n   {summary}\n")
-
-    sources_section = "\n".join(source_lines)
-
-    return f"""## Raport z badań: {topic}
-
-### Synteza
-
-{synthesis}
-
----
-
-### Źródła
-
-{sources_section}"""
+    return f"## Raport z badań: {topic}\n\n{formatted}"
 
 
-def researcher_node(state: AuthorState) -> dict:
+async def researcher_node(state: AuthorState) -> dict:
     """
-    Perform web research via Exa. Checks session cache first (AUTH-10).
+    Perform web research via Exa MCP. Checks session cache first (AUTH-10).
 
-    Returns updated search_cache (with text stripped to save state space)
+    Returns updated search_cache (raw MCP results string, keyed by topic)
     and formatted research_report (Markdown).
     """
     topic = state["topic"]
@@ -108,22 +78,14 @@ def researcher_node(state: AuthorState) -> dict:
     cache = state.get("search_cache", {})
 
     if topic in cache:
-        # Cache hit — no Exa API call
+        # Cache hit — no MCP call
         raw_results = cache[topic]
     else:
-        # Cache miss — call Exa
-        exa = Exa(api_key=settings.exa_api_key)
-        raw_results = _call_exa_with_retry(exa, topic, keywords)
+        # Cache miss — call Exa via MCP
+        raw_results = await _call_exa_mcp(topic, keywords)
+        cache = {**cache, topic: raw_results}
 
-    # Format report (uses text field for synthesis)
     report = _format_research_report(raw_results, topic, keywords)
-
-    # Strip text from cache after report generation to avoid state bloat (Pitfall 4)
-    slim_results = [
-        {"title": r["title"], "url": r["url"], "summary": r.get("summary", "")}
-        for r in raw_results
-    ]
-    cache[topic] = slim_results
 
     return {
         "research_report": report,

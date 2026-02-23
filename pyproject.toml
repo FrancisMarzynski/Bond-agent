@@ -23,7 +23,7 @@ dependencies = [
     "langgraph-checkpoint-sqlite>=3.0.3",
     "requests",
     "langgraph>=0.2",
-    "exa-py>=2.4.0",
+    "langchain-mcp-adapters>=0.1",
     "langchain-openai>=0.2",
     "langchain-anthropic>=0.2",
 ]
