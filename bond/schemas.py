@@ -11,9 +11,15 @@ AgentOutput — co agent zwraca po zakończeniu wszystkich węzłów
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+# Dozwolone wartości tonu — Literal blokuje nieprawidłowe stringi na poziomie walidacji.
+Tone = Literal["profesjonalny", "ekspercki", "przyjazny", "edukacyjny", "sprzedażowy"]
+
+# Minimalna liczba słów w gotowym artykule (spójna z settings.min_word_count).
+_MIN_WORD_COUNT = 800
 
 
 class AgentInput(BaseModel):
@@ -26,6 +32,8 @@ class AgentInput(BaseModel):
       sources → przekazywany do researcher_node jako wskazówki źródłowe
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     topic: Annotated[str, Field(
         min_length=3,
         max_length=300,
@@ -33,10 +41,10 @@ class AgentInput(BaseModel):
         examples=["Jak zwiększyć ruch na blogu firmowym"],
     )]
 
-    tone: Annotated[str, Field(
+    tone: Annotated[Tone, Field(
         default="profesjonalny",
         description=(
-            "Ton i styl pisania. Możliwe wartości: "
+            "Ton i styl pisania. Dozwolone wartości: "
             "'profesjonalny', 'ekspercki', 'przyjazny', 'edukacyjny', 'sprzedażowy'."
         ),
         examples=["profesjonalny", "przyjazny"],
@@ -64,12 +72,25 @@ class AgentOutput(BaseModel):
                          (domyślnie 0 — implementacja w osobnym zadaniu)
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     markdown_content: Annotated[str, Field(
+        min_length=1,
         description=(
             "Gotowy artykuł w formacie Markdown, zawierający hierarchię H1/H2/H3, "
-            "meta-description (150-160 znaków) i minimum 800 słów."
+            f"meta-description (150-160 znaków) i minimum {_MIN_WORD_COUNT} słów."
         ),
     )]
+
+    @field_validator("markdown_content")
+    @classmethod
+    def validate_word_count(cls, v: str) -> str:
+        word_count = len(v.split())
+        if word_count < _MIN_WORD_COUNT:
+            raise ValueError(
+                f"markdown_content zawiera {word_count} słów — wymagane minimum {_MIN_WORD_COUNT}."
+            )
+        return v
 
     sources_list: Annotated[list[str], Field(
         default_factory=list,
