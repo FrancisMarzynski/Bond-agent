@@ -1,0 +1,29 @@
+Task Name,Description
+Określenie Tone of Voice Adaptation,"Generowanie treści dopasowanej do marki ""Bond"".
+Kryteria Akceptacji (AC):
+[ ] Przygotowanie system promptu dla węzła Writer.
+[ ] Definicja ograniczeń (np. zakaz używania konkretnych słów, długość posta).
+[ ] AC: Wyjście w czystym Markdown gotowym do wklejenia na bloga.
+"
+Definicja Schematów Input/Output,"Ustalenie, co Bond dostaje na wejściu i co musi zwrócić w stanie grafu. Kryteria Akceptacji (AC):
+[ ] Plik schemas.py z klasą AgentInput (topic, tone, sources).
+[ ] Klasa AgentOutput (markdown_content, sources_list, tokens_used).
+[ ] Walidacja pól zgodnie ze standardem JSON Mode.
+
+"
+Utworzenie Research Node (Deep Search),"Bond musi umieć znaleźć i zweryfikować fakty przed pisaniem. Kryteria Akceptacji (AC):
+[ ] Opis logiczny węzła Researcher (jakie narzędzia MCP wykorzystuje).
+[ ] Definicja sukcesu: Raport z researchu musi zawierać min. 3 unikalne źródła.
+[ ] Obsługa błędu: Co robi agent, gdy nie znajdzie informacji?
+"
+Określenie Human-in-the-loop,"Wdrożenie punktu kontrolnego przed generowaniem tekstu. Kryteria Akceptacji (AC):
+[ ] Definicja stanu Waiting for Approval.
+[ ] Specyfikacja komend dla człowieka: Approve, Rewrite (with comment), Abort.
+[ ] Integracja z mechanizmem interrupt_before w LangGraph.
+"
+"Zdefiniowanie ""Stylu Komunikacji""",
+"Określenie ""Kontekstu""",
+Zablokowanie nieautoryzowanych akcji i kosztownych pętli.,"Utworzyć Liste ""Forbidden Patterns"" (czego modelowi nie wolno robić, np. wymyślanie źródeł).
+Zdefiniować limitów (np. max 3 iteracje researchu, zakaz publikacji bez HITL).
+Ustalić procedury bezpieczeństwa dla kluczy API i danych wrażliwych
+"
