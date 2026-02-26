@@ -55,15 +55,17 @@ def _handle_interrupt(result: dict, interactive: bool) -> dict:
 
         if not interactive:
             print("\n[AUTO] Zatwierdzam strukturę nagłówków.")
-            return {"approved": True}
+            return {"action": "approve"}
 
-        user_input = input("\nZatwierdź? [t/n]: ").strip().lower()
+        user_input = input("\nZatwierdź? [t/n/abort]: ").strip().lower()
+        if user_input == "abort":
+            return {"action": "abort"}
         if user_input == "t":
-            return {"approved": True}
+            return {"action": "approve"}
         edited = input("Wklej edytowaną strukturę nagłówków (lub Enter aby zachować obecną):\n")
         note = input("Opcjonalna notatka dla agenta:\n")
         return {
-            "approved": False,
+            "action": "reject",
             "edited_structure": edited or interrupt_data.get("heading_structure", ""),
             "note": note,
         }
@@ -78,13 +80,15 @@ def _handle_interrupt(result: dict, interactive: bool) -> dict:
 
         if not interactive:
             print("\n[AUTO] Zatwierdzam draft.")
-            return {"approved": True}
+            return {"action": "approve"}
 
-        user_input = input("\nZatwierdź? [t/n]: ").strip().lower()
+        user_input = input("\nZatwierdź? [t/n/abort]: ").strip().lower()
+        if user_input == "abort":
+            return {"action": "abort"}
         if user_input == "t":
-            return {"approved": True}
+            return {"action": "approve"}
         feedback = input("Opisz które sekcje poprawić i jak:\n")
-        return {"approved": False, "feedback": feedback}
+        return {"action": "reject", "feedback": feedback}
 
     elif "warning" in interrupt_data:
         # Duplicate detection or low-corpus checkpoint

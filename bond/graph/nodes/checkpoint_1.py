@@ -1,19 +1,27 @@
-from langgraph.types import interrupt
+from pydantic import ValidationError
+from langgraph.types import interrupt, Command
+from langgraph.graph import END
 
 from bond.graph.state import AuthorState
+from bond.schemas import CheckpointResponse
 
 
-def checkpoint_1_node(state: AuthorState) -> dict:
+def checkpoint_1_node(state: AuthorState) -> dict | Command:
     """
     Checkpoint 1: pause for human review of research report and heading structure.
 
     Surfaces: research_report, heading_structure, cp1_iterations.
     Resume format:
-      Approve: {"approved": True}
-      Reject:  {"approved": False, "edited_structure": "# ...", "note": "Optional note"}
+      Approve: {"action": "approve"}
+      Reject:  {"action": "reject", "edited_structure": "# ...", "note": "Optional note"}
+      Abort:   {"action": "abort"}
+
+    Response is validated through CheckpointResponse — rejects strings like "false"
+    or "tak" that would pass a naive truthy check on 'approved'.
 
     On rejection: edited_structure + note are concatenated into cp1_feedback.
     structure_node reads cp1_feedback on its next run.
+    On abort: returns Command(goto=END), terminating the pipeline immediately.
     """
     user_response = interrupt({
         "checkpoint": "checkpoint_1",
@@ -21,20 +29,27 @@ def checkpoint_1_node(state: AuthorState) -> dict:
         "heading_structure": state.get("heading_structure", ""),
         "cp1_iterations": state.get("cp1_iterations", 0),
         "instructions": (
-            "Zatwierdź lub odrzuć raport i strukturę nagłówków. "
-            "Przy odrzuceniu: edytuj strukturę nagłówków bezpośrednio i dodaj opcjonalną notatkę."
+            'Wyślij {"action": "approve"}, '
+            '{"action": "reject", "edited_structure": "# ...", "note": "..."} '
+            'lub {"action": "abort"} aby zakończyć pipeline.'
         ),
     })
 
-    if user_response.get("approved"):
+    try:
+        response = CheckpointResponse(**user_response)
+    except ValidationError as exc:
+        raise ValueError(f"Nieprawidłowa odpowiedź checkpoint_1: {exc}") from exc
+
+    if response.action == "abort":
+        return Command(goto=END)
+
+    if response.action == "approve":
         return {"cp1_approved": True}
 
-    # Rejection: concatenate edited structure + note into cp1_feedback
-    edited_structure = user_response.get("edited_structure", state.get("heading_structure", ""))
-    note = user_response.get("note", "")
-    feedback = edited_structure
-    if note:
-        feedback = f"{edited_structure}\n\nUwaga: {note}"
+    # reject — concatenate edited structure + note into cp1_feedback
+    edited = response.edited_structure or state.get("heading_structure", "")
+    note = response.note or ""
+    feedback = f"{edited}\n\nUwaga: {note}" if note else edited
 
     return {
         "cp1_approved": False,

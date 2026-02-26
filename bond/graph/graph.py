@@ -83,13 +83,13 @@ def build_author_graph() -> StateGraph:
     builder.add_conditional_edges(
         "checkpoint_1",
         _route_after_cp1,
-        {"writer": "writer", "structure": "structure"},
+        {"writer": "writer", "structure": "structure", END: END},
     )
     builder.add_edge("writer", "checkpoint_2")
     builder.add_conditional_edges(
         "checkpoint_2",
         _route_after_cp2,
-        {"save_metadata": "save_metadata", "writer": "writer"},
+        {"save_metadata": "save_metadata", "writer": "writer", END: END},
     )
     builder.add_edge("save_metadata", END)
 

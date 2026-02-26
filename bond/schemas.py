@@ -11,7 +11,7 @@ AgentOutput — co agent zwraca po zakończeniu wszystkich węzłów
 
 from __future__ import annotations
 
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -20,6 +20,31 @@ Tone = Literal["profesjonalny", "ekspercki", "przyjazny", "edukacyjny", "sprzeda
 
 # Minimalna liczba słów w gotowym artykule (spójna z settings.min_word_count).
 _MIN_WORD_COUNT = 800
+
+
+class CheckpointResponse(BaseModel):
+    """
+    Odpowiedź użytkownika na przerwanie HITL (checkpoint_1 lub checkpoint_2).
+
+    Zastępuje słownik z kluczem 'approved' — wymusza jawny typ akcji
+    i blokuje niejednoznaczne wartości (np. string "false" zamiast bool False).
+
+    Akcje:
+      approve — zatwierdź i przejdź dalej
+      reject  — odrzuć i wróć do poprzedniego węzła (z opcjonalnym feedbackiem)
+      abort   — zakończ pipeline natychmiast (goto=END)
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    action: Literal["approve", "reject", "abort"]
+
+    # cp1 only — ignorowane przez checkpoint_2
+    edited_structure: Optional[str] = None
+    note: Optional[str] = None
+
+    # cp2 only — ignorowane przez checkpoint_1
+    feedback: Optional[str] = None
 
 
 class AgentInput(BaseModel):
