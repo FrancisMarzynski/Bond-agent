@@ -1,9 +1,29 @@
-import asyncio
+import re
+
+from langchain_anthropic import ChatAnthropic
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from langchain_openai import ChatOpenAI
 
 from bond.config import settings
 from bond.graph.state import AuthorState
 
 EXA_MCP_URL = "https://mcp.exa.ai/mcp"
+_MIN_SOURCES = 3
+
+# Module-level tools cache — fetched once per process, reused across node calls.
+_exa_tools_cache: list | None = None
+
+
+async def _get_exa_tools() -> list:
+    """Fetch Exa MCP tools and cache them for the lifetime of the process."""
+    global _exa_tools_cache
+    if _exa_tools_cache is not None:
+        return _exa_tools_cache
+    client = MultiServerMCPClient(
+        {"exa": {"url": EXA_MCP_URL, "transport": "streamable_http"}}
+    )
+    _exa_tools_cache = await client.get_tools()
+    return _exa_tools_cache
 
 
 async def _call_exa_mcp(query: str, keywords: list[str], num_results: int = 8) -> str:
@@ -11,14 +31,9 @@ async def _call_exa_mcp(query: str, keywords: list[str], num_results: int = 8) -
     Call Exa web_search_exa tool via MCP HTTP.
     Returns the raw formatted results string.
     """
-    from langchain_mcp_adapters.client import MultiServerMCPClient
-
     search_query = f"{query} {' '.join(keywords)}" if keywords else query
 
-    client = MultiServerMCPClient(
-        {"exa": {"url": EXA_MCP_URL, "transport": "streamable_http"}}
-    )
-    tools = await client.get_tools()
+    tools = await _get_exa_tools()
     web_search = next((t for t in tools if t.name == "web_search_exa"), None)
     if web_search is None:
         available = [t.name for t in tools]
@@ -29,6 +44,11 @@ async def _call_exa_mcp(query: str, keywords: list[str], num_results: int = 8) -
     return result if isinstance(result, str) else str(result)
 
 
+def _count_sources(report: str) -> int:
+    """Count numbered source entries (lines starting with digit + dot) in the report."""
+    return len(re.findall(r"^\d+\.", report, re.MULTILINE))
+
+
 def _format_research_report(raw_results: str, topic: str, keywords: list[str]) -> str:
     """
     Format raw MCP search results into a structured Markdown report.
@@ -37,9 +57,6 @@ def _format_research_report(raw_results: str, topic: str, keywords: list[str]) -
     1. Synthesis section: 2-3 paragraphs summarizing key themes across sources
     2. Numbered source list extracted from results
     """
-    from langchain_anthropic import ChatAnthropic
-    from langchain_openai import ChatOpenAI
-
     research_model = settings.research_model
 
     synthesis_prompt = f"""Jesteś redaktorem. Na podstawie poniższych wyników wyszukiwania napisz:
@@ -57,9 +74,9 @@ WYNIKI WYSZUKIWANIA:
 Odpowiedź zacznij od nagłówka "### Synteza", a listę źródeł od "### Źródła"."""
 
     if "claude" in research_model.lower():
-        llm = ChatAnthropic(model=research_model, max_tokens=1200)
+        llm = ChatAnthropic(model=research_model, max_tokens=2500)
     else:
-        llm = ChatOpenAI(model=research_model, max_tokens=1200)
+        llm = ChatOpenAI(model=research_model, max_tokens=2500)
 
     formatted = llm.invoke(synthesis_prompt).content.strip()
 
@@ -72,6 +89,11 @@ async def researcher_node(state: AuthorState) -> dict:
 
     Returns updated search_cache (raw MCP results string, keyed by topic)
     and formatted research_report (Markdown).
+
+    Raises ValueError if the formatted report contains fewer than _MIN_SOURCES sources.
+
+    Known limitation: source URLs are not validated for reachability or paywall status.
+    Exa returns indexed content but cannot guarantee live access at generation time.
     """
     topic = state["topic"]
     keywords = state.get("keywords", [])
@@ -86,6 +108,13 @@ async def researcher_node(state: AuthorState) -> dict:
         cache = {**cache, topic: raw_results}
 
     report = _format_research_report(raw_results, topic, keywords)
+
+    source_count = _count_sources(report)
+    if source_count < _MIN_SOURCES:
+        raise ValueError(
+            f"Raport zawiera tylko {source_count} źródeł — wymagane minimum {_MIN_SOURCES}. "
+            "Sprawdź połączenie z Exa MCP lub rozszerz zapytanie."
+        )
 
     return {
         "research_report": report,
