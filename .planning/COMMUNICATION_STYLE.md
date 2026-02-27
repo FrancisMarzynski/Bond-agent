@@ -40,21 +40,36 @@ Styl Bonda jest determinowany przez temperaturę modelu w poszczególnych węzł
 | Research & Struktura (Checkpoint 1) | 0.1–0.2 | GPT-4o | Trzymanie się faktów i sztywnego formatu wyjściowego |
 | Drafting (Checkpoint 2) | 0.5–0.7 | GPT-4o | Naturalny przepływ tekstu (human-like) przy zachowaniu struktury |
 
+**Prompt Caching:** Węzły używające GPT-4o-mini (Routing, Klasyfikacja) powinny korzystać z mechanizmu Prompt Caching dla statycznych części system promptu (np. SYSTEM DIRECTIVES, BRAND_CONTEXT). Redukuje to koszt i latencję przy wielokrotnych wywołaniach w ramach tej samej sesji.
+
 ---
 
 ## 4. Architektura HITL i Kontrakty Danych (Pydantic)
 
 Komunikacja z użytkownikiem (UI/CLI) nie opiera się na parsowaniu tekstu, lecz na wymuszeniu od LLMa struktury JSON/Pydantic. LangGraph zatrzymuje stan (`interrupt_before`) w oczekiwaniu na decyzję.
 
+**Narzędzia Researcher Node** muszą być serwowane przez MCP. Ustandaryzuje to format błędów API (jednolita struktura `error_code` + `message`) i oddzieli transport od logiki węzła.
+
+**Recursion limit:** każda pętla (CP1, CP2) musi mieć jawny limit w konfiguracji grafu, aby zapobiec zawieszeniu przy błędzie API:
+```python
+app = graph.compile(checkpointer=..., recursion_limit=25)
+```
+
 ```
 graph TD
-    A[Researcher Node] -->|Generate Structure| B(Structure Node)
-    B -->|interrupt_before| C{Checkpoint 1: Akceptacja?}
-    C -->|NIE + Feedback| B
-    C -->|TAK| D[Writer Node]
-    D -->|interrupt_before| E{Checkpoint 2: Akceptacja Draftu?}
-    E -->|NIE + Feedback| D
-    E -->|TAK| F[Publikacja/Zapis]
+    A[Researcher Node] -->|Sukces| B(Duplicate Validation Node)
+    A -->|Wyjątek API| ERR[Error Handler Node]
+    ERR -->|interrupt| ERRCP{Błąd: poinformuj użytkownika}
+    B -->|Brak duplikatu| C(Structure Node)
+    B -->|Duplikat wykryty| DUP{Checkpoint: Duplikat?}
+    DUP -->|NIE - przerwij| END[Koniec]
+    DUP -->|TAK - kontynuuj| C
+    C -->|interrupt_before| CP1{Checkpoint 1: Akceptacja?}
+    CP1 -->|NIE + Feedback| C
+    CP1 -->|TAK| D[Writer Node]
+    D -->|interrupt_before| CP2{Checkpoint 2: Akceptacja Draftu?}
+    CP2 -->|NIE + Feedback| D
+    CP2 -->|TAK| F[Publikacja/Zapis]
 ```
 
 ### Checkpoint 1: Struktura Artykułu
@@ -76,7 +91,15 @@ class StructureCheckpointPayload(BaseModel):
     sections: List[SectionStructure]
     sources_count: int
     sources_provider: str = Field(default="Exa")
-    similarity_warning: float = Field(default=0.0, description="% duplikacji z bazą. >80% triggeruje ostrzeżenie.")
+    # UWAGA: similarity_warning zostało usunięte z tej klasy (SRP).
+    # Walidacja duplikatów odbywa się w osobnym węźle DuplicateValidationNode,
+    # który zwraca DuplicateCheckPayload przed wejściem do Structure Node.
+
+class DuplicateCheckPayload(BaseModel):
+    similarity_score: float = Field(description="% duplikacji z bazą. >80% triggeruje ostrzeżenie.")
+    existing_title: str = Field(default="")
+    existing_date: str = Field(default="")
+    should_warn: bool = Field(description="True jeśli similarity_score > 0.80")
 ```
 
 **Renderowany Output (UI/CLI):**
