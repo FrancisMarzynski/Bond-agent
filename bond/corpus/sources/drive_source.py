@@ -1,6 +1,15 @@
 """Google Drive folder downloader using google-api-python-client v3."""
 
 import io
+import os
+
+from google.auth.transport.requests import Request
+from google.oauth2 import service_account
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseDownload
+
 from bond.config import settings
 from bond.corpus.sources.file_source import extract_text
 from bond.corpus.ingestor import CorpusIngestor
@@ -16,25 +25,16 @@ SUPPORTED_MIME_TYPES = {
 
 def build_drive_service():
     """Build Google Drive API service. Supports oauth and service_account auth methods."""
-    from googleapiclient.discovery import build
-
     method = settings.google_auth_method
     creds_path = settings.google_credentials_path
 
     if method == "service_account":
-        from google.oauth2 import service_account
-
         creds = service_account.Credentials.from_service_account_file(
             creds_path, scopes=SCOPES
         )
         return build("drive", "v3", credentials=creds)
     else:
         # OAuth installed-app flow (default)
-        import os
-        from google.oauth2.credentials import Credentials
-        from google_auth_oauthlib.flow import InstalledAppFlow
-        from google.auth.transport.requests import Request
-
         token_path = creds_path.replace("credentials.json", "token.json")
         creds = None
         if os.path.exists(token_path):
@@ -73,8 +73,6 @@ def list_folder_files(service, folder_id: str) -> list[dict]:
 
 def download_file(service, file_id: str, mime_type: str) -> bytes | None:
     """Download file content as bytes. Exports Google Docs as plain text."""
-    from googleapiclient.http import MediaIoBaseDownload
-
     try:
         if mime_type == "application/vnd.google-apps.document":
             request = service.files().export_media(

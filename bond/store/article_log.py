@@ -1,3 +1,4 @@
+import os
 import sqlite3
 from datetime import datetime, timezone
 from bond.config import settings
@@ -14,7 +15,6 @@ CREATE TABLE IF NOT EXISTS corpus_articles (
 """
 
 def _get_conn() -> sqlite3.Connection:
-    import os
     os.makedirs(os.path.dirname(os.path.abspath(settings.article_db_path)), exist_ok=True)
     conn = sqlite3.connect(settings.article_db_path)
     conn.execute(CREATE_TABLE)

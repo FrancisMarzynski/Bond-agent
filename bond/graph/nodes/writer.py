@@ -1,6 +1,8 @@
 import re
 from typing import Optional
 
+from langchain_anthropic import ChatAnthropic
+from langchain_openai import ChatOpenAI
 from langgraph.types import interrupt
 
 from bond.config import settings
@@ -177,9 +179,6 @@ def writer_node(state: AuthorState) -> dict:
     - Auto-retries up to 2 times if hard constraints fail.
     - On cp2_feedback: targeted section revision (preserves unchanged sections).
     """
-    from langchain_anthropic import ChatAnthropic
-    from langchain_openai import ChatOpenAI
-
     topic = state["topic"]
     keywords = state.get("keywords", [])
     primary_keyword = keywords[0] if keywords else topic
