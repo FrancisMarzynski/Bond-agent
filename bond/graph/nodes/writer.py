@@ -1,12 +1,14 @@
 import re
 from typing import Optional
 
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_anthropic import ChatAnthropic
 from langchain_openai import ChatOpenAI
 from langgraph.types import interrupt
 
 from bond.config import settings
 from bond.graph.state import AuthorState
+from bond.prompts.writer import FORBIDDEN_WORD_STEMS, WRITER_SYSTEM_PROMPT
 from bond.store.chroma import get_corpus_collection
 
 LOW_CORPUS_THRESHOLD = 10
@@ -54,20 +56,50 @@ def _fetch_rag_exemplars(topic: str, n: int = 5) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
-# SEO constraint validation
+# Output cleanup
 # ---------------------------------------------------------------------------
 
+def _strip_thinking_tags(text: str) -> str:
+    """Remove <thinking>...</thinking> blocks emitted by the LLM's reasoning step."""
+    return re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL).strip()
+
+
+def _strip_markdown_wrapper(text: str) -> str:
+    """Strip ```markdown ... ``` or ``` ... ``` wrappers the LLM may add despite instructions."""
+    text = text.strip()
+    if text.startswith("```markdown"):
+        text = text[len("```markdown"):].lstrip("\n")
+    elif text.startswith("```"):
+        text = text[3:].lstrip("\n")
+    if text.endswith("```"):
+        text = text[:-3].rstrip("\n")
+    return text.strip()
+
+
+def _clean_output(text: str) -> str:
+    """Full output cleanup pipeline: strip thinking tags, then markdown wrappers."""
+    return _strip_markdown_wrapper(_strip_thinking_tags(text))
+
+
+# ---------------------------------------------------------------------------
+# SEO + tone constraint validation
+# ---------------------------------------------------------------------------
+
+def _check_forbidden_words(draft: str) -> list[str]:
+    """Return list of forbidden word stems found in draft (stem = catches all inflected forms)."""
+    draft_lower = draft.lower()
+    return [stem for stem in FORBIDDEN_WORD_STEMS if stem in draft_lower]
+
+
 def _validate_draft(draft: str, primary_keyword: str, min_words: int) -> dict[str, bool]:
-    """Check all hard SEO constraints. Returns dict of constraint_name -> passed."""
+    """Check all hard constraints. Returns dict of constraint_name -> passed."""
     lines = draft.split("\n")
     h1_lines = [l for l in lines if re.match(r"^#\s+", l)]
-    # First non-empty, non-heading paragraph
     first_para = next(
         (l.strip() for l in lines if l.strip() and not l.strip().startswith("#")),
         ""
     )
 
-    # Meta description: accept "Meta-description:", "Meta opis:", "Meta description:" patterns
     meta_match = re.search(
         r"(?:Meta[- ]?[Dd]escription|Meta opis)[:\s]+(.+)",
         draft,
@@ -83,14 +115,15 @@ def _validate_draft(draft: str, primary_keyword: str, min_words: int) -> dict[st
         "keyword_in_first_para": pk_lower in first_para.lower(),
         "meta_desc_length_ok": 150 <= len(meta_desc) <= 160,
         "word_count_ok": word_count >= min_words,
+        "no_forbidden_words": len(_check_forbidden_words(draft)) == 0,
     }
 
 
 # ---------------------------------------------------------------------------
-# Prompt builder
+# Prompt builder (user message only — system prompt is in bond/prompts/writer.py)
 # ---------------------------------------------------------------------------
 
-def _build_writer_prompt(
+def _build_writer_user_prompt(
     topic: str,
     keywords: list[str],
     heading_structure: str,
@@ -100,15 +133,16 @@ def _build_writer_prompt(
     cp2_feedback: Optional[str] = None,
     current_draft: Optional[str] = None,
 ) -> str:
-    """Build the system+user prompt for the writer LLM."""
+    """Build the user message for the writer LLM. System directives live in WRITER_SYSTEM_PROMPT."""
     primary_keyword = keywords[0] if keywords else topic
     other_keywords = ", ".join(keywords[1:]) if len(keywords) > 1 else "brak"
 
     exemplar_section = ""
     if exemplars:
         formatted = "\n\n---\n\n".join(exemplars[:5])
-        exemplar_section = f"""## WZORCE STYLISTYCZNE (Few-Shot)
-Poniższe fragmenty ilustrują pożądany styl pisania. Pisz w podobnym tonie i stylu — nie kopiuj treści, tylko styl.
+        exemplar_section = f"""
+## WZORCE STYLISTYCZNE (Few-Shot)
+Pisz w podobnym tonie i stylu — nie kopiuj treści, tylko styl.
 
 {formatted}
 
@@ -116,18 +150,15 @@ Poniższe fragmenty ilustrują pożądany styl pisania. Pisz w podobnym tonie i 
 """
 
     if cp2_feedback and current_draft:
-        # Targeted revision mode: preserve unchanged sections
-        return f"""Jesteś redaktorem. Użytkownik odrzucił draft artykułu i wskazał sekcje do poprawki.
-
-{exemplar_section}## ZADANIE
-Popraw TYLKO wskazane sekcje. Zachowaj pozostałe sekcje bez zmian.
+        return f"""## ZADANIE
+Popraw TYLKO wskazane sekcje artykułu. Zachowaj pozostałe sekcje bez zmian.
 
 ## FEEDBACK UŻYTKOWNIKA
 {cp2_feedback}
 
 ## OBECNY DRAFT (do poprawki)
 {current_draft}
-
+{exemplar_section}
 ## WYMAGANIA SEO (muszą być spełnione po poprawce)
 - Główne słowo kluczowe "{primary_keyword}" w H1 i pierwszym akapicie
 - Meta-description: dokładnie jedna linia zaczynająca się od "Meta-description:" zawierająca 150-160 znaków
@@ -136,10 +167,10 @@ Popraw TYLKO wskazane sekcje. Zachowaj pozostałe sekcje bez zmian.
 
 Zwróć CAŁY artykuł (poprawione sekcje + niezmienione sekcje)."""
     else:
-        # Fresh draft generation
-        return f"""Jesteś ekspertem SEO copywriterem piszącym po polsku.
+        return f"""## ZADANIE
+Napisz kompletny artykuł blogowy w Markdown.
 
-{exemplar_section}## TEMAT
+## TEMAT
 {topic}
 
 ## SŁOWA KLUCZOWE
@@ -149,17 +180,15 @@ Poboczne: {other_keywords}
 ## STRUKTURA NAGŁÓWKÓW (obowiązkowa)
 {heading_structure}
 
-## RAPORT BADAWCZY (informacje do uwzględnienia)
+## RAPORT BADAWCZY
 {research_report[:3000]}
-
+{exemplar_section}
 ## WYMAGANIA SEO (wszystkie obowiązkowe)
 1. Główne słowo kluczowe "{primary_keyword}" musi być w H1 i w pierwszym akapicie
 2. Poprawna hierarchia nagłówków: # H1, ## H2, ### H3
 3. Meta-description: JEDNA linia w formacie "Meta-description: [treść]" zawierająca dokładnie 150-160 znaków
 4. Minimum {min_words} słów (nie licząc nagłówków i meta-description)
-5. Naturalne wplecenie słów kluczowych (bez keyword stuffing)
-
-Napisz kompletny artykuł blogowy w Markdown."""
+5. Naturalne wplecenie słów kluczowych (bez keyword stuffing)"""
 
 
 # ---------------------------------------------------------------------------
@@ -168,7 +197,7 @@ Napisz kompletny artykuł blogowy w Markdown."""
 
 def writer_node(state: AuthorState) -> dict:
     """
-    Generate SEO-compliant draft with RAG style injection.
+    Generate SEO-compliant draft with RAG style injection and Tone of Voice enforcement.
 
     Before generation:
     - Checks RAG corpus count. If < LOW_CORPUS_THRESHOLD (10 articles), interrupts with
@@ -176,7 +205,7 @@ def writer_node(state: AuthorState) -> dict:
       User must respond True (proceed anyway) or False (abort pipeline).
 
     After corpus check:
-    - Auto-retries up to 2 times if hard constraints fail.
+    - Auto-retries up to 2 times if hard constraints fail (SEO or forbidden words).
     - On cp2_feedback: targeted section revision (preserves unchanged sections).
     """
     topic = state["topic"]
@@ -188,29 +217,25 @@ def writer_node(state: AuthorState) -> dict:
     current_draft = state.get("draft")  # for targeted revision
     min_words = settings.min_word_count
 
-    # --- Low corpus gate (locked user decision) ---
-    # Check corpus count before generating the draft. If the style corpus has
-    # fewer than LOW_CORPUS_THRESHOLD articles, warn the user and pause.
-    # The user must explicitly confirm (True) to proceed or abort (False).
+    # --- Low corpus gate ---
     corpus_collection = get_corpus_collection()
     corpus_count = corpus_collection.count() if corpus_collection is not None else 0
     if corpus_count < LOW_CORPUS_THRESHOLD:
         proceed = interrupt({
             "warning": "low_corpus",
             "message": (
-                f"Korpus stylistyczny zawiera tylko {corpus_count} artykułów "
-                f"(próg: {LOW_CORPUS_THRESHOLD}). Styl generowanego draftu może być niskiej jakości. "
-                "Potwierdź, aby kontynuować, lub przerwij i najpierw dodaj więcej artykułów do korpusu."
+                f"Korpus zawiera tylko {corpus_count} artykułów "
+                f"(minimum: {LOW_CORPUS_THRESHOLD}). Styl draftu może być niespójny. "
+                "Kontynuować?"
             ),
             "corpus_count": corpus_count,
             "threshold": LOW_CORPUS_THRESHOLD,
-            "instructions": "Odpowiedz True, aby kontynuować generowanie, lub False, aby przerwać.",
+            "instructions": "Odpowiedz True, aby kontynuować, lub False, aby przerwać.",
         })
         if not proceed:
-            # User chose to abort — return draft=None, draft_validated=False
             return {"draft": None, "draft_validated": False}
 
-    # Select DRAFT_MODEL LLM (AUTH-11)
+    # Select DRAFT_MODEL LLM (temperature 0.5–0.7 per COMMUNICATION_STYLE.md §3)
     draft_model = settings.draft_model
     if "claude" in draft_model.lower():
         llm = ChatAnthropic(model=draft_model, max_tokens=4096, temperature=0.7)
@@ -225,17 +250,21 @@ def writer_node(state: AuthorState) -> dict:
     validation = {}
     max_attempts = 3
     for attempt in range(max_attempts):
-        prompt = _build_writer_prompt(
+        user_prompt = _build_writer_user_prompt(
             topic=topic,
             keywords=keywords,
             heading_structure=heading_structure,
             research_report=research_report,
             exemplars=exemplars,
             min_words=min_words,
-            cp2_feedback=cp2_feedback if attempt == 0 else None,  # feedback only on first targeted attempt
+            cp2_feedback=cp2_feedback if attempt == 0 else None,
             current_draft=current_draft if attempt == 0 else None,
         )
-        draft = llm.invoke(prompt).content.strip()
+        messages = [
+            SystemMessage(content=WRITER_SYSTEM_PROMPT),
+            HumanMessage(content=user_prompt),
+        ]
+        draft = _clean_output(llm.invoke(messages).content)
         validation = _validate_draft(draft, primary_keyword, min_words)
 
         all_passed = all(validation.values())
@@ -243,11 +272,10 @@ def writer_node(state: AuthorState) -> dict:
             return {"draft": draft, "draft_validated": True}
 
         if attempt < max_attempts - 1:
-            # Silent retry — log which constraints failed
             failed = [k for k, v in validation.items() if not v]
             print(f"Writer auto-retry {attempt + 1}/{max_attempts - 1}: failed constraints: {failed}")
 
-    # All retries exhausted — surface failure (user will see draft_validated=False)
+    # All retries exhausted
     failed_constraints = [k for k, v in validation.items() if not v]
     print(f"WARNING: Draft failed validation after {max_attempts} attempts. Failed: {failed_constraints}")
     return {"draft": draft, "draft_validated": False}
