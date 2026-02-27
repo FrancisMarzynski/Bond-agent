@@ -6,6 +6,7 @@ class AuthorState(TypedDict):
     topic: str
     keywords: list[str]
     thread_id: str
+    context_dynamic: Optional[str]  # run-specific context supplied at pipeline start
 
     # --- Duplicate detection ---
     duplicate_match: Optional[dict]     # {"title": str, "date": str, "similarity": float} or None

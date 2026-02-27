@@ -8,6 +8,7 @@ from langgraph.types import interrupt
 
 from bond.config import settings
 from bond.graph.state import AuthorState
+from bond.prompts.context import build_context_block
 from bond.prompts.writer import FORBIDDEN_WORD_STEMS, WRITER_SYSTEM_PROMPT
 from bond.store.chroma import get_corpus_collection
 
@@ -130,6 +131,7 @@ def _build_writer_user_prompt(
     research_report: str,
     exemplars: list[str],
     min_words: int,
+    context_block: str = "",
     cp2_feedback: Optional[str] = None,
     current_draft: Optional[str] = None,
 ) -> str:
@@ -149,9 +151,12 @@ Pisz w podobnym tonie i stylu — nie kopiuj treści, tylko styl.
 ---
 """
 
+    context_section = f"\n{context_block}\n" if context_block else ""
+
     if cp2_feedback and current_draft:
         return f"""## ZADANIE
 Popraw TYLKO wskazane sekcje artykułu. Zachowaj pozostałe sekcje bez zmian.
+{context_section}
 
 ## FEEDBACK UŻYTKOWNIKA
 {cp2_feedback}
@@ -169,7 +174,7 @@ Zwróć CAŁY artykuł (poprawione sekcje + niezmienione sekcje)."""
     else:
         return f"""## ZADANIE
 Napisz kompletny artykuł blogowy w Markdown.
-
+{context_section}
 ## TEMAT
 {topic}
 
@@ -244,6 +249,7 @@ def writer_node(state: AuthorState) -> dict:
 
     # Fetch RAG exemplars from Phase 1 corpus
     exemplars = _fetch_rag_exemplars(topic, n=5)
+    context_block = build_context_block(state.get("context_dynamic"))
 
     # Generate draft with silent auto-retry (max 2 additional attempts = 3 total)
     draft = ""
@@ -257,6 +263,7 @@ def writer_node(state: AuthorState) -> dict:
             research_report=research_report,
             exemplars=exemplars,
             min_words=min_words,
+            context_block=context_block,
             cp2_feedback=cp2_feedback if attempt == 0 else None,
             current_draft=current_draft if attempt == 0 else None,
         )

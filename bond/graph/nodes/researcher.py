@@ -6,6 +6,7 @@ from langchain_openai import ChatOpenAI
 
 from bond.config import settings
 from bond.graph.state import AuthorState
+from bond.prompts.context import build_context_block
 
 EXA_MCP_URL = "https://mcp.exa.ai/mcp"
 _MIN_SOURCES = 3
@@ -49,7 +50,7 @@ def _count_sources(report: str) -> int:
     return len(re.findall(r"^\d+\.", report, re.MULTILINE))
 
 
-def _format_research_report(raw_results: str, topic: str, keywords: list[str]) -> str:
+def _format_research_report(raw_results: str, topic: str, keywords: list[str], context_block: str = "") -> str:
     """
     Format raw MCP search results into a structured Markdown report.
 
@@ -59,7 +60,8 @@ def _format_research_report(raw_results: str, topic: str, keywords: list[str]) -
     """
     research_model = settings.research_model
 
-    synthesis_prompt = f"""Jesteś redaktorem. Na podstawie poniższych wyników wyszukiwania napisz:
+    context_section = f"\n{context_block}\n" if context_block else ""
+    synthesis_prompt = f"""Jesteś redaktorem. Na podstawie poniższych wyników wyszukiwania napisz:{context_section}
 
 1. SYNTEZA (2-3 akapity): krótkie podsumowanie głównych tematów i trendów dotyczących "{topic}" (słowa kluczowe: {', '.join(keywords)}). Pisz po polsku. Nie cytuj źródeł bezpośrednio — syntezuj idee.
 
@@ -107,7 +109,8 @@ async def researcher_node(state: AuthorState) -> dict:
         raw_results = await _call_exa_mcp(topic, keywords)
         cache = {**cache, topic: raw_results}
 
-    report = _format_research_report(raw_results, topic, keywords)
+    context_block = build_context_block(state.get("context_dynamic"))
+    report = _format_research_report(raw_results, topic, keywords, context_block)
 
     source_count = _count_sources(report)
     if source_count < _MIN_SOURCES:

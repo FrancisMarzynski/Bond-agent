@@ -3,6 +3,7 @@ from langchain_openai import ChatOpenAI
 
 from bond.config import settings
 from bond.graph.state import AuthorState
+from bond.prompts.context import build_context_block
 
 
 def _get_research_llm():
@@ -25,10 +26,13 @@ def structure_node(state: AuthorState) -> dict:
     research_report = state.get("research_report", "")
     cp1_feedback = state.get("cp1_feedback")
     cp1_iterations = state.get("cp1_iterations", 0)
+    context_block = build_context_block(state.get("context_dynamic"))
 
     if cp1_feedback and cp1_iterations > 0:
         # Re-run with user feedback: treat edited structure as strong prior
         prompt = f"""Jesteś redaktorem SEO. Zaproponuj poprawioną strukturę nagłówków (H1/H2/H3) artykułu.
+
+{context_block}
 
 TEMAT: {topic}
 SŁOWA KLUCZOWE: {', '.join(keywords)}
@@ -49,6 +53,8 @@ Zwróć TYLKO strukturę nagłówków w formacie Markdown (# H1, ## H2, ### H3).
     else:
         # First run
         prompt = f"""Jesteś redaktorem SEO. Na podstawie raportu badawczego zaproponuj strukturę nagłówków artykułu.
+
+{context_block}
 
 TEMAT: {topic}
 SŁOWA KLUCZOWE: {', '.join(keywords)}

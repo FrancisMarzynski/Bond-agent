@@ -116,6 +116,7 @@ async def run_author_pipeline(
     thread_id: Optional[str] = None,
     interactive: bool = False,
     resume: bool = False,
+    context_dynamic: Optional[str] = None,
 ) -> dict:
     """
     Run the Author mode pipeline end-to-end.
@@ -154,6 +155,7 @@ async def run_author_pipeline(
                 "topic": topic,
                 "keywords": keywords,
                 "thread_id": thread_id,
+                "context_dynamic": context_dynamic,
                 "search_cache": {},
                 "cp1_iterations": 0,
                 "cp2_iterations": 0,
@@ -200,6 +202,7 @@ if __name__ == "__main__":
     parser.add_argument("--thread-id", default=None)
     parser.add_argument("--interactive", action="store_true")
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--context", default=None, help="Run-specific context (dynamic layer)")
     args = parser.parse_args()
 
     keywords = [k.strip() for k in args.keywords.split(",")]
@@ -209,4 +212,5 @@ if __name__ == "__main__":
         thread_id=args.thread_id,
         interactive=args.interactive,
         resume=args.resume,
+        context_dynamic=args.context,
     ))
