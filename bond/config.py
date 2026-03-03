@@ -19,4 +19,7 @@ class Settings(BaseSettings):
     min_word_count: int = 800
     duplicate_threshold: float = 0.85
 
+    # Phase 3: Streaming API and Frontend
+    cors_origins: list[str] = ["http://localhost:3000"]
+
 settings = Settings()
