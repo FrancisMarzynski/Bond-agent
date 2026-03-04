@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Sidebar />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <header className="h-14 border-b flex items-center px-4 justify-between shrink-0">
-            <span className="font-medium text-sm text-muted-foreground">Author Mode</span>
+            <span className="font-medium text-sm text-muted-foreground">Panel sterowania</span>
             <ModeToggle />
           </header>
           <main className="flex-1 overflow-hidden">
