@@ -1,12 +1,21 @@
-from datetime import datetime, timezone
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from bond.api.routes.corpus import router as corpus_router
 from bond.config import settings
+from bond.api.routes.corpus import router as corpus_router
+from bond.api.routes.chat import router as chat_router
+from bond.graph.graph import compile_graph
 
-app = FastAPI(title="Bond — Agent Redakcyjny", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with compile_graph() as graph:
+        app.state.graph = graph
+        yield
+
+app = FastAPI(title="Bond — Agent Redakcyjny", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -17,6 +26,7 @@ app.add_middleware(
 )
 
 app.include_router(corpus_router)
+app.include_router(chat_router, prefix="/api/chat")
 
 
 @app.get("/health")
