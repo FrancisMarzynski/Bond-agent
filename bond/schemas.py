@@ -22,6 +22,17 @@ Tone = Literal["profesjonalny", "ekspercki", "przyjazny", "edukacyjny", "sprzeda
 _MIN_WORD_COUNT = 800
 
 
+class StreamEvent(BaseModel):
+    """
+    Format komunikatu generowanego przez parser strumienia LangGraph.
+    Gwarantuje zgodność z kontraktem frontendu dla komunikatów SSE.
+    """
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["node", "token"]
+    data: str
+
+
 class CheckpointResponse(BaseModel):
     """
     Odpowiedź użytkownika na przerwanie HITL (checkpoint_1 lub checkpoint_2).

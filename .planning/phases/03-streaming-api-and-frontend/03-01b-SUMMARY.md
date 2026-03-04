@@ -20,9 +20,13 @@ Zaimplementowanie testowalnej funkcji mapującej eventy `on_chat_model_stream` n
 
 Stworzono nowy moduł z asynchronicznym generatorem `parse_stream_events`. 
 Analizuje on strumień zdarzeń z pakietu LangGraph wywoływany przez `astream_events(version="v2")`:
-- Odbierane zdarzenia `on_chain_start` (identyfikacja węzła grafu np. `researcher`, `writer` pobierana z tagu `langgraph_node` w sekcji `metadata` lub z nazwy) są pakowane do formatu: `{"type": "node", "data": "nazwa_wezla"}`.
-- Odbierane zdarzenia `on_chat_model_stream` odpowiadają za wyciągnięcie zawartego tekstu (tokenów chunk) od LLMa i wysyłane są w formacie: `{"type": "token", "data": "fragment_tekstu"}`.
+- Odbierane zdarzenia `on_chain_start` (identyfikacja węzła grafu np. `researcher`, `writer` pobierana z tagu `langgraph_node` w sekcji `metadata` lub z nazwy) są pakowane do ustandaryzowanego modelu Pydantic `StreamEvent` formatowanego do JSON jako: `{"type": "node", "data": "nazwa_wezla"}`.
+- Odbierane zdarzenia `on_chat_model_stream` odpowiadają za wyciągnięcie zawartego tekstu (tokenów chunk) od LLMa i wysyłane są do formatu `StreamEvent`: `{"type": "token", "data": "fragment_tekstu"}`.
 - Zdarzenia irrelewantne dla klienta UI (jak wewnętrzne `on_tool_start`, `on_chain_end` itd.) są dyskretnie ignorowane.
+
+### `bond/schemas.py` — Nowy model kontraktowy
+
+Dodano klasę `StreamEvent(BaseModel)` jako gwarancję stałego kontraktu JSON dla frontendu. Generator strumienia zamiast wypychać niesprawdzalne "surowe" słowniki, instancjonuje ten model i weryfikuje pola wywołując `.model_dump_json()`.
 
 ### `tests/unit/api/test_stream.py` (Nowy) — Zestaw testów jednostkowych dla parsera
 
@@ -35,7 +39,7 @@ Dodano testy asynchroniczne (`pytest-asyncio`) weryfikujące poprawność dekodo
 
 ## Decyzje projektowe
 
-- **Format z JSON Dumps we wzorcu SSE:** Obiekty pakowane są jako reprezentacje string wewnątrz funkcji generatora. Zmniejszy to ciężar pracy warstwy wyżej - główny routing API FastAPI po prostu zewolve-uje je wraz z nagłówkiem EventSourceResponse `data: ...`. 
+- **Format z JSON Dumps we wzorcu SSE z Pydantic (Contract-First):** Pakiety dla strumienia są teraz formalnie odzwierciedlane przez model Pydantic `StreamEvent`. Odrzucono luźne, niezdefiniowane w kodzie słowniki formatowane standardową metodą `json.dumps()` na rzecz bezpiecznego instancjonowania obiektu, gwarantując przewidywalny kontrakt z API dla klienta. 
 - **Złożone chunking'i zwracane z LLM'ow:** Zbudowano obsługę i warunki zapasowe na obiekty strukturalne zwracane od nowszych modeli (np. obiekty, zagnieżdżone w listach typu block `{"type": "text", "text": "value"}`).
 - **Odsuwanie szumu na wczesnym etapie:** Filtrowanie zapytań nie dzieje się na zewnątrz funkcji parsera lecz pod spodem. Eliminuje to zbędne obciążenie pamięci iteratora streamingu na interfejsy aplikacji - Frontend nie dostanie powiadomienia, póki to nie jest akcja w GUI.
 - **Nazewnictwo Planu 03-01b:** Z racji na bliskie pokrewieństwo z wdrażaniem Endpointów Chat w planie pierwszym fazy trzeciej (po stronie backendu), zostało to usystematyzowane w numeracji 03-01b by nie kolidować z Planem 2 skupionym stricte wokół komponentów front-endowych.

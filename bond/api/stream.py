@@ -1,6 +1,8 @@
 import json
 from typing import AsyncIterator, Any
 
+from bond.schemas import StreamEvent
+
 
 async def parse_stream_events(events: AsyncIterator[Any]) -> AsyncIterator[str]:
     """
@@ -28,13 +30,12 @@ async def parse_stream_events(events: AsyncIterator[Any]) -> AsyncIterator[str]:
             # If for some reason langgraph_node is missing, fallback to 'name'
             if not node_name:
                  name = event.get("name")
-                 # Check if it's one of our target nodes (e.g. Researcher, Writer)
-                 # We can refine this logic if needed.
-                 if name in ["researcher", "writer", "__start__", "__end__"]:
+                 # Check if it's one of our target nodes
+                 if name in ["duplicate_check", "researcher", "structure", "writer", "save_metadata", "__start__", "__end__"]:
                       node_name = name
                       
             if node_name:
-                yield json.dumps({"type": "node", "data": node_name})
+                yield StreamEvent(type="node", data=node_name).model_dump_json()
                 
         # Handle streaming of chat model tokens
         elif kind == "on_chat_model_stream":
@@ -45,16 +46,16 @@ async def parse_stream_events(events: AsyncIterator[Any]) -> AsyncIterator[str]:
                 if hasattr(chunk, "content"):
                     text = chunk.content
                     if isinstance(text, str):
-                        yield json.dumps({"type": "token", "data": text})
+                        yield StreamEvent(type="token", data=text).model_dump_json()
                     elif isinstance(text, list):
                         # Some models return list of content blocks
                         for block in text:
                             if isinstance(block, dict) and block.get("type") == "text":
-                                yield json.dumps({"type": "token", "data": block.get("text")})
+                                yield StreamEvent(type="token", data=block.get("text")).model_dump_json()
                 elif isinstance(chunk, dict) and "content" in chunk:
                      content = chunk["content"]
                      if isinstance(content, str):
-                         yield json.dumps({"type": "token", "data": content})
+                         yield StreamEvent(type="token", data=content).model_dump_json()
 
     # Optional: emit an end event when the stream finishes
     # yield json.dumps({"type": "end", "data": "done"})
