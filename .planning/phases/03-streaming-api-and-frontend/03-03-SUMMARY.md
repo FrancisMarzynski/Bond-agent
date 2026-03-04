@@ -16,7 +16,7 @@ Zbudowanie bazy wizualnej aplikacji służącej jako środowisko pracy dla redak
 ## Zmodyfikowane i Utworzone pliki
 
 ### `frontend/src/app/layout.tsx` & `page.tsx`
-Fundamentalna przemiana standardowej siatki startowej z modułu Next.js do formy potężnego edytora z odciętą lewą kolumną (na Sidebara) oraz górnym headerem. 
+Fundamentalna przemiana standardowej siatki startowej z modułu Next.js do formy edytora z odciętą lewą kolumną (na Sidebara) oraz górnym headerem. 
 - Usunięto standardowe style by zapobiec rozjeżdżaniu DOM za pomocą sztywnego bloku `min-w-0 overflow-hidden` dla flexboxa.
 - Strona główna została ogołocona z demówek Next.js i zaprasza komponenty Pasku postępu oraz robi rezerwowe miejsce dla ChatInterface (przygotowanego pod etap wdrożeniowy Plan 04).
 
