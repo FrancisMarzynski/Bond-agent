@@ -3,6 +3,8 @@ import { useChatStore } from "@/store/chatStore";
 import { SSEParser } from "@/lib/sse";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 3000;
 
 async function consumeStream(
     response: Response,
@@ -68,24 +70,49 @@ async function consumeStream(
     }
 }
 
-export async function startStream(message: string, threadId: string | null, mode: "author" | "shadow", onThreadId: (id: string) => void): Promise<void> {
+export async function startStream(
+    message: string,
+    threadId: string | null,
+    mode: "author" | "shadow",
+    onThreadId: (id: string) => void
+): Promise<void> {
     const store = useChatStore.getState();
     store.setStreaming(true);
     store.addMessage({ role: "user", content: message });
 
-    const response = await fetch(`${API_URL}/api/chat/stream`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, thread_id: threadId, mode }),
-    });
+    let attempt = 0;
 
-    if (!response.ok) {
-        store.addMessage({ role: "assistant", content: "Connection error. Please try again." });
-        store.setStreaming(false);
-        return;
+    while (attempt <= MAX_RETRIES) {
+        try {
+            const response = await fetch(`${API_URL}/api/chat/stream`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message, thread_id: threadId, mode }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            await consumeStream(response, onThreadId);
+            return; // Stream consumed successfully or ended gracefully
+        } catch (e) {
+            attempt++;
+            if (attempt <= MAX_RETRIES) {
+                store.addMessage({
+                    role: "assistant",
+                    content: `Połączenie zerwane. Próbuję ponownie (${attempt}/${MAX_RETRIES})...`
+                });
+                await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
+            } else {
+                store.addMessage({
+                    role: "assistant",
+                    content: `[Błąd krytyczny]: Nie udało się nawiązać stabilnego połączenia po ${MAX_RETRIES} próbach. Odśwież stronę.`
+                });
+                store.setStreaming(false);
+            }
+        }
     }
-
-    await consumeStream(response, onThreadId);
 }
 
 export async function resumeStream(
@@ -98,17 +125,37 @@ export async function resumeStream(
     store.setHitlPause(null);
     store.setStreaming(true);
 
-    const response = await fetch(`${API_URL}/api/chat/resume`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ thread_id: threadId, action, feedback }),
-    });
+    let attempt = 0;
 
-    if (!response.ok) {
-        store.addMessage({ role: "assistant", content: "Resume error. Please try again." });
-        store.setStreaming(false);
-        return;
+    while (attempt <= MAX_RETRIES) {
+        try {
+            const response = await fetch(`${API_URL}/api/chat/resume`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ thread_id: threadId, action, feedback }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            await consumeStream(response, onThreadId);
+            return;
+        } catch (e) {
+            attempt++;
+            if (attempt <= MAX_RETRIES) {
+                store.addMessage({
+                    role: "assistant",
+                    content: `Połączenie zerwane. Wznawianie sesji (${attempt}/${MAX_RETRIES})...`
+                });
+                await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
+            } else {
+                store.addMessage({
+                    role: "assistant",
+                    content: `[Błąd krytyczny]: Nie udało się wznowić odpowiedzi po ${MAX_RETRIES} próbach. Odśwież stronę.`
+                });
+                store.setStreaming(false);
+            }
+        }
     }
-
-    await consumeStream(response, onThreadId);
 }
