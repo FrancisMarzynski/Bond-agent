@@ -20,17 +20,26 @@ export function StageProgress() {
     // Ensure we don't hide the stepper if we crashed at any stage other than idle.
     if (stage === "idle" && !isStreaming) return null;
 
-    const currentIdx = stepIndex(stage);
+    // Znajdź najdalszy krok, który został osiągnięty (nie jest "pending")
+    let furthestIdx = -1;
+    STEPS.forEach((step, idx) => {
+        if (stageStatus[step.id] !== "pending") {
+            furthestIdx = Math.max(furthestIdx, idx);
+        }
+    });
+
+    const currentStageIdx = stepIndex(stage);
+    const activeIdx = currentStageIdx !== -1 ? currentStageIdx : furthestIdx;
 
     return (
         <div className="border-b px-4 py-3 bg-muted/20">
             <ol className="flex items-center gap-0">
                 {STEPS.map((step, idx) => {
                     const status = stageStatus[step.id];
-                    const isActive = step.id === stage;
-                    const isComplete = status === "complete" || (currentIdx > idx && stage !== "error");
-                    const isRunning = isActive && status === "running";
-                    const isError = isActive && status === "error";
+                    const isActive = idx === activeIdx;
+                    const isComplete = status === "complete" || stage === "done" || activeIdx > idx;
+                    const isError = status === "error" || (isActive && (stage === "error" || stageStatus["error"] === "error"));
+                    const isRunning = isActive && !isError && (status === "running" || isStreaming) && stage !== "done";
 
                     return (
                         <li key={step.id} className="flex items-center">

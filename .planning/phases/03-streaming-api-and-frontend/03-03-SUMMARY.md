@@ -33,6 +33,7 @@ Element ulokowany permanentnie w górnym Header Layoutu głównego tuż obok tut
 Implementacja inteligentnego i reaktywnego progressbaru. Wykorzystany zostanie wyciągany krok zdarzeń (LangGraph event `stage` z API w Pythonie).
 - Zastosowano trzykrokową siatkę na listach uporządkowanych HTML ze zmiennymi ikonografikami (CheckCircle2 dla zrobionych "completed" jako zielone foki oraz kręcący się Loader2 dla "running"). Jeśli stan zwróci pusty domyślny string "idle" przy resecie chatu - ukryje cały bar nie rzucając się w oczęta (tożsamo ze statycznym zachowaniem strumienia wg statusu).
 - Wprowadzono odporność na błędy parsowania: po wystąpieniu craszu serwera lub przerwaniu streamowania wywołanie aktywnego kroku zostaje zachowane (nie przełącza się na generyczny "idle" lub "error"), a ikona ulega zmianie na czerwoną oznakę craszu (XCircle), by jednoznacznie zakomunikować klientowi, w którym miejscu proces napotkał awarię. Zmodyfikowano w tym celu `useStream.ts` oraz `chatStore.ts`.
+- Naprawiono logikę statusu zakończenia kroku (`isComplete`). Jeżeli aplikacja wejdzie w globalny stan `"error"`, poprzednie (w pełni zakończone) etapy zachowują wizualnie swój poprawiany rezultat na zielono zamiast gubić kontekst. Osiągnięto to na podstawie weryfikacji najdalszego osiągniętego indeksu.
 
 ---
 
