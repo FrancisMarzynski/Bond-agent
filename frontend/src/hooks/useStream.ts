@@ -48,7 +48,8 @@ async function consumeStream(
                             store.setStreaming(false);
                             return; // Stream ends at HITL pause
                         case "error":
-                            store.setStage("error", "running");
+                            const currentStage = store.stage !== "idle" && store.stage !== "done" ? store.stage : "error";
+                            store.setStage(currentStage, "error");
                             store.addMessage({ role: "assistant", content: `Error: ${parsed.message}` });
                             store.setStreaming(false);
                             return;
@@ -96,7 +97,7 @@ export async function startStream(
 
             await consumeStream(response, onThreadId);
             return; // Stream consumed successfully or ended gracefully
-        } catch (e) {
+        } catch {
             attempt++;
             if (attempt <= MAX_RETRIES) {
                 store.addMessage({
@@ -110,6 +111,8 @@ export async function startStream(
                     content: `[Błąd krytyczny]: Nie udało się nawiązać stabilnego połączenia po ${MAX_RETRIES} próbach. Odśwież stronę.`
                 });
                 store.setStreaming(false);
+                const currentStage = store.stage !== "idle" && store.stage !== "done" ? store.stage : "error";
+                store.setStage(currentStage, "error");
             }
         }
     }
@@ -141,7 +144,7 @@ export async function resumeStream(
 
             await consumeStream(response, onThreadId);
             return;
-        } catch (e) {
+        } catch {
             attempt++;
             if (attempt <= MAX_RETRIES) {
                 store.addMessage({
@@ -155,6 +158,8 @@ export async function resumeStream(
                     content: `[Błąd krytyczny]: Nie udało się wznowić odpowiedzi po ${MAX_RETRIES} próbach. Odśwież stronę.`
                 });
                 store.setStreaming(false);
+                const currentStage = store.stage !== "idle" && store.stage !== "done" ? store.stage : "error";
+                store.setStage(currentStage, "error");
             }
         }
     }

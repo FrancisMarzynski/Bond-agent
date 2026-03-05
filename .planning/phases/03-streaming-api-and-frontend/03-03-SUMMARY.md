@@ -19,6 +19,7 @@ Zbudowanie bazy wizualnej aplikacji służącej jako środowisko pracy dla redak
 Fundamentalna przemiana standardowej siatki startowej z modułu Next.js do formy edytora z odciętą lewą kolumną (na Sidebara) oraz górnym headerem. 
 - Usunięto standardowe style by zapobiec rozjeżdżaniu DOM za pomocą sztywnego bloku `min-w-0 overflow-hidden` dla flexboxa.
 - Strona główna została ogołocona z demówek Next.js i zaprasza komponenty Pasku postępu oraz robi rezerwowe miejsce dla ChatInterface (przygotowanego pod etap wdrożeniowy Plan 04).
+- Wyrenderowano globalnie komponent paska postępu (`<StageProgress />`) bezpośrednio w bloku `<main>` ponad kontenerem na `{children}`, aby na bieżąco powiadamiał użytkownika o postępie bez względu na otwieraną podstronę konwersacji.
 
 ### `frontend/src/components/Sidebar.tsx` (Nowy)
 Stworzono boczny panel dla logiki obsługi.
@@ -31,6 +32,7 @@ Element ulokowany permanentnie w górnym Header Layoutu głównego tuż obok tut
 ### `frontend/src/components/StageProgress.tsx` (Nowy)
 Implementacja inteligentnego i reaktywnego progressbaru. Wykorzystany zostanie wyciągany krok zdarzeń (LangGraph event `stage` z API w Pythonie).
 - Zastosowano trzykrokową siatkę na listach uporządkowanych HTML ze zmiennymi ikonografikami (CheckCircle2 dla zrobionych "completed" jako zielone foki oraz kręcący się Loader2 dla "running"). Jeśli stan zwróci pusty domyślny string "idle" przy resecie chatu - ukryje cały bar nie rzucając się w oczęta (tożsamo ze statycznym zachowaniem strumienia wg statusu).
+- Wprowadzono odporność na błędy parsowania: po wystąpieniu craszu serwera lub przerwaniu streamowania wywołanie aktywnego kroku zostaje zachowane (nie przełącza się na generyczny "idle" lub "error"), a ikona ulega zmianie na czerwoną oznakę craszu (XCircle), by jednoznacznie zakomunikować klientowi, w którym miejscu proces napotkał awarię. Zmodyfikowano w tym celu `useStream.ts` oraz `chatStore.ts`.
 
 ---
 

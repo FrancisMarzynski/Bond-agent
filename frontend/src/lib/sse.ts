@@ -17,7 +17,7 @@ export class SSEParser {
         for (const part of parts) {
             const lines = part.split("\n");
             let eventType = "message";
-            let dataLines: string[] = [];
+            const dataLines: string[] = [];
             for (const line of lines) {
                 if (line.startsWith("event: ")) {
                     eventType = line.slice(7).trim();

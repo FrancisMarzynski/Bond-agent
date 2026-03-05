@@ -2,7 +2,7 @@
 import { create } from "zustand";
 
 export type Stage = "idle" | "research" | "structure" | "writing" | "done" | "error";
-export type StageStatus = "pending" | "running" | "complete";
+export type StageStatus = "pending" | "running" | "complete" | "error";
 export type HitlPause = {
     checkpoint_id: string;
     type: string;
