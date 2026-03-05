@@ -1,6 +1,7 @@
 "use client";
 import { useChatStore } from "@/store/chatStore";
 import { SSEParser } from "@/lib/sse";
+import { z } from "zod";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const MAX_RETRIES = 3;
@@ -39,40 +40,70 @@ async function consumeStream(
                 }
                 try {
                     const parsed = JSON.parse(data);
-                    if (!parsed || typeof parsed !== "object") {
-                        throw new Error("Invalid JSON structure");
-                    }
+
                     switch (event) {
-                        case "thread_id":
-                            onThreadId(parsed.thread_id);
+                        case "thread_id": {
+                            const schema = z.object({ thread_id: z.string() });
+                            const result = schema.safeParse(parsed);
+                            if (!result.success) throw new Error("Invalid thread_id event data");
+                            onThreadId(result.data.thread_id);
                             break;
-                        case "token":
-                            store.appendDraftToken(parsed.token);
+                        }
+                        case "token": {
+                            const schema = z.object({ token: z.string() });
+                            const result = schema.safeParse(parsed);
+                            if (!result.success) throw new Error("Invalid token event data");
+                            store.appendDraftToken(result.data.token);
                             break;
-                        case "stage":
-                            store.setStage(parsed.stage, parsed.status);
+                        }
+                        case "stage": {
+                            const schema = z.object({ stage: z.string(), status: z.string() });
+                            const result = schema.safeParse(parsed);
+                            if (!result.success) throw new Error("Invalid stage event data");
+                            store.setStage(result.data.stage as any, result.data.status as any);
                             break;
-                        case "message":
-                            store.addMessage({ role: "assistant", content: parsed.content });
+                        }
+                        case "message": {
+                            const schema = z.object({ content: z.string() });
+                            const result = schema.safeParse(parsed);
+                            if (!result.success) throw new Error("Invalid message event data");
+                            store.addMessage({ role: "assistant", content: result.data.content });
                             break;
-                        case "hitl_pause":
+                        }
+                        case "hitl_pause": {
+                            const schema = z.object({
+                                checkpoint_id: z.string(),
+                                type: z.string(),
+                                iterations_remaining: z.number().optional()
+                            });
+                            const result = schema.safeParse(parsed);
+                            if (!result.success) throw new Error("Invalid hitl_pause event data");
                             store.setHitlPause({
-                                checkpoint_id: parsed.checkpoint_id,
-                                type: parsed.type,
-                                iterations_remaining: parsed.iterations_remaining,
+                                checkpoint_id: result.data.checkpoint_id,
+                                type: result.data.type,
+                                iterations_remaining: result.data.iterations_remaining,
                             });
                             store.setStreaming(false);
                             return; // Stream ends at HITL pause
-                        case "error":
+                        }
+                        case "error": {
+                            const schema = z.object({ message: z.string() });
+                            const result = schema.safeParse(parsed);
+                            if (!result.success) throw new Error("Invalid error event data");
                             const currentStage = store.stage !== "idle" && store.stage !== "done" ? store.stage : "error";
                             store.setStage(currentStage, "error");
-                            store.addMessage({ role: "assistant", content: `Error: ${parsed.message}` });
+                            store.addMessage({ role: "assistant", content: `Error: ${result.data.message}` });
                             store.setStreaming(false);
                             return;
+                        }
                         case "done":
                             store.setStage("done", "complete");
                             store.setStreaming(false);
                             return;
+                        default:
+                            if (process.env.NODE_ENV === "development") {
+                                console.warn(`Unhandled SSE event type: ${event}`);
+                            }
                     }
                 } catch (err) {
                     // Skip malformed JSON — log in development
