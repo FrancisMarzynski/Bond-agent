@@ -6,6 +6,16 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 3000;
 
+let activeController: AbortController | null = null;
+
+export function stopStream() {
+    if (activeController) {
+        activeController.abort();
+        activeController = null;
+    }
+    useChatStore.getState().setStreaming(false);
+}
+
 async function consumeStream(
     response: Response,
     onThreadId: (id: string) => void
@@ -26,6 +36,9 @@ async function consumeStream(
             for (const { event, data } of events) {
                 try {
                     const parsed = JSON.parse(data);
+                    if (!parsed || typeof parsed !== "object") {
+                        throw new Error("Invalid JSON structure");
+                    }
                     switch (event) {
                         case "thread_id":
                             onThreadId(parsed.thread_id);
@@ -58,10 +71,10 @@ async function consumeStream(
                             store.setStreaming(false);
                             return;
                     }
-                } catch {
+                } catch (err) {
                     // Skip malformed JSON — log in development
                     if (process.env.NODE_ENV === "development") {
-                        console.warn("SSE parse error:", data);
+                        console.warn("SSE parse error or invalid format:", data, err);
                     }
                 }
             }
@@ -78,8 +91,18 @@ export async function startStream(
     onThreadId: (id: string) => void
 ): Promise<void> {
     const store = useChatStore.getState();
+    if (store.isStreaming) {
+        console.warn("Stream is already active. Blocking startStream.");
+        return;
+    }
+
     store.setStreaming(true);
     store.addMessage({ role: "user", content: message });
+
+    if (activeController) {
+        activeController.abort();
+    }
+    activeController = new AbortController();
 
     let attempt = 0;
 
@@ -89,6 +112,7 @@ export async function startStream(
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ message, thread_id: threadId, mode }),
+                signal: activeController.signal,
             });
 
             if (!response.ok) {
@@ -97,7 +121,10 @@ export async function startStream(
 
             await consumeStream(response, onThreadId);
             return; // Stream consumed successfully or ended gracefully
-        } catch {
+        } catch (e: unknown) {
+            if (e instanceof Error && e.name === "AbortError") {
+                return; // Gracefully exit if stream was intentionally aborted
+            }
             attempt++;
             if (attempt <= MAX_RETRIES) {
                 store.addMessage({
@@ -125,8 +152,18 @@ export async function resumeStream(
     onThreadId: (id: string) => void
 ): Promise<void> {
     const store = useChatStore.getState();
+    if (store.isStreaming) {
+        console.warn("Stream is already active. Blocking resumeStream.");
+        return;
+    }
+
     store.setHitlPause(null);
     store.setStreaming(true);
+
+    if (activeController) {
+        activeController.abort();
+    }
+    activeController = new AbortController();
 
     let attempt = 0;
 
@@ -136,6 +173,7 @@ export async function resumeStream(
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ thread_id: threadId, action, feedback }),
+                signal: activeController.signal,
             });
 
             if (!response.ok) {
@@ -144,7 +182,10 @@ export async function resumeStream(
 
             await consumeStream(response, onThreadId);
             return;
-        } catch {
+        } catch (e: unknown) {
+            if (e instanceof Error && e.name === "AbortError") {
+                return; // Gracefully exit if stream was intentionally aborted
+            }
             attempt++;
             if (attempt <= MAX_RETRIES) {
                 store.addMessage({
