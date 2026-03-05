@@ -1,5 +1,6 @@
 // Handles SSE chunk boundary splitting: accumulates lines, emits complete events
 export interface SSEEvent {
+    id?: string;
     event: string;
     data: string;
 }
@@ -17,16 +18,19 @@ export class SSEParser {
         for (const part of parts) {
             const lines = part.split("\n");
             let eventType = "message";
+            let eventId: string | undefined = undefined;
             const dataLines: string[] = [];
             for (const line of lines) {
                 if (line.startsWith("event: ")) {
                     eventType = line.slice(7).trim();
+                } else if (line.startsWith("id: ")) {
+                    eventId = line.slice(4).trim();
                 } else if (line.startsWith("data: ")) {
                     dataLines.push(line.slice(6));
                 }
             }
             if (dataLines.length > 0) {
-                events.push({ event: eventType, data: dataLines.join("\n") });
+                events.push({ id: eventId, event: eventType, data: dataLines.join("\n") });
             }
         }
         return events;

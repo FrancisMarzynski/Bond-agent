@@ -33,7 +33,10 @@ async function consumeStream(
             if (!value) continue;
 
             const events = parser.feed(value);
-            for (const { event, data } of events) {
+            for (const { id, event, data } of events) {
+                if (id) {
+                    store.setLastEventId(id);
+                }
                 try {
                     const parsed = JSON.parse(data);
                     if (!parsed || typeof parsed !== "object") {
@@ -108,9 +111,16 @@ export async function startStream(
 
     while (attempt <= MAX_RETRIES) {
         try {
+            const headers: Record<string, string> = {
+                "Content-Type": "application/json",
+            };
+            if (store.lastEventId) {
+                headers["Last-Event-ID"] = store.lastEventId;
+            }
+
             const response = await fetch(`${API_URL}/api/chat/stream`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers,
                 body: JSON.stringify({ message, thread_id: threadId, mode }),
                 signal: activeController.signal,
             });
@@ -127,16 +137,10 @@ export async function startStream(
             }
             attempt++;
             if (attempt <= MAX_RETRIES) {
-                store.addMessage({
-                    role: "assistant",
-                    content: `Połączenie zerwane. Próbuję ponownie (${attempt}/${MAX_RETRIES})...`
-                });
+                store.setSystemAlert(`Połączenie zerwane. Próbuję ponownie (${attempt}/${MAX_RETRIES})...`);
                 await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
             } else {
-                store.addMessage({
-                    role: "assistant",
-                    content: `[Błąd krytyczny]: Nie udało się nawiązać stabilnego połączenia po ${MAX_RETRIES} próbach. Odśwież stronę.`
-                });
+                store.setSystemAlert(`[Błąd krytyczny]: Nie udało się nawiązać stabilnego połączenia po ${MAX_RETRIES} próbach. Odśwież stronę.`);
                 store.setStreaming(false);
                 const currentStage = store.stage !== "idle" && store.stage !== "done" ? store.stage : "error";
                 store.setStage(currentStage, "error");
@@ -169,9 +173,16 @@ export async function resumeStream(
 
     while (attempt <= MAX_RETRIES) {
         try {
+            const headers: Record<string, string> = {
+                "Content-Type": "application/json",
+            };
+            if (store.lastEventId) {
+                headers["Last-Event-ID"] = store.lastEventId;
+            }
+
             const response = await fetch(`${API_URL}/api/chat/resume`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers,
                 body: JSON.stringify({ thread_id: threadId, action, feedback }),
                 signal: activeController.signal,
             });
@@ -188,16 +199,10 @@ export async function resumeStream(
             }
             attempt++;
             if (attempt <= MAX_RETRIES) {
-                store.addMessage({
-                    role: "assistant",
-                    content: `Połączenie zerwane. Wznawianie sesji (${attempt}/${MAX_RETRIES})...`
-                });
+                store.setSystemAlert(`Połączenie zerwane. Wznawianie sesji (${attempt}/${MAX_RETRIES})...`);
                 await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
             } else {
-                store.addMessage({
-                    role: "assistant",
-                    content: `[Błąd krytyczny]: Nie udało się wznowić odpowiedzi po ${MAX_RETRIES} próbach. Odśwież stronę.`
-                });
+                store.setSystemAlert(`[Błąd krytyczny]: Nie udało się wznowić odpowiedzi po ${MAX_RETRIES} próbach. Odśwież stronę.`);
                 store.setStreaming(false);
                 const currentStage = store.stage !== "idle" && store.stage !== "done" ? store.stage : "error";
                 store.setStage(currentStage, "error");

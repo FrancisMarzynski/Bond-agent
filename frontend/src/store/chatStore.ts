@@ -23,6 +23,8 @@ interface ChatStore {
     messages: ChatMessage[];
     hitlPause: HitlPause;
     isStreaming: boolean;
+    lastEventId?: string;
+    systemAlert?: string;
     // Actions
     setMode: (mode: "author" | "shadow") => void;
     setThreadId: (id: string | null) => void;
@@ -31,6 +33,8 @@ interface ChatStore {
     setDraft: (draft: string) => void;
     setHitlPause: (pause: HitlPause) => void;
     setStreaming: (v: boolean) => void;
+    setLastEventId: (id: string | undefined) => void;
+    setSystemAlert: (alert: string | undefined) => void;
     addMessage: (msg: ChatMessage) => void;
     resetSession: () => void;
 }
@@ -53,6 +57,8 @@ export const useChatStore = create<ChatStore>((set) => ({
     messages: [],
     hitlPause: null,
     isStreaming: false,
+    lastEventId: undefined,
+    systemAlert: undefined,
     setMode: (mode) => set({ mode }),
     setThreadId: (threadId) => set({ threadId }),
     setStage: (stage, status) =>
@@ -61,7 +67,9 @@ export const useChatStore = create<ChatStore>((set) => ({
     setDraft: (draft) => set({ draft }),
     setHitlPause: (hitlPause) => set({ hitlPause }),
     setStreaming: (isStreaming) => set({ isStreaming }),
+    setLastEventId: (lastEventId) => set({ lastEventId }),
+    setSystemAlert: (systemAlert) => set({ systemAlert }),
     addMessage: (msg) => set((s) => ({ messages: [...s.messages, msg] })),
     resetSession: () =>
-        set({ threadId: null, stage: "idle", stageStatus: { ...initialStageStatus }, draft: "", messages: [], hitlPause: null, isStreaming: false }),
+        set({ threadId: null, stage: "idle", stageStatus: { ...initialStageStatus }, draft: "", messages: [], hitlPause: null, isStreaming: false, lastEventId: undefined, systemAlert: undefined }),
 }));
