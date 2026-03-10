@@ -24,7 +24,7 @@ async def test_parse_stream_events_on_chain_start_with_langgraph_node():
     results = [json.loads(r) async for r in parse_stream_events(stream)]
     
     assert len(results) == 1
-    assert results[0] == {"type": "node", "data": "researcher"}
+    assert results[0] == {"type": "node_start", "data": "researcher"}
 
 
 @pytest.mark.asyncio
@@ -41,7 +41,7 @@ async def test_parse_stream_events_on_chain_start_fallback_name():
     results = [json.loads(r) async for r in parse_stream_events(stream)]
     
     assert len(results) == 1
-    assert results[0] == {"type": "node", "data": "writer"}
+    assert results[0] == {"type": "node_start", "data": "writer"}
 
 
 @pytest.mark.asyncio

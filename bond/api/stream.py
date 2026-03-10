@@ -35,7 +35,20 @@ async def parse_stream_events(events: AsyncIterator[Any]) -> AsyncIterator[str]:
                       node_name = name
                       
             if node_name:
-                yield StreamEvent(type="node", data=node_name).model_dump_json()
+                yield StreamEvent(type="node_start", data=node_name).model_dump_json()
+
+        # Handle end of a node (chain)
+        elif kind == "on_chain_end":
+            metadata = event.get("metadata", {})
+            node_name = metadata.get("langgraph_node")
+            
+            if not node_name:
+                 name = event.get("name")
+                 if name in ["duplicate_check", "researcher", "structure", "writer", "save_metadata", "__start__", "__end__"]:
+                      node_name = name
+                      
+            if node_name:
+                yield StreamEvent(type="node_end", data=node_name).model_dump_json()
                 
         # Handle streaming of chat model tokens
         elif kind == "on_chat_model_stream":

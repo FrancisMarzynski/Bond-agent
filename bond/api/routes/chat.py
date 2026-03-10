@@ -7,6 +7,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from bond.api.stream import parse_stream_events
+from bond.schemas import StreamEvent
 
 
 router = APIRouter()
@@ -41,6 +42,7 @@ async def chat_stream(req: ChatRequest, request: Request):
                 yield f"data: {json_str}\n\n"
 
         gen = formatted_events()
+        last_heartbeat = asyncio.get_event_loop().time()
 
         try:
             while True:
@@ -53,8 +55,13 @@ async def chat_stream(req: ChatRequest, request: Request):
                     # Pozwala to przerwać długo trwające requesty LLM w LangGraph
                     chunk = await asyncio.wait_for(gen.__anext__(), timeout=1.0)
                     yield chunk
+                    last_heartbeat = asyncio.get_event_loop().time()
                 except asyncio.TimeoutError:
                     # Brak zdarzeń w ciągu minionej sekundy, pętla sprawdzi znow is_disconnected()
+                    current_time = asyncio.get_event_loop().time()
+                    if current_time - last_heartbeat > 15.0:
+                        yield f"data: {StreamEvent(type='heartbeat', data='ping').model_dump_json()}\n\n"
+                        last_heartbeat = current_time
                     continue
                 except StopAsyncIteration:
                     # Koniec strumienia
