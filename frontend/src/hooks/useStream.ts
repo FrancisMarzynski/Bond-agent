@@ -96,6 +96,24 @@ async function consumeStream(
                             store.setStreaming(false);
                             return;
                         }
+                        case "node_start": {
+                            const schema = z.object({ data: z.string().optional() }).catchall(z.any());
+                            schema.safeParse(parsed);
+                            // Możliwa integracja statusu konkretnego węzła z Zustand tutaj
+                            break;
+                        }
+                        case "node_end": {
+                            const schema = z.object({ data: z.string().optional() }).catchall(z.any());
+                            schema.safeParse(parsed);
+                            break;
+                        }
+                        case "heartbeat": {
+                            // Cichy Ping - podtrzymuje otwarte procesy proxy zapobiegając Gateway Timeout
+                            if (process.env.NODE_ENV === "development") {
+                                console.log("[SSE] Otrzymano Heartbeat (ping) z serwera by podtrzymać strumień...");
+                            }
+                            break;
+                        }
                         case "done":
                             store.setStage("done", "complete");
                             store.setStreaming(false);
