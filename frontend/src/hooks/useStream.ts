@@ -50,34 +50,52 @@ async function consumeStream(
                 }
                 try {
                     const parsed = JSON.parse(data);
+                    
+                    // The backend emits events in the format: data: {"type": "<event_type>", "data": "<payload_string>"}
+                    // Therefore, the SSE `event` header is missing, defaulting to "message".
+                    // We must determine the true event type from `parsed.type`.
+                    const eventType = parsed.type || event;
+                    
+                    // Extract payload. If parsed.data is a string that looks like JSON, parse it.
+                    let payload: any;
+                    if (typeof parsed.data === "string") {
+                        try {
+                            payload = JSON.parse(parsed.data);
+                        } catch (e) {
+                            payload = parsed.data; // e.g. plain text for 'token', 'done', 'heartbeat'
+                        }
+                    } else {
+                        payload = parsed.data;
+                    }
 
-                    switch (event) {
+                    switch (eventType) {
                         case "thread_id": {
-                            const result = ThreadIdSchema.safeParse(parsed);
+                            const result = ThreadIdSchema.safeParse(payload);
                             if (!result.success) throw new Error("Invalid thread_id event data");
                             onThreadId(result.data.thread_id);
                             break;
                         }
                         case "token": {
-                            const result = TokenSchema.safeParse(parsed);
-                            if (!result.success) throw new Error("Invalid token event data");
-                            store.appendDraftToken(result.data.token);
+                            // Backend may send plain string for token data
+                            const tokenContent = typeof payload === "string" ? payload : (payload.token || "");
+                            if (!tokenContent) throw new Error("Invalid token event data");
+                            store.appendDraftToken(tokenContent);
                             break;
                         }
                         case "stage": {
-                            const result = StageSchema.safeParse(parsed);
+                            const result = StageSchema.safeParse(payload);
                             if (!result.success) throw new Error("Invalid stage event data");
                             store.setStage(result.data.stage as any, result.data.status as any);
                             break;
                         }
-                        case "message": {
-                            const result = MessageSchema.safeParse(parsed);
+                        case "message": { // Keeping this just in case backend ever sends direct message
+                            const result = MessageSchema.safeParse(payload);
                             if (!result.success) throw new Error("Invalid message event data");
                             store.addMessage({ role: "assistant", content: result.data.content });
                             break;
                         }
                         case "hitl_pause": {
-                            const result = HitlPauseSchema.safeParse(parsed);
+                            const result = HitlPauseSchema.safeParse(payload);
                             if (!result.success) throw new Error("Invalid hitl_pause event data");
                             store.setHitlPause({
                                 checkpoint_id: result.data.checkpoint_id,
@@ -88,8 +106,8 @@ async function consumeStream(
                             return; // Stream ends at HITL pause
                         }
                         case "error": {
-                            const result = ErrorSchema.safeParse(parsed);
-                            if (!result.success) throw new Error("Invalid error event data");
+                            // Payload could be a string or JSON depending on backend formatting
+                            const errorMessage = typeof payload === "string" ? payload : (payload.message || payload.data || "Unknown error");
                             const currentStage =
                                 store.stage !== "idle" && store.stage !== "done"
                                     ? store.stage
@@ -97,7 +115,7 @@ async function consumeStream(
                             store.setStage(currentStage, "error");
                             store.addMessage({
                                 role: "assistant",
-                                content: `Error: ${result.data.message}`,
+                                content: `Error: ${errorMessage}`,
                             });
                             store.setStreaming(false);
                             return;
@@ -120,7 +138,7 @@ async function consumeStream(
                             return;
                         default:
                             if (process.env.NODE_ENV === "development") {
-                                console.warn(`Unhandled SSE event type: ${event}`);
+                                console.warn(`Unhandled SSE event type: ${eventType}`, parsed);
                             }
                     }
                 } catch (err) {

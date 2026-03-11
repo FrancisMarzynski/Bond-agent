@@ -94,12 +94,12 @@ async def chat_stream(req: ChatRequest, request: Request):
             if state_snapshot.next:
                  # Mapowanie stanu do hitl_pause (używamy tej samej logiki co w /history)
                  history_state = await get_chat_history(thread_id, request)
-                 if history_state.get("hitlPause"):
-                      yield f"data: {StreamEvent(type='hitl_pause', data=json.dumps(history_state['hitlPause'])).model_dump_json()}\n\n"
-                 
-                 # Wyślij aktualny stage
+                 # Wyślij aktualny stage przed hitl_pause, żeby klient zdążył odebrać go przed przerwaniem strumienia
                  if history_state.get("stage"):
                       yield f"data: {StreamEvent(type='stage', data=json.dumps({'stage': history_state['stage'], 'status': history_state['stageStatus'].get(history_state['stage'], 'running')})).model_dump_json()}\n\n"
+
+                 if history_state.get("hitlPause"):
+                      yield f"data: {StreamEvent(type='hitl_pause', data=json.dumps(history_state['hitlPause'])).model_dump_json()}\n\n"
             else:
                  # Jeśli nie ma następnych kroków i nie było błędu, wyślij 'done'
                  yield f"data: {StreamEvent(type='done', data='done').model_dump_json()}\n\n"
@@ -173,10 +173,10 @@ async def chat_resume(req: ResumeRequest, request: Request):
             state_snapshot = await graph.aget_state(config)
             history_state = await get_chat_history(req.thread_id, request)
             if state_snapshot.next:
-                 if history_state.get("hitlPause"):
-                      yield f"data: {StreamEvent(type='hitl_pause', data=json.dumps(history_state['hitlPause'])).model_dump_json()}\n\n"
                  if history_state.get("stage"):
                       yield f"data: {StreamEvent(type='stage', data=json.dumps({'stage': history_state['stage'], 'status': history_state['stageStatus'].get(history_state['stage'], 'running')})).model_dump_json()}\n\n"
+                 if history_state.get("hitlPause"):
+                      yield f"data: {StreamEvent(type='hitl_pause', data=json.dumps(history_state['hitlPause'])).model_dump_json()}\n\n"
             else:
                  yield f"data: {StreamEvent(type='done', data='done').model_dump_json()}\n\n"
 
