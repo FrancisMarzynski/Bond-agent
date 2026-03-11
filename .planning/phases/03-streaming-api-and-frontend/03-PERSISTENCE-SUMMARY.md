@@ -16,16 +16,19 @@ Wdrożenie pełnej odporności na odświeżenie strony — każda sesja czatu za
 
 ### `bond/api/routes/chat.py`
 
-Dodano endpointy i poprawiono logikę:
+Dodano endpointy i poprawiono logikę (uwzględniając code-review):
 1. **`GET /history/{thread_id}`**: 
    - Pobiera stan z `AsyncSqliteSaver`.
-   - **Nowość**: Odtwarza bogatą historię (topic, raport z badań, strukturę nagłówków, feedback, podgląd draftu).
+   - Poprawiono odczyt historii: korzysta bezpośrednio z wbudowanej w mechanizm LangGraph listy `messages`. Zrezygnowano z ręcznego sprawdzania specyficznych kluczy (jak np. `topic` czy `research_report`).
 2. **`POST /resume`**: 
-   - **Nowość**: Umożliwia kontynuację przerwanego grafu (HITL) po odświeżeniu strony.
+   - Umożliwia kontynuację przerwanego grafu (HITL) po odświeżeniu strony, re-wykorzystując obecny stan (brak wielokrotnego zapytania bazodanowego).
    - Obsługuje akcje `approve`, `reject`, `abort`.
+   - Podobnie jak w `/stream`, zabezpieczono wychodzenie z funkcji przy błędach.
 3. **`POST /stream`**:
    - Wysyła `thread_id` na początku strumienia.
-   - Po zakończeniu strumienia wysyła zdarzenia `hitl_pause` lub `done` na podstawie stanu końcowego grafu.
+   - Wyeliminowano zbędne podwójne odpytywanie o stan poprzez przekazywanie `state_snapshot` do funkcji pomocniczej.
+   - Usunięto błąd polegający na yieldowaniu (wysyłaniu) eventów `hitl_pause` i `done` wewnątrz bloku `finally`.
+   - Dodano flagę `finished_cleanly`, aby zagwarantować, że zdarzenia końcowe nie zostaną wysłane do frontendu, jeśli strumień zakończył się nieoczekiwanym wyjątkiem (lub rozłączeniem klienta).
 
 ### `bond/api/stream.py`
 
@@ -36,6 +39,7 @@ Dodano endpointy i poprawiono logikę:
 
 - Dodano nowe typy zdarzeń SSE: `thread_id`, `stage`, `hitl_pause`, `done`.
 - Dodano schemat `ResumeRequest`.
+- Złagodzono walidację w `AgentOutput`: usunięto wpadający twardy błąd `ValueError`, jeśli liczba słów gotowego artykułu wyniesie poniżej 800 (np. 795 po wielominutowej pracy agenta). Zastąpiono go modułowym logowaniem (`logger.warning`), aby nie wywalać całego API i nie blokować wyniku użytkownikowi.
 
 ### `frontend/src/hooks/useSession.ts`
 

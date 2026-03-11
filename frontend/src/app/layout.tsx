@@ -12,7 +12,6 @@ export const metadata: Metadata = {
   description: "AI editorial assistant",
 };
 
-import { StageProgress } from "@/components/StageProgress";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -25,8 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <ModeToggle />
           </header>
           <main className="flex-1 overflow-hidden flex flex-col">
-            <StageProgress />
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 flex flex-col overflow-hidden min-h-0">
               <SessionProvider>
                 {children}
               </SessionProvider>

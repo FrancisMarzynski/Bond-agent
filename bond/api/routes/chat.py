@@ -56,11 +56,14 @@ async def chat_stream(req: ChatRequest, request: Request):
 
         gen = formatted_events()
         last_heartbeat = asyncio.get_event_loop().time()
+        client_disconnected = False
+        finished_cleanly = False
 
         try:
             while True:
                 # Aktywne przerywanie pracy w przypadku rozłączenia
                 if await request.is_disconnected():
+                    client_disconnected = True
                     break
                 
                 try:
@@ -78,6 +81,7 @@ async def chat_stream(req: ChatRequest, request: Request):
                     continue
                 except StopAsyncIteration:
                     # Koniec strumienia
+                    finished_cleanly = True
                     break
         
         except asyncio.CancelledError:
@@ -89,11 +93,13 @@ async def chat_stream(req: ChatRequest, request: Request):
             # Wymuszenie zwolnienia zasobów i przymusowe przerwanie aktywnego agenta
             await gen.aclose()
 
-            # Po zakończeniu strumienia, sprawdź czy graf nie zatrzymał się na checkpointcie
+        # Po zakończeniu strumienia, sprawdź czy graf nie zatrzymał się na checkpointcie
+        # Wysyłamy zdarzenia TYLKO jeśli klient nadal tam jest
+        if finished_cleanly and not client_disconnected:
             state_snapshot = await graph.aget_state(config)
             if state_snapshot.next:
                  # Mapowanie stanu do hitl_pause (używamy tej samej logiki co w /history)
-                 history_state = await get_chat_history(thread_id, request)
+                 history_state = await get_chat_history(thread_id, request, state_snapshot=state_snapshot)
                  # Wyślij aktualny stage przed hitl_pause, żeby klient zdążył odebrać go przed przerwaniem strumienia
                  if history_state.get("stage"):
                       yield f"data: {StreamEvent(type='stage', data=json.dumps({'stage': history_state['stage'], 'status': history_state['stageStatus'].get(history_state['stage'], 'running')})).model_dump_json()}\n\n"
@@ -148,10 +154,13 @@ async def chat_resume(req: ResumeRequest, request: Request):
 
         gen = formatted_events()
         last_heartbeat = asyncio.get_event_loop().time()
+        client_disconnected = False
+        finished_cleanly = False
 
         try:
             while True:
                 if await request.is_disconnected():
+                    client_disconnected = True
                     break
                 try:
                     chunk = await asyncio.wait_for(gen.__anext__(), timeout=1.0)
@@ -164,14 +173,19 @@ async def chat_resume(req: ResumeRequest, request: Request):
                         last_heartbeat = current_time
                     continue
                 except StopAsyncIteration:
+                    finished_cleanly = True
                     break
+        except asyncio.CancelledError:
+            pass
         except Exception as e:
             yield f"data: {json.dumps({'type': 'error', 'data': str(e)})}\n\n"
         finally:
             await gen.aclose()
+            
+        if finished_cleanly and not client_disconnected:
             # Logika sprawdzania stanu po resume (analogiczna do /stream)
             state_snapshot = await graph.aget_state(config)
-            history_state = await get_chat_history(req.thread_id, request)
+            history_state = await get_chat_history(req.thread_id, request, state_snapshot=state_snapshot)
             if state_snapshot.next:
                  if history_state.get("stage"):
                       yield f"data: {StreamEvent(type='stage', data=json.dumps({'stage': history_state['stage'], 'status': history_state['stageStatus'].get(history_state['stage'], 'running')})).model_dump_json()}\n\n"
@@ -194,7 +208,7 @@ async def chat_resume(req: ResumeRequest, request: Request):
 
 
 @router.get("/history/{thread_id}")
-async def get_chat_history(thread_id: str, request: Request):
+async def get_chat_history(thread_id: str, request: Request, state_snapshot=None):
     """
     Pobiera historię oraz aktualny stan z pliku SQLite (AsyncSqliteSaver) 
     dla podanej sesji (thread_id).
@@ -202,8 +216,9 @@ async def get_chat_history(thread_id: str, request: Request):
     config = {"configurable": {"thread_id": thread_id}}
     graph = request.app.state.graph
     
-    # Pobieramy najświeższy snapshot stanu z checkpointera LangGraph
-    state_snapshot = await graph.aget_state(config)
+    # Pobieramy najświeższy snapshot stanu z checkpointera LangGraph jeśli nie podano
+    if state_snapshot is None:
+        state_snapshot = await graph.aget_state(config)
     
     if not state_snapshot or not hasattr(state_snapshot, "values") or not state_snapshot.values:
         return {
@@ -217,26 +232,17 @@ async def get_chat_history(thread_id: str, request: Request):
     st = state_snapshot.values
     next_nodes = state_snapshot.next
 
-    # Odtwarzamy historię komunikatów (messages) na podstawie dostępnych kluczy w stanie
+    # Odtwarzamy historię komunikatów (messages)
     messages = []
     
-    if "topic" in st:
-        messages.append({"role": "user", "content": st["topic"]})
-    
-    if "research_report" in st and st["research_report"]:
-        messages.append({"role": "assistant", "content": "Zebrałem informacje z sieci i przygotowałem raport."})
-    
-    if "heading_structure" in st and st["heading_structure"]:
-        messages.append({"role": "assistant", "content": f"Oto proponowana struktura nagłówków:\n\n{st['heading_structure']}"})
-
-    if "cp1_feedback" in st and st["cp1_feedback"]:
-        messages.append({"role": "user", "content": st["cp1_feedback"]})
-        
-    if "draft" in st and st["draft"]:
-        messages.append({"role": "assistant", "content": f"Przygotowałem projekt artykułu:\n\n{st['draft'][:500]}..."})
-
-    if "cp2_feedback" in st and st["cp2_feedback"]:
-        messages.append({"role": "user", "content": st["cp2_feedback"]})
+    raw_messages = st.get("messages", [])
+    for msg in raw_messages:
+        # LangGraph messages might be dictionaries or LangChain Message objects
+        if isinstance(msg, dict):
+            messages.append(msg)
+        else:
+            role = "user" if msg.type == "human" else ("assistant" if msg.type == "ai" else str(msg.type))
+            messages.append({"role": role, "content": msg.content})
 
     # Odtwarzanie obecnego etapu (stage) na podstawie następnych kroków zapisanych w checkpointerze
     stage = "idle"

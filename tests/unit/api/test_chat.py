@@ -30,6 +30,13 @@ def app():
     mock_graph = AsyncMock()
     mock_graph.astream_events = fake_astream_events
     
+    # Mock aget_state return
+    class MockState:
+        values = {"messages": []}
+        next = []
+        
+    mock_graph.aget_state.return_value = MockState()
+    
     app.state.graph = mock_graph
     app.include_router(router, prefix="/api/chat")
     return app

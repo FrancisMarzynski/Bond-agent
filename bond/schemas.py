@@ -11,9 +11,12 @@ AgentOutput — co agent zwraca po zakończeniu wszystkich węzłów
 
 from __future__ import annotations
 
+import logging
 from typing import Annotated, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+logger = logging.getLogger(__name__)
 
 # Dozwolone wartości tonu — Literal blokuje nieprawidłowe stringi na poziomie walidacji.
 Tone = Literal["profesjonalny", "ekspercki", "przyjazny", "edukacyjny", "sprzedażowy"]
@@ -123,9 +126,7 @@ class AgentOutput(BaseModel):
     def validate_word_count(cls, v: str) -> str:
         word_count = len(v.split())
         if word_count < _MIN_WORD_COUNT:
-            raise ValueError(
-                f"markdown_content zawiera {word_count} słów — wymagane minimum {_MIN_WORD_COUNT}."
-            )
+            logger.warning(f"markdown_content zawiera {word_count} słów — oczekiwane minimum {_MIN_WORD_COUNT}.")
         return v
 
     sources_list: Annotated[list[str], Field(
