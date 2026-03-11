@@ -3,20 +3,30 @@ import { useEffect, useState } from "react";
 import { useChatStore } from "@/store/chatStore";
 
 const STORAGE_KEY = "bond_thread_id";
+const MODE_KEY = "bond_mode";
 
 export function useSession() {
-    const { threadId, setThreadId, resetSession } = useChatStore();
+    const { threadId, setThreadId, mode, setMode, resetSession } = useChatStore();
 
     const [isRestoring, setIsRestoring] = useState(true);
 
     useEffect(() => {
-        const stored = sessionStorage.getItem(STORAGE_KEY);
-        if (stored) {
-            setThreadId(stored);
+        const storedThread = sessionStorage.getItem(STORAGE_KEY);
+        const storedMode = sessionStorage.getItem(MODE_KEY);
+
+        if (storedMode === "author" || storedMode === "shadow") {
+            setMode(storedMode);
+        }
+
+        if (storedThread) {
+            setThreadId(storedThread);
             const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-            fetch(`${API_URL}/api/chat/history/${stored}`)
-                .then((res) => res.json())
+            fetch(`${API_URL}/api/chat/history/${storedThread}`)
+                .then((res) => {
+                    if (!res.ok) throw new Error("Sesja nie znaleziona na serwerze");
+                    return res.json();
+                })
                 .then((data) => {
                     const store = useChatStore.getState();
                     if (data.messages && Array.isArray(data.messages)) {
@@ -33,16 +43,26 @@ export function useSession() {
                         store.setStage(data.stage, status);
                     }
                 })
-                .catch((err) => console.error("Nie udało się pobrać historii:", err))
+                .catch((err) => {
+                    console.error("Przywracanie sesji przerwane:", err);
+                    // Jeśli sesja wygasła w DB, czyścimy sessionStorage by uniknąć zapętlenia
+                    sessionStorage.removeItem(STORAGE_KEY);
+                    setThreadId(null);
+                })
                 .finally(() => setIsRestoring(false));
         } else {
             setIsRestoring(false);
         }
-    }, [setThreadId]);
+    }, [setThreadId, setMode]);
 
     const persistThreadId = (id: string) => {
         sessionStorage.setItem(STORAGE_KEY, id);
         setThreadId(id);
+    };
+
+    const persistMode = (newMode: "author" | "shadow") => {
+        sessionStorage.setItem(MODE_KEY, newMode);
+        setMode(newMode);
     };
 
     const newSession = () => {
@@ -50,5 +70,5 @@ export function useSession() {
         resetSession();
     };
 
-    return { threadId, persistThreadId, newSession, isRestoring };
+    return { threadId, mode, persistThreadId, persistMode, newSession, isRestoring };
 }

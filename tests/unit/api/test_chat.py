@@ -55,6 +55,13 @@ def test_chat_stream_returns_sse(client):
         lines = [line for line in content if line.strip()]
         
         # Verify the chunks from fake_astream_events
-        assert 'data: {"type":"node_start","data":"researcher"}' in lines[0]
-        assert 'data: {"type":"token","data":"Hel"}' in lines[1]
-        assert 'data: {"type":"token","data":"lo"}' in lines[2]
+        # lines[0] is now thread_id
+        assert 'data: {"type":"thread_id"' in lines[0]
+        # lines[1] is node_start
+        assert 'data: {"type":"node_start","data":"researcher"}' in lines[1]
+        # lines[2] is stage (added in stream.py)
+        assert 'data: {"type":"stage","data":"{\\"stage\\": \\"research\\", \\"status\\": \\"running\\"}"}' in lines[2]
+        # lines[3] is token
+        assert 'data: {"type":"token","data":"Hel"}' in lines[3]
+        # lines[4] is token
+        assert 'data: {"type":"token","data":"lo"}' in lines[4]

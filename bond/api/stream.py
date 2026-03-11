@@ -36,6 +36,15 @@ async def parse_stream_events(events: AsyncIterator[Any]) -> AsyncIterator[str]:
                       
             if node_name:
                 yield StreamEvent(type="node_start", data=node_name).model_dump_json()
+                # Zmapuj node_name na stage (uproszczone mapowanie dla frontendu)
+                stage_map = {
+                    "researcher": "research",
+                    "structure": "structure",
+                    "writer": "writing",
+                    "save_metadata": "done"
+                }
+                if node_name in stage_map:
+                    yield StreamEvent(type="stage", data=json.dumps({"stage": stage_map[node_name], "status": "running"})).model_dump_json()
 
         # Handle end of a node (chain)
         elif kind == "on_chain_end":
