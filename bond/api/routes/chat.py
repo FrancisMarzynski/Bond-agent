@@ -1,4 +1,5 @@
 import asyncio
+import json
 from typing import Optional
 from uuid import uuid4
 
@@ -71,7 +72,6 @@ async def chat_stream(req: ChatRequest, request: Request):
             # Upewniamy się, że przy ustrzeleniu przez serwer uvicorn również wychodzimy płynnie
             pass
         except Exception as e:
-            import json
             yield f"data: {json.dumps({'type': 'error', 'data': str(e)})}\n\n"
         finally:
             # Wymuszenie zwolnienia zasobów i przymusowe przerwanie aktywnego agenta
@@ -87,3 +87,91 @@ async def chat_stream(req: ChatRequest, request: Request):
             "Content-Encoding": "none",
         },
     )
+
+
+@router.get("/history/{thread_id}")
+async def get_chat_history(thread_id: str, request: Request):
+    """
+    Pobiera historię oraz aktualny stan z pliku SQLite (AsyncSqliteSaver) 
+    dla podanej sesji (thread_id).
+    """
+    config = {"configurable": {"thread_id": thread_id}}
+    graph = request.app.state.graph
+    
+    # Pobieramy najświeższy snapshot stanu z checkpointera LangGraph
+    state_snapshot = await graph.aget_state(config)
+    
+    if not state_snapshot or not hasattr(state_snapshot, "values") or not state_snapshot.values:
+        return {
+            "messages": [], 
+            "stage": "idle", 
+            "draft": "", 
+            "hitlPause": None,
+            "stageStatus": {}
+        }
+
+    st = state_snapshot.values
+    next_nodes = state_snapshot.next
+
+    # Odtwarzamy historię komunikatów (messages) na podstawie dostępnych kluczy w stanie
+    messages = []
+    
+    if "topic" in st:
+        messages.append({"role": "user", "content": st["topic"]})
+    
+    if "research_report" in st and st["research_report"]:
+        messages.append({"role": "assistant", "content": "Zebrałem informacje z sieci i przygotowałem raport. Przechodzę do struktury."})
+    
+    if "cp1_feedback" in st and st["cp1_feedback"]:
+        messages.append({"role": "user", "content": st["cp1_feedback"]})
+        
+    if "cp2_feedback" in st and st["cp2_feedback"]:
+        messages.append({"role": "user", "content": st["cp2_feedback"]})
+
+    # Odtwarzanie obecnego etapu (stage) na podstawie następnych kroków zapisanych w checkpointerze
+    stage = "idle"
+    hitl_pause = None
+    
+    if not next_nodes:
+        if st.get("metadata_saved"):
+            stage = "done"
+        else:
+            stage = "writing" if "draft" in st else "idle"
+    else:
+        next_node = next_nodes[0]
+        if next_node == "researcher":
+            stage = "research"
+        elif next_node == "structure":
+            stage = "structure"
+        elif next_node == "checkpoint_1":
+            stage = "structure"
+            # Odtworzenie stanu pauzy HITL
+            if "heading_structure" in st:
+                hitl_pause = {
+                    "checkpoint_id": "checkpoint_1",
+                    "type": "approve_reject",
+                }
+        elif next_node == "writer":
+            stage = "writing"
+        elif next_node == "checkpoint_2":
+            stage = "writing"
+            # Odtworzenie stanu pauzy HITL
+            if "draft" in st:
+                hitl_pause = {
+                    "checkpoint_id": "checkpoint_2",
+                    "type": "approve_reject",
+                    "iterations_remaining": 3 - st.get("cp2_iterations", 0)
+                }
+        elif next_node == "save_metadata":
+            stage = "done"
+
+    return {
+        "messages": messages,
+        "stage": stage,
+        "draft": st.get("draft", ""),
+        "hitlPause": hitl_pause,
+        "stageStatus": {
+            stage: "pending" if hitl_pause else "running"
+        }
+    }
+

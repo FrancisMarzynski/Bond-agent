@@ -25,6 +25,10 @@ interface ChatStore {
     isStreaming: boolean;
     lastEventId?: string;
     systemAlert?: string;
+    /** AbortController belonging to the current active stream. Stored here
+     *  so that every hook/component instance has its own isolated reference
+     *  instead of sharing a single module-level variable. */
+    activeController: AbortController | null;
     // Actions
     setMode: (mode: "author" | "shadow") => void;
     setThreadId: (id: string | null) => void;
@@ -37,6 +41,11 @@ interface ChatStore {
     setSystemAlert: (alert: string | undefined) => void;
     addMessage: (msg: ChatMessage) => void;
     resetSession: () => void;
+    /** Creates a fresh AbortController, aborts any previous one, and stores
+     *  the new instance in the store. Returns the new signal. */
+    createController: () => AbortSignal;
+    /** Aborts the current controller (if any) and clears it from the store. */
+    abortController: () => void;
 }
 
 const initialStageStatus: Record<Stage, StageStatus> = {
@@ -48,7 +57,7 @@ const initialStageStatus: Record<Stage, StageStatus> = {
     error: "pending",
 };
 
-export const useChatStore = create<ChatStore>((set) => ({
+export const useChatStore = create<ChatStore>((set, get) => ({
     mode: "author",
     threadId: null,
     stage: "idle",
@@ -59,6 +68,8 @@ export const useChatStore = create<ChatStore>((set) => ({
     isStreaming: false,
     lastEventId: undefined,
     systemAlert: undefined,
+    activeController: null,
+
     setMode: (mode) => set({ mode }),
     setThreadId: (threadId) => set({ threadId }),
     setStage: (stage, status) =>
@@ -71,5 +82,30 @@ export const useChatStore = create<ChatStore>((set) => ({
     setSystemAlert: (systemAlert) => set({ systemAlert }),
     addMessage: (msg) => set((s) => ({ messages: [...s.messages, msg] })),
     resetSession: () =>
-        set({ threadId: null, stage: "idle", stageStatus: { ...initialStageStatus }, draft: "", messages: [], hitlPause: null, isStreaming: false, lastEventId: undefined, systemAlert: undefined }),
+        set({
+            threadId: null,
+            stage: "idle",
+            stageStatus: { ...initialStageStatus },
+            draft: "",
+            messages: [],
+            hitlPause: null,
+            isStreaming: false,
+            lastEventId: undefined,
+            systemAlert: undefined,
+            activeController: null,
+        }),
+
+    createController: () => {
+        const previous = get().activeController;
+        if (previous) previous.abort();
+        const controller = new AbortController();
+        set({ activeController: controller });
+        return controller.signal;
+    },
+
+    abortController: () => {
+        const controller = get().activeController;
+        if (controller) controller.abort();
+        set({ activeController: null, isStreaming: false });
+    },
 }));

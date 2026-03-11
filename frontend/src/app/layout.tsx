@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
 import { ModeToggle } from "@/components/ModeToggle";
+import { SessionProvider } from "@/components/SessionProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,7 +27,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="flex-1 overflow-hidden flex flex-col">
             <StageProgress />
             <div className="flex-1 overflow-y-auto">
-              {children}
+              <SessionProvider>
+                {children}
+              </SessionProvider>
             </div>
           </main>
         </div>

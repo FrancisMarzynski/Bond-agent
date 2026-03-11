@@ -29,7 +29,7 @@ class StreamEvent(BaseModel):
     """
     model_config = ConfigDict(extra="forbid")
 
-    type: Literal["node_start", "node_end", "token", "heartbeat"]
+    type: Literal["node_start", "node_end", "token", "heartbeat", "error"]
     data: str
 
 

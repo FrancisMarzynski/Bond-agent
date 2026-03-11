@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useCallback } from "react";
 import { useChatStore } from "@/store/chatStore";
 import { SSEParser } from "@/lib/sse";
 import { z } from "zod";
@@ -7,18 +8,26 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 3000;
 
-let activeController: AbortController | null = null;
+// ---------------------------------------------------------------------------
+// Zod schemas — defined once at module scope, not re-created on every event.
+// ---------------------------------------------------------------------------
+const ThreadIdSchema = z.object({ thread_id: z.string() });
+const TokenSchema = z.object({ token: z.string() });
+const StageSchema = z.object({ stage: z.string(), status: z.string() });
+const MessageSchema = z.object({ content: z.string() });
+const HitlPauseSchema = z.object({
+    checkpoint_id: z.string(),
+    type: z.string(),
+    iterations_remaining: z.number().optional(),
+});
+const ErrorSchema = z.object({ message: z.string() });
 
-export function stopStream() {
-    if (activeController) {
-        activeController.abort();
-        activeController = null;
-    }
-    useChatStore.getState().setStreaming(false);
-}
-
+// ---------------------------------------------------------------------------
+// Internal stream consumer
+// ---------------------------------------------------------------------------
 async function consumeStream(
     response: Response,
+    signal: AbortSignal,
     onThreadId: (id: string) => void
 ): Promise<void> {
     const store = useChatStore.getState();
@@ -29,6 +38,7 @@ async function consumeStream(
 
     try {
         while (true) {
+            if (signal.aborted) break;
             const { value, done } = await reader.read();
             if (done) break;
             if (!value) continue;
@@ -43,40 +53,31 @@ async function consumeStream(
 
                     switch (event) {
                         case "thread_id": {
-                            const schema = z.object({ thread_id: z.string() });
-                            const result = schema.safeParse(parsed);
+                            const result = ThreadIdSchema.safeParse(parsed);
                             if (!result.success) throw new Error("Invalid thread_id event data");
                             onThreadId(result.data.thread_id);
                             break;
                         }
                         case "token": {
-                            const schema = z.object({ token: z.string() });
-                            const result = schema.safeParse(parsed);
+                            const result = TokenSchema.safeParse(parsed);
                             if (!result.success) throw new Error("Invalid token event data");
                             store.appendDraftToken(result.data.token);
                             break;
                         }
                         case "stage": {
-                            const schema = z.object({ stage: z.string(), status: z.string() });
-                            const result = schema.safeParse(parsed);
+                            const result = StageSchema.safeParse(parsed);
                             if (!result.success) throw new Error("Invalid stage event data");
                             store.setStage(result.data.stage as any, result.data.status as any);
                             break;
                         }
                         case "message": {
-                            const schema = z.object({ content: z.string() });
-                            const result = schema.safeParse(parsed);
+                            const result = MessageSchema.safeParse(parsed);
                             if (!result.success) throw new Error("Invalid message event data");
                             store.addMessage({ role: "assistant", content: result.data.content });
                             break;
                         }
                         case "hitl_pause": {
-                            const schema = z.object({
-                                checkpoint_id: z.string(),
-                                type: z.string(),
-                                iterations_remaining: z.number().optional()
-                            });
-                            const result = schema.safeParse(parsed);
+                            const result = HitlPauseSchema.safeParse(parsed);
                             if (!result.success) throw new Error("Invalid hitl_pause event data");
                             store.setHitlPause({
                                 checkpoint_id: result.data.checkpoint_id,
@@ -87,33 +88,32 @@ async function consumeStream(
                             return; // Stream ends at HITL pause
                         }
                         case "error": {
-                            const schema = z.object({ message: z.string() });
-                            const result = schema.safeParse(parsed);
+                            const result = ErrorSchema.safeParse(parsed);
                             if (!result.success) throw new Error("Invalid error event data");
-                            const currentStage = store.stage !== "idle" && store.stage !== "done" ? store.stage : "error";
+                            const currentStage =
+                                store.stage !== "idle" && store.stage !== "done"
+                                    ? store.stage
+                                    : "error";
                             store.setStage(currentStage, "error");
-                            store.addMessage({ role: "assistant", content: `Error: ${result.data.message}` });
+                            store.addMessage({
+                                role: "assistant",
+                                content: `Error: ${result.data.message}`,
+                            });
                             store.setStreaming(false);
                             return;
                         }
-                        case "node_start": {
-                            const schema = z.object({ data: z.string().optional() }).catchall(z.any());
-                            schema.safeParse(parsed);
-                            // Możliwa integracja statusu konkretnego węzła z Zustand tutaj
+                        case "node_start":
+                        case "node_end":
+                            // Informational lifecycle events — no store integration yet.
                             break;
-                        }
-                        case "node_end": {
-                            const schema = z.object({ data: z.string().optional() }).catchall(z.any());
-                            schema.safeParse(parsed);
-                            break;
-                        }
-                        case "heartbeat": {
-                            // Cichy Ping - podtrzymuje otwarte procesy proxy zapobiegając Gateway Timeout
+                        case "heartbeat":
+                            // Silent ping — keeps proxy connections alive during long generation pauses.
                             if (process.env.NODE_ENV === "development") {
-                                console.log("[SSE] Otrzymano Heartbeat (ping) z serwera by podtrzymać strumień...");
+                                console.log(
+                                    "[SSE] Otrzymano Heartbeat (ping) z serwera by podtrzymać strumień..."
+                                );
                             }
                             break;
-                        }
                         case "done":
                             store.setStage("done", "complete");
                             store.setStreaming(false);
@@ -124,7 +124,7 @@ async function consumeStream(
                             }
                     }
                 } catch (err) {
-                    // Skip malformed JSON — log in development
+                    // Skip malformed JSON — log in development only
                     if (process.env.NODE_ENV === "development") {
                         console.warn("SSE parse error or invalid format:", data, err);
                     }
@@ -136,26 +136,16 @@ async function consumeStream(
     }
 }
 
-export async function startStream(
-    message: string,
-    threadId: string | null,
-    mode: "author" | "shadow",
+// ---------------------------------------------------------------------------
+// Retry loop helper
+// ---------------------------------------------------------------------------
+async function fetchWithRetry(
+    url: string,
+    body: string,
+    signal: AbortSignal,
     onThreadId: (id: string) => void
 ): Promise<void> {
     const store = useChatStore.getState();
-    if (store.isStreaming) {
-        console.warn("Stream is already active. Blocking startStream.");
-        return;
-    }
-
-    store.setStreaming(true);
-    store.addMessage({ role: "user", content: message });
-
-    if (activeController) {
-        activeController.abort();
-    }
-    activeController = new AbortController();
-
     let attempt = 0;
 
     while (attempt <= MAX_RETRIES) {
@@ -167,95 +157,116 @@ export async function startStream(
                 headers["Last-Event-ID"] = store.lastEventId;
             }
 
-            const response = await fetch(`${API_URL}/api/chat/stream`, {
+            const response = await fetch(url, {
                 method: "POST",
                 headers,
-                body: JSON.stringify({ message, thread_id: threadId, mode }),
-                signal: activeController.signal,
+                body,
+                signal,
             });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            await consumeStream(response, onThreadId);
-            return; // Stream consumed successfully or ended gracefully
+            await consumeStream(response, signal, onThreadId);
+            return; // Success — exit retry loop
         } catch (e: unknown) {
             if (e instanceof Error && e.name === "AbortError") {
-                return; // Gracefully exit if stream was intentionally aborted
+                return; // Intentional abort — exit cleanly
             }
             attempt++;
             if (attempt <= MAX_RETRIES) {
-                store.setSystemAlert(`Połączenie zerwane. Próbuję ponownie (${attempt}/${MAX_RETRIES})...`);
+                store.setSystemAlert(
+                    `Połączenie zerwane. Próbuję ponownie (${attempt}/${MAX_RETRIES})...`
+                );
                 await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
             } else {
-                store.setSystemAlert(`[Błąd krytyczny]: Nie udało się nawiązać stabilnego połączenia po ${MAX_RETRIES} próbach. Odśwież stronę.`);
+                store.setSystemAlert(
+                    `[Błąd krytyczny]: Nie udało się nawiązać stabilnego połączenia po ${MAX_RETRIES} próbach. Odśwież stronę.`
+                );
                 store.setStreaming(false);
-                const currentStage = store.stage !== "idle" && store.stage !== "done" ? store.stage : "error";
+                const currentStage =
+                    store.stage !== "idle" && store.stage !== "done" ? store.stage : "error";
                 store.setStage(currentStage, "error");
             }
         }
     }
 }
 
-export async function resumeStream(
-    threadId: string,
-    action: "approve" | "approve_save" | "reject",
-    feedback: string | null,
-    onThreadId: (id: string) => void
-): Promise<void> {
-    const store = useChatStore.getState();
-    if (store.isStreaming) {
-        console.warn("Stream is already active. Blocking resumeStream.");
-        return;
-    }
+// ---------------------------------------------------------------------------
+// React hook — the single public export.
+//
+// Encapsulates AbortController lifecycle: the controller lives in Zustand
+// (isolated per-store instance) and is automatically aborted when the
+// consuming component unmounts via useEffect cleanup.
+// ---------------------------------------------------------------------------
+export function useStream() {
+    const { createController, abortController } = useChatStore();
 
-    store.setHitlPause(null);
-    store.setStreaming(true);
+    // Automatically stop any in-flight stream when the component unmounts.
+    useEffect(() => {
+        return () => {
+            abortController();
+        };
+    }, [abortController]);
 
-    if (activeController) {
-        activeController.abort();
-    }
-    activeController = new AbortController();
-
-    let attempt = 0;
-
-    while (attempt <= MAX_RETRIES) {
-        try {
-            const headers: Record<string, string> = {
-                "Content-Type": "application/json",
-            };
-            if (store.lastEventId) {
-                headers["Last-Event-ID"] = store.lastEventId;
+    const startStream = useCallback(
+        async (
+            message: string,
+            threadId: string | null,
+            mode: "author" | "shadow",
+            onThreadId: (id: string) => void
+        ): Promise<void> => {
+            const store = useChatStore.getState();
+            if (store.isStreaming) {
+                console.warn("Stream is already active. Blocking startStream.");
+                return;
             }
 
-            const response = await fetch(`${API_URL}/api/chat/resume`, {
-                method: "POST",
-                headers,
-                body: JSON.stringify({ thread_id: threadId, action, feedback }),
-                signal: activeController.signal,
-            });
+            store.setStreaming(true);
+            store.addMessage({ role: "user", content: message });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            const signal = createController();
+            await fetchWithRetry(
+                `${API_URL}/api/chat/stream`,
+                JSON.stringify({ message, thread_id: threadId, mode }),
+                signal,
+                onThreadId
+            );
+        },
+        [createController]
+    );
+
+    const resumeStream = useCallback(
+        async (
+            threadId: string,
+            action: "approve" | "approve_save" | "reject",
+            feedback: string | null,
+            onThreadId: (id: string) => void
+        ): Promise<void> => {
+            const store = useChatStore.getState();
+            if (store.isStreaming) {
+                console.warn("Stream is already active. Blocking resumeStream.");
+                return;
             }
 
-            await consumeStream(response, onThreadId);
-            return;
-        } catch (e: unknown) {
-            if (e instanceof Error && e.name === "AbortError") {
-                return; // Gracefully exit if stream was intentionally aborted
-            }
-            attempt++;
-            if (attempt <= MAX_RETRIES) {
-                store.setSystemAlert(`Połączenie zerwane. Wznawianie sesji (${attempt}/${MAX_RETRIES})...`);
-                await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
-            } else {
-                store.setSystemAlert(`[Błąd krytyczny]: Nie udało się wznowić odpowiedzi po ${MAX_RETRIES} próbach. Odśwież stronę.`);
-                store.setStreaming(false);
-                const currentStage = store.stage !== "idle" && store.stage !== "done" ? store.stage : "error";
-                store.setStage(currentStage, "error");
-            }
-        }
-    }
+            store.setHitlPause(null);
+            store.setStreaming(true);
+
+            const signal = createController();
+            await fetchWithRetry(
+                `${API_URL}/api/chat/resume`,
+                JSON.stringify({ thread_id: threadId, action, feedback }),
+                signal,
+                onThreadId
+            );
+        },
+        [createController]
+    );
+
+    const stopStream = useCallback(() => {
+        abortController();
+    }, [abortController]);
+
+    return { startStream, resumeStream, stopStream };
 }

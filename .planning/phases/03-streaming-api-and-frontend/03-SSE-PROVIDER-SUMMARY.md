@@ -1,6 +1,7 @@
 # 03-SSE-PROVIDER Podsumowanie: Implementacja dostawcy FastAPI SSE dla LangGraph
 
-**Data ukończenia:** 2026-03-10
+**Data ukończenia:** 2026-03-10  
+**Data poprawki (code review):** 2026-03-11  
 **Faza:** 03 — Streaming API i Frontend  
 **Plan:** 03-SSE (Integracja dostawcy Server-Sent Events)
 **Status:** ✅ Zakończone
@@ -18,11 +19,15 @@ Zaimplementowanie stabilnego dostawcy Server-Sent Events po stronie FastAPI. Zap
 ### `bond/schemas.py` 
 Zaktualizowano kontrakt informacyjny dla Pydantic w obiekcie `StreamEvent`. Dodano poprawne literale typów dopuszczając przesyłanie zdarzeń `node_start`, `node_end` oraz `heartbeat` i zastępując przestarzałą generyczną formułę `node`.
 
+**Poprawka:** Dodano brakujący literal `"error"` do pola `StreamEvent.type`. Blok `except Exception` w `chat.py` emituje zdarzenie `{"type": "error"}` — bez tego wpisu Pydantic rzucał `ValidationError` i przerywał działanie generatora zamiast przekazać błąd klientowi.
+
 ### `bond/api/stream.py` 
 Zrefaktoryzowano mapper LangGraph by potrafił dokładnie zrewizować zdarzenia. `on_chain_start` dostarcza informacji o `node_start`, a nowo dodany blok pod chwytanie `on_chain_end` zapewnia, że poszczególny węzeł raportuje również jako `node_end`. Całość przekazywana rzetelnie jako zserializowany JSON dla frontendu.
 
 ### `bond/api/routes/chat.py`
-Ubogacono główną pętle asynchroniczną i iterator `gen.__anext__()` nad endpointem `/stream`. Obcięto czas zawieszeń wątku pod asynchroniczny `is_disconnected` tak, by rewidował rozłączenia użytkowników co "każdą minioną sekundę" przez wpadnięcie w blok `TimeoutError`. Kiedy miniony czas przekracza jednak granicę 15s, skrypt wydaje z siebie dedykowany ustrukturyzowany pakiet dla `StreamEvent` typu `heartbeat`, mówiąc load balancerowi/klientowi w standardzie SSE "still running" dopóki stream dobiegnie końca. 
+Ubogacono główną pętle asynchroniczną i iterator `gen.__anext__()` nad endpointem `/stream`. Obcięto czas zawieszeń wątku pod asynchroniczny `is_disconnected` tak, by rewidował rozłączenia użytkowników co "każdą minioną sekundę" przez wpadnięcie w blok `TimeoutError`. Kiedy miniony czas przekracza jednak granicę 15s, skrypt wydaje z siebie dedykowany ustrukturyzowany pakiet dla `StreamEvent` typu `heartbeat`, mówiąc load balancerowi/klientowi w standardzie SSE "still running" dopóki stream dobiegnie końca.
+
+**Poprawka (2026-03-11):** Przeniesiono `import json` z wnętrza bloku `except Exception` na poziom modułu (linia 2). Wewnątrz funkcji import działał dzięki cache'owaniu Pythona, jednak naruszał PEP 8 i konwencje projektu — wszystkie importy muszą znajdować się na górze pliku.
 
 ---
 
