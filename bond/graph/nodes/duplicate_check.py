@@ -47,6 +47,8 @@ def duplicate_check_node(state: AuthorState) -> dict:
 
     # interrupt() pauses the graph; resume value is bool (True=proceed, False=abort)
     proceed = interrupt({
+        "checkpoint": "duplicate_check",
+        "type": "approve_reject",
         "warning": "Wykryto podobny temat",
         "existing_title": match_info["existing_title"],
         "existing_date": match_info["existing_date"],
@@ -55,5 +57,5 @@ def duplicate_check_node(state: AuthorState) -> dict:
 
     return {
         "duplicate_match": match_info,
-        "duplicate_override": bool(proceed),
+        "duplicate_override": proceed.get("action") == "approve" if isinstance(proceed, dict) else bool(proceed),
     }

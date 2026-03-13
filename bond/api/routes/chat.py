@@ -41,7 +41,12 @@ async def chat_stream(req: ChatRequest, request: Request):
     async def generate():
         # Uruchomienie strumieniowania (wersja v2)
         events = graph.astream_events(
-            {"messages": [{"role": "user", "content": req.message}], "mode": req.mode},
+            {
+                "topic": req.message, 
+                "keywords": [],
+                "messages": [{"role": "user", "content": req.message}], 
+                "mode": req.mode
+            },
             config=config,
             version="v2",
         )
@@ -255,31 +260,39 @@ async def get_chat_history(thread_id: str, request: Request, state_snapshot=None
             stage = "writing" if "draft" in st else "idle"
     else:
         next_node = next_nodes[0]
-        if next_node == "researcher":
+        if next_node == "duplicate_check":
+            stage = "idle"
+        elif next_node == "researcher":
             stage = "research"
         elif next_node == "structure":
             stage = "structure"
         elif next_node == "checkpoint_1":
             stage = "structure"
-            # Odtworzenie stanu pauzy HITL
-            if "heading_structure" in st:
-                hitl_pause = {
-                    "checkpoint_id": "checkpoint_1",
-                    "type": "approve_reject",
-                }
         elif next_node == "writer":
             stage = "writing"
         elif next_node == "checkpoint_2":
             stage = "writing"
-            # Odtworzenie stanu pauzy HITL
-            if "draft" in st:
-                hitl_pause = {
-                    "checkpoint_id": "checkpoint_2",
-                    "type": "approve_reject",
-                    "iterations_remaining": 3 - st.get("cp2_iterations", 0)
-                }
         elif next_node == "save_metadata":
             stage = "done"
+
+    # Wyciąganie payloadu przerwania (interrupt) z zadań w LangGraph
+    if hasattr(state_snapshot, "tasks"):
+        for task in state_snapshot.tasks:
+            if hasattr(task, "interrupts") and task.interrupts:
+                for intr in task.interrupts:
+                    val = getattr(intr, "value", intr)
+                    if isinstance(val, dict):
+                        hitl_pause = {
+                            "checkpoint_id": val.get("checkpoint", task.name),
+                            "type": val.get("type", "approve_reject"),
+                        }
+                        for k, v in val.items():
+                            if k not in ["checkpoint", "type", "instructions"]:
+                                hitl_pause[k] = v
+                        
+                        # Fallback dla iteracji w checkpoint_2
+                        if task.name == "checkpoint_2" and "iterations_remaining" not in hitl_pause:
+                            hitl_pause["iterations_remaining"] = 3 - st.get("cp2_iterations", 0)
 
     return {
         "messages": messages,

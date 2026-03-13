@@ -25,6 +25,7 @@ def checkpoint_1_node(state: AuthorState) -> dict | Command:
     """
     user_response = interrupt({
         "checkpoint": "checkpoint_1",
+        "type": "approve_reject",
         "research_report": state.get("research_report", ""),
         "heading_structure": state.get("heading_structure", ""),
         "cp1_iterations": state.get("cp1_iterations", 0),
