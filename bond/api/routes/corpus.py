@@ -13,17 +13,27 @@ from bond.corpus.sources.file_source import extract_text
 from bond.corpus.ingestor import CorpusIngestor
 from bond.corpus.sources.url_source import ingest_blog
 from bond.corpus.sources.drive_source import ingest_drive_folder
-from bond.store.article_log import get_article_count, get_chunk_count
+from bond.store.article_log import get_article_count, get_chunk_count, get_articles
 from bond.corpus.smoke_test import run_smoke_test, DEFAULT_QUERY
 from bond.config import settings
 
 router = APIRouter(prefix="/api/corpus", tags=["corpus"])
 
 
+class DocumentInfo(BaseModel):
+    article_id: str
+    title: str
+    source_type: str
+    source_url: str
+    chunk_count: int
+    ingested_at: str | None = None
+
+
 class CorpusStatus(BaseModel):
     article_count: int
     chunk_count: int
     low_corpus_warning: str | None = None
+    documents: list[DocumentInfo] = []
 
 
 class SmokeTestResult(BaseModel):
@@ -142,10 +152,13 @@ async def corpus_status_endpoint():
             f"Recommend at least {settings.low_corpus_threshold} articles for reliable style retrieval."
         )
 
+    documents = [DocumentInfo(**doc) for doc in get_articles()]
+
     return CorpusStatus(
         article_count=article_count,
         chunk_count=chunk_count,
         low_corpus_warning=warning,
+        documents=documents,
     )
 
 

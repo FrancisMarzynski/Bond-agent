@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PlusCircle, MessageSquare } from "lucide-react";
 import { useSession } from "@/hooks/useSession";
+import { CorpusStatusPanel } from "@/components/CorpusStatusPanel";
 
 export function Sidebar() {
     const { threadId, sessions, newSession, switchSession } = useSession();
@@ -41,6 +42,7 @@ export function Sidebar() {
                     </p>
                 )}
             </nav>
+        <CorpusStatusPanel />
         </aside>
     );
 }

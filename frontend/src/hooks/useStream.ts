@@ -50,12 +50,12 @@ async function consumeStream(
                 }
                 try {
                     const parsed = JSON.parse(data);
-                    
+
                     // The backend emits events in the format: data: {"type": "<event_type>", "data": "<payload_string>"}
                     // Therefore, the SSE `event` header is missing, defaulting to "message".
                     // We must determine the true event type from `parsed.type`.
                     const eventType = parsed.type || event;
-                    
+
                     // Extract payload. If parsed.data is a string that looks like JSON, parse it.
                     let payload: any;
                     if (typeof parsed.data === "string") {
