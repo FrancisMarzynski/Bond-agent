@@ -31,6 +31,7 @@ def checkpoint_2_node(state: AuthorState) -> dict | Command:
     # Build interrupt payload
     interrupt_payload = {
         "checkpoint": "checkpoint_2",
+        "type": "approve_reject",
         "draft": state.get("draft", ""),
         "draft_validated": draft_validated,
         "cp2_iterations": cp2_iterations,
