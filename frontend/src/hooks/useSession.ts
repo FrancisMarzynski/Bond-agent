@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { useChatStore } from "@/store/chatStore";
+import { API_URL } from "@/config";
 
 const STORAGE_KEY = "bond_thread_id";
 const MODE_KEY = "bond_mode";
@@ -47,8 +48,6 @@ export function useSession() {
 
     const loadSessionHistory = useCallback(async (id: string) => {
         setIsRestoring(true);
-        const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-
         try {
             const res = await fetch(`${API_URL}/api/chat/history/${id}`);
             if (!res.ok) throw new Error("Sesja nie znaleziona na serwerze");

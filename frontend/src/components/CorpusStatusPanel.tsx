@@ -10,8 +10,7 @@ import {
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { CorpusAddForm } from "@/components/CorpusAddForm";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { API_URL } from "@/config";
 
 interface DocumentInfo {
   article_id: string;
@@ -96,7 +95,6 @@ export function CorpusStatusPanel() {
   }, []);
 
   function handleAddSuccess() {
-    setShowAddForm(false);
     fetchStatus();
   }
 

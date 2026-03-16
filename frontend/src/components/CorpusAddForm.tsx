@@ -1,5 +1,5 @@
 "use client";
-import { type DragEvent, type FormEvent, type ReactNode, useRef, useState } from "react";
+import { type DragEvent, type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import {
   FileText,
   Link2,
@@ -11,28 +11,10 @@ import {
   FileUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { API_URL, MAX_FILE_SIZE_BYTES } from "@/config";
 
 type Tab = "text" | "link" | "file";
 type SourceType = "own" | "external";
-
-interface IngestResult {
-  article_id: string;
-  title: string;
-  chunks_added: number;
-  source_type: string;
-  warnings: string[];
-}
-
-interface BatchIngestResult {
-  articles_ingested: number;
-  total_chunks: number;
-  source_type: string;
-  warnings: string[];
-}
-
-type SuccessResult = IngestResult | BatchIngestResult;
 
 interface CorpusAddFormProps {
   onSuccess: () => void;
@@ -81,7 +63,7 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
   const [activeTab, setActiveTab] = useState<Tab>("text");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<SuccessResult | null>(null);
+  const [justSucceeded, setJustSucceeded] = useState(false);
 
   // Text tab state
   const [textTitle, setTextTitle] = useState("");
@@ -99,9 +81,16 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-clear the inline success indicator after 2 s
+  useEffect(() => {
+    if (!justSucceeded) return;
+    const id = setTimeout(() => setJustSucceeded(false), 2000);
+    return () => clearTimeout(id);
+  }, [justSucceeded]);
+
   function resetState() {
     setError(null);
-    setSuccess(null);
+    setJustSucceeded(false);
     setLoading(false);
   }
 
@@ -118,7 +107,6 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
     }
     setLoading(true);
     setError(null);
-    setSuccess(null);
     try {
       const res = await fetch(`${API_URL}/api/corpus/ingest/text`, {
         method: "POST",
@@ -133,11 +121,11 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
         const detail = await res.json().catch(() => null);
         throw new Error(detail?.detail ?? `HTTP ${res.status}`);
       }
-      const data: IngestResult = await res.json();
-      setSuccess(data);
+      await res.json();
       setTextContent("");
       setTextTitle("");
-      setTimeout(onSuccess, 1500);
+      setJustSucceeded(true);
+      onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Błąd zapisu");
     } finally {
@@ -153,7 +141,6 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
     }
     setLoading(true);
     setError(null);
-    setSuccess(null);
     try {
       const res = await fetch(`${API_URL}/api/corpus/ingest/url`, {
         method: "POST",
@@ -167,10 +154,10 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
         const detail = await res.json().catch(() => null);
         throw new Error(detail?.detail ?? `HTTP ${res.status}`);
       }
-      const data: BatchIngestResult = await res.json();
-      setSuccess(data);
+      await res.json();
       setLinkUrl("");
-      setTimeout(onSuccess, 1500);
+      setJustSucceeded(true);
+      onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Błąd pobierania URL");
     } finally {
@@ -186,7 +173,6 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
     }
     setLoading(true);
     setError(null);
-    setSuccess(null);
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -201,11 +187,11 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
         const detail = await res.json().catch(() => null);
         throw new Error(detail?.detail ?? `HTTP ${res.status}`);
       }
-      const data: IngestResult = await res.json();
-      setSuccess(data);
+      await res.json();
       setFile(null);
       setFileTitle("");
-      setTimeout(onSuccess, 1500);
+      setJustSucceeded(true);
+      onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Błąd przesyłania pliku");
     } finally {
@@ -221,6 +207,12 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
   }
 
   function acceptFile(f: File) {
+    if (f.size > MAX_FILE_SIZE_BYTES) {
+      setError(
+        `Plik jest za duży (${(f.size / 1024 / 1024).toFixed(1)} MB). Maksymalny rozmiar: ${MAX_FILE_SIZE_BYTES / 1024 / 1024} MB.`
+      );
+      return;
+    }
     const allowed = [
       "application/pdf",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -241,23 +233,6 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
     { id: "link", label: "Link", icon: <Link2 className="h-3 w-3" /> },
     { id: "file", label: "Plik", icon: <Upload className="h-3 w-3" /> },
   ];
-
-  function SuccessBanner() {
-    if (!success) return null;
-    const isArticle = "article_id" in success;
-    const count = isArticle
-      ? (success as IngestResult).chunks_added
-      : (success as BatchIngestResult).total_chunks;
-    return (
-      <div className="flex items-start gap-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 px-2 py-1.5">
-        <CheckCircle2 className="h-3 w-3 text-emerald-500 mt-0.5 shrink-0" />
-        <p className="text-xs text-emerald-600 dark:text-emerald-400">
-          Dodano — {count}{" "}
-          {count === 1 ? "fragment" : "fragmentów"}
-        </p>
-      </div>
-    );
-  }
 
   function ErrorBanner() {
     if (!error) return null;
@@ -324,18 +299,17 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
             />
             <div className="flex items-center justify-between">
               <SourceTypeToggle value={textSource} onChange={setTextSource} />
-              <Button
-                type="submit"
-                size="sm"
-                disabled={loading || !!success}
-                className="h-7 text-xs"
-              >
-                {loading ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  "Dodaj"
+              <div className="flex items-center gap-2">
+                {justSucceeded && (
+                  <span className="flex items-center gap-1 text-xs text-emerald-500">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Dodano
+                  </span>
                 )}
-              </Button>
+                <Button type="submit" size="sm" disabled={loading} className="h-7 text-xs">
+                  {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Dodaj"}
+                </Button>
+              </div>
             </div>
           </form>
         )}
@@ -355,18 +329,17 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
             </p>
             <div className="flex items-center justify-between">
               <SourceTypeToggle value={linkSource} onChange={setLinkSource} />
-              <Button
-                type="submit"
-                size="sm"
-                disabled={loading || !!success}
-                className="h-7 text-xs"
-              >
-                {loading ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  "Pobierz"
+              <div className="flex items-center gap-2">
+                {justSucceeded && (
+                  <span className="flex items-center gap-1 text-xs text-emerald-500">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Pobrano
+                  </span>
                 )}
-              </Button>
+                <Button type="submit" size="sm" disabled={loading} className="h-7 text-xs">
+                  {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Pobierz"}
+                </Button>
+              </div>
             </div>
           </form>
         )}
@@ -433,24 +406,27 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
 
             <div className="flex items-center justify-between">
               <SourceTypeToggle value={fileSource} onChange={setFileSource} />
-              <Button
-                type="submit"
-                size="sm"
-                disabled={!file || loading || !!success}
-                className="h-7 text-xs"
-              >
-                {loading ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  "Prześlij"
+              <div className="flex items-center gap-2">
+                {justSucceeded && (
+                  <span className="flex items-center gap-1 text-xs text-emerald-500">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Wysłano
+                  </span>
                 )}
-              </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={!file || loading}
+                  className="h-7 text-xs"
+                >
+                  {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Prześlij"}
+                </Button>
+              </div>
             </div>
           </form>
         )}
 
-        {/* Feedback banners */}
-        <SuccessBanner />
+        {/* Error banner */}
         <ErrorBanner />
       </div>
     </div>

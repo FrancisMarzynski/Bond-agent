@@ -3,8 +3,7 @@ import { useEffect, useCallback } from "react";
 import { useChatStore } from "@/store/chatStore";
 import { SSEParser } from "@/lib/sse";
 import { z } from "zod";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { API_URL } from "@/config";
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 3000;
 
