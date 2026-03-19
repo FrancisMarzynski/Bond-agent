@@ -5,6 +5,8 @@ from langgraph.graph import END
 from bond.graph.state import AuthorState
 from bond.schemas import CheckpointResponse
 
+HARD_CAP_ITERATIONS = 10
+
 
 def checkpoint_1_node(state: AuthorState) -> dict | Command:
     """
@@ -23,12 +25,18 @@ def checkpoint_1_node(state: AuthorState) -> dict | Command:
     structure_node reads cp1_feedback on its next run.
     On abort: returns Command(goto=END), terminating the pipeline immediately.
     """
+    cp1_iterations = state.get("cp1_iterations", 0)
+
+    # Hard cap — abort pipeline when iteration limit is reached
+    if cp1_iterations >= HARD_CAP_ITERATIONS:
+        return Command(goto=END)
+
     user_response = interrupt({
         "checkpoint": "checkpoint_1",
         "type": "approve_reject",
         "research_report": state.get("research_report", ""),
         "heading_structure": state.get("heading_structure", ""),
-        "cp1_iterations": state.get("cp1_iterations", 0),
+        "cp1_iterations": cp1_iterations,
         "instructions": (
             'Wyślij {"action": "approve"}, '
             '{"action": "reject", "edited_structure": "# ...", "note": "..."} '

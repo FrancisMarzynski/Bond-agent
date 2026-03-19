@@ -24,23 +24,30 @@ const ErrorSchema = z.object({ message: z.string() });
 
 // ---------------------------------------------------------------------------
 // Internal stream consumer
+// Returns true when the stream ended cleanly (via 'done', 'hitl_pause', or 'error' event).
+// Returns false if the stream was cut unexpectedly (connection drop, server crash, etc.).
 // ---------------------------------------------------------------------------
 async function consumeStream(
     response: Response,
     signal: AbortSignal,
     onThreadId: (id: string) => void
-): Promise<void> {
+): Promise<boolean> {
     const store = useChatStore.getState();
     const parser = new SSEParser();
     const reader = response.body!
         .pipeThrough(new TextDecoderStream())
         .getReader();
 
+    let endedCleanly = false;
+
     try {
         while (true) {
-            if (signal.aborted) break;
+            if (signal.aborted) {
+                endedCleanly = true; // Intentional abort is a clean exit
+                break;
+            }
             const { value, done } = await reader.read();
-            if (done) break;
+            if (done) break; // Connection closed — endedCleanly determined by terminal event
             if (!value) continue;
 
             const events = parser.feed(value);
@@ -103,7 +110,8 @@ async function consumeStream(
                                 iterations_remaining: result.data.iterations_remaining,
                             });
                             store.setStreaming(false);
-                            return; // Stream ends at HITL pause
+                            endedCleanly = true;
+                            return endedCleanly; // Stream ends at HITL pause
                         }
                         case "error": {
                             // Payload could be a string or JSON depending on backend formatting
@@ -118,7 +126,8 @@ async function consumeStream(
                                 content: `Error: ${errorMessage}`,
                             });
                             store.setStreaming(false);
-                            return;
+                            endedCleanly = true; // Error is a terminal state — no retry
+                            return endedCleanly;
                         }
                         case "shadow_corrected_text": {
                             const text = typeof payload === "string" ? payload : (payload?.text || "");
@@ -148,7 +157,8 @@ async function consumeStream(
                         case "done":
                             store.setStage("done", "complete");
                             store.setStreaming(false);
-                            return;
+                            endedCleanly = true;
+                            return endedCleanly;
                         default:
                             if (process.env.NODE_ENV === "development") {
                                 console.warn(`Unhandled SSE event type: ${eventType}`, parsed);
@@ -165,6 +175,8 @@ async function consumeStream(
     } finally {
         reader.releaseLock(); // Always release to avoid memory leak
     }
+
+    return endedCleanly;
 }
 
 // ---------------------------------------------------------------------------
@@ -199,7 +211,11 @@ async function fetchWithRetry(
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            await consumeStream(response, signal, onThreadId);
+            const endedCleanly = await consumeStream(response, signal, onThreadId);
+            if (!endedCleanly) {
+                // Stream ended without a terminal event — treat as a recoverable disconnect
+                throw new Error("Połączenie SSE zerwane przed zakończeniem strumienia.");
+            }
             return; // Success — exit retry loop
         } catch (e: unknown) {
             if (e instanceof Error && e.name === "AbortError") {

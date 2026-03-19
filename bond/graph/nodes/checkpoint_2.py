@@ -6,6 +6,7 @@ from bond.graph.state import AuthorState
 from bond.schemas import CheckpointResponse
 
 SOFT_CAP_ITERATIONS = 3
+HARD_CAP_ITERATIONS = 10
 
 
 def checkpoint_2_node(state: AuthorState) -> dict | Command:
@@ -27,6 +28,10 @@ def checkpoint_2_node(state: AuthorState) -> dict | Command:
     """
     cp2_iterations = state.get("cp2_iterations", 0)
     draft_validated = state.get("draft_validated", True)
+
+    # Hard cap — abort pipeline when iteration limit is reached
+    if cp2_iterations >= HARD_CAP_ITERATIONS:
+        return Command(goto=END)
 
     # Build interrupt payload
     interrupt_payload = {
