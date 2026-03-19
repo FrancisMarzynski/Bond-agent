@@ -2,7 +2,13 @@
 import { create } from "zustand";
 
 interface ShadowStore {
-  // Stan trybu Shadow — zostanie rozbudowany w kolejnych fazach
+  originalText: string;
+  setOriginalText: (text: string) => void;
+  resetShadow: () => void;
 }
 
-export const useShadowStore = create<ShadowStore>(() => ({}));
+export const useShadowStore = create<ShadowStore>((set) => ({
+  originalText: "",
+  setOriginalText: (originalText) => set({ originalText }),
+  resetShadow: () => set({ originalText: "" }),
+}));
