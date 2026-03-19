@@ -52,6 +52,7 @@ class BondState(TypedDict):
     # --- Shadow mode fields ---
     original_text: Optional[str]                # submitted text for style analysis
     annotations: Optional[list[Annotation]]     # style corrections produced by shadow_annotate
+    shadow_corpus_fragments: Optional[list[dict]]  # raw corpus fragments from shadow_analyze → shadow_annotate
 
 
 # Backward-compat alias — all existing Phase 2 node imports use AuthorState without modification
