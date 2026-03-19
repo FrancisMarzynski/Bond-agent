@@ -100,6 +100,129 @@ Opcjonalne ustawienia (pokazano wartości domyślne):
 | `MIN_WORD_COUNT` | `800` | Minimalna liczba słów w wygenerowanym szkicu |
 | `DUPLICATE_THRESHOLD` | `0.85` | Próg podobieństwa cosinusowego przy wykrywaniu duplikatów |
 
+## Szybki start dla nowych deweloperów
+
+```bash
+# 1. Zainstaluj zależności
+uv sync
+
+# 2. Skopiuj konfigurację i uzupełnij klucze API
+cp .env.example .env
+# Edytuj .env — ustaw OPENAI_API_KEY
+
+# 3. Zainicjalizuj bazy danych i ChromaDB (jednorazowo)
+uv run python setup_db.py
+
+# 4. Uruchom backend
+uv run uvicorn bond.api.main:app --reload
+
+# 5. Uruchom frontend (w nowym terminalu)
+cd frontend && npm install && npm run dev
+```
+
+Backend dostępny pod `http://localhost:8000/docs`, frontend pod `http://localhost:3000`.
+
+> **Reset danych:** `uv run python setup_db.py --reset` (usuwa wszystkie bazy i ChromaDB — żąda potwierdzenia).
+
+---
+
+## Troubleshooting SSE
+
+Strumień SSE (`/api/chat/stream`, `/api/chat/resume`) używa `text/event-stream`. Poniżej typowe problemy i rozwiązania.
+
+### Eventy nie docierają / strumień "wisi"
+
+**Proxy lub nginx buforuje odpowiedź.**
+
+Backend wysyła nagłówek `X-Accel-Buffering: no` — wymagana konfiguracja nginx po stronie serwera:
+
+```nginx
+proxy_buffering off;
+proxy_cache off;
+proxy_read_timeout 300s;
+```
+
+Lokalnie (bez proxy) problem nie wystąpi. Na produkcji sprawdź logi nginx.
+
+---
+
+### `net::ERR_CONNECTION_REFUSED` przy starcie frontendu
+
+Frontend próbuje połączyć się z `http://localhost:8000` — backend musi działać wcześniej.
+
+```bash
+# Sprawdź czy backend działa
+curl http://localhost:8000/health
+```
+
+Jeśli zwraca błąd CORS (`blocked by CORS policy`), sprawdź zmienną `CORS_ORIGINS` w `.env`:
+
+```
+CORS_ORIGINS=["http://localhost:3000"]
+```
+
+---
+
+### Strumień SSE przerywa się po ~30 sekundach
+
+Niektóre proxy (nginx, Cloudflare) zamykają idle connections. Backend wysyła heartbeat co 15 sekund — event `{"type": "heartbeat", "data": "ping"}`. Frontend (`useStream.ts`) ignoruje te eventy.
+
+Jeśli mimo to połączenie pada, zwiększ timeout proxy:
+
+```nginx
+proxy_read_timeout 600s;
+```
+
+---
+
+### `hitl_pause` event nie dociera po zatrzymaniu grafu
+
+Backend emituje `hitl_pause` **po** zakończeniu strumienia `astream_events` — nie w jego trakcie. Kolejność emisji jest zawsze:
+
+```
+data: {"type": "stage", ...}
+data: {"type": "hitl_pause", ...}
+```
+
+Jeśli frontend nie odbiera tych eventów, sprawdź czy `EventSource` / `fetch` z `ReadableStream` są poprawnie zamknięte i otwarte ponownie po przerwie. Patrz: `frontend/src/hooks/useStream.ts`.
+
+---
+
+### `POST /api/chat/resume` zwraca błąd "Poprzednia akcja HITL jest jeszcze w toku"
+
+Backend używa per-thread locka (`asyncio.Lock`) — dwa kliknięcia "Zatwierdź" dla tego samego `thread_id` blokują się wzajemnie. Drugie żądanie jest odrzucane z tym komunikatem. Poczekaj na zakończenie aktualnego strumienia.
+
+---
+
+### Brak modelu `paraphrase-multilingual-MiniLM-L12-v2` przy starcie
+
+ChromaDB pobiera model z HuggingFace przy pierwszym uruchomieniu (ok. 500 MB). W środowisku bez internetu uruchom `setup_db.py` z dostępem do sieci wcześniej — model jest cache'owany lokalnie.
+
+```bash
+uv run python setup_db.py  # pobiera i zapisuje model
+```
+
+---
+
+### `KeyError: 'topic'` lub `KeyError: 'keywords'` w logach backendu
+
+Graf LangGraph wymaga pól `topic` i `keywords` w stanie wejściowym. Endpoint `/api/chat/stream` ustawia je automatycznie z `req.message`. Jeśli wywołujesz API bezpośrednio, wymagana struktura:
+
+```json
+{
+  "message": "Temat artykułu",
+  "mode": "author"
+}
+```
+
+---
+
+### Logi SSE w przeglądarce (DevTools)
+
+W Chrome/Firefox: **Network → filter: EventStream** → kliknij żądanie `/stream` lub `/resume` → zakładka **EventStream** pokazuje każdy event osobno.
+
+---
+
 ## Programowanie
 
 ```bash
