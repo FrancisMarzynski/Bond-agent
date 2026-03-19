@@ -7,6 +7,8 @@ class Annotation(TypedDict):
     original_span: str          # exact verbatim text to replace
     replacement: str            # corrected replacement text
     reason: str                 # brief explanation referencing author's style
+    start_index: int            # character start index of original_span in text (inclusive)
+    end_index: int              # character end index of original_span in text (exclusive)
 
 
 class BondState(TypedDict):
@@ -52,6 +54,7 @@ class BondState(TypedDict):
     # --- Shadow mode fields ---
     original_text: Optional[str]                # submitted text for style analysis
     annotations: Optional[list[Annotation]]     # style corrections produced by shadow_annotate
+    shadow_corrected_text: Optional[str]        # full text with all annotations applied
     shadow_corpus_fragments: Optional[list[dict]]  # raw corpus fragments from shadow_analyze → shadow_annotate
 
 
