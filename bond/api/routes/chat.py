@@ -112,7 +112,14 @@ async def chat_stream(req: ChatRequest, request: Request):
                  if history_state.get("hitlPause"):
                       yield f"data: {StreamEvent(type='hitl_pause', data=json.dumps(history_state['hitlPause'])).model_dump_json()}\n\n"
             else:
-                 # Jeśli nie ma następnych kroków i nie było błędu, wyślij 'done'
+                 # Shadow mode: emit corrected text and annotations before done
+                 st_values = state_snapshot.values
+                 shadow_corrected = st_values.get("shadow_corrected_text") or ""
+                 annotations = st_values.get("annotations") or []
+                 if shadow_corrected:
+                     yield f"data: {StreamEvent(type='shadow_corrected_text', data=json.dumps({'text': shadow_corrected})).model_dump_json()}\n\n"
+                 if annotations:
+                     yield f"data: {StreamEvent(type='annotations', data=json.dumps(annotations)).model_dump_json()}\n\n"
                  yield f"data: {StreamEvent(type='done', data='done').model_dump_json()}\n\n"
 
     return StreamingResponse(

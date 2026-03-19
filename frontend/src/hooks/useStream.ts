@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useCallback } from "react";
 import { useChatStore } from "@/store/chatStore";
+import { useShadowStore } from "@/store/shadowStore";
 import { SSEParser } from "@/lib/sse";
 import { z } from "zod";
 import { API_URL } from "@/config";
@@ -118,6 +119,19 @@ async function consumeStream(
                             });
                             store.setStreaming(false);
                             return;
+                        }
+                        case "shadow_corrected_text": {
+                            const text = typeof payload === "string" ? payload : (payload?.text || "");
+                            if (text) {
+                                store.setDraft(text);
+                                useShadowStore.getState().setShadowCorrectedText(text);
+                            }
+                            break;
+                        }
+                        case "annotations": {
+                            const annotations = Array.isArray(payload) ? payload : [];
+                            useShadowStore.getState().setAnnotations(annotations);
+                            break;
                         }
                         case "node_start":
                         case "node_end":

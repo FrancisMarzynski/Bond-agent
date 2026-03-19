@@ -1,21 +1,64 @@
 "use client";
-import { useState, useCallback } from "react";
-import { useShadowStore } from "@/store/shadowStore";
+import { useState, useCallback, useRef } from "react";
+import { useShadowStore, type Annotation } from "@/store/shadowStore";
 import { useChatStore } from "@/store/chatStore";
 import { useStream } from "@/hooks/useStream";
+import { AnnotationList } from "@/components/AnnotationList";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, RotateCcw, FileText, Pencil } from "lucide-react";
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+type Segment =
+  | { type: "text"; content: string }
+  | { type: "annotation"; annotation: Annotation; content: string };
+
+/**
+ * Split `text` into plain-text and annotation segments ordered by position.
+ * Non-overlapping annotations only — overlapping spans are skipped.
+ */
+function buildSegments(text: string, annotations: Annotation[]): Segment[] {
+  const sorted = [...annotations].sort((a, b) => a.start_index - b.start_index);
+  const segments: Segment[] = [];
+  let cursor = 0;
+
+  for (const ann of sorted) {
+    if (ann.start_index < cursor) continue; // skip overlapping
+    if (ann.start_index > cursor) {
+      segments.push({ type: "text", content: text.slice(cursor, ann.start_index) });
+    }
+    segments.push({
+      type: "annotation",
+      annotation: ann,
+      content: text.slice(ann.start_index, ann.end_index),
+    });
+    cursor = ann.end_index;
+  }
+
+  if (cursor < text.length) {
+    segments.push({ type: "text", content: text.slice(cursor) });
+  }
+
+  return segments;
+}
+
+// ---------------------------------------------------------------------------
 // ShadowPanel — two-phase UI:
 //   1. Input view  — user submits text for style analysis
-//   2. Comparison  — original (read-only) left / corrected (editable) right
+//   2. Comparison  — annotation sidebar | original (highlighted) | corrected (editable)
 // ---------------------------------------------------------------------------
 export function ShadowPanel() {
   const [inputText, setInputText] = useState("");
+  const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(null);
 
-  const { originalText, setOriginalText, resetShadow } = useShadowStore();
+  // Refs to annotation <mark> elements in the original text pane
+  const spanRefs = useRef<Record<string, HTMLElement | null>>({});
+
+  const { originalText, setOriginalText, resetShadow, annotations, shadowCorrectedText } =
+    useShadowStore();
   const { draft, setDraft, isStreaming, threadId, setThreadId, resetSession } = useChatStore();
   const { startStream } = useStream();
 
@@ -24,6 +67,8 @@ export function ShadowPanel() {
     if (!trimmed || isStreaming) return;
     resetSession();
     setOriginalText(trimmed);
+    spanRefs.current = {};
+    setActiveAnnotationId(null);
     await startStream(trimmed, threadId, "shadow", (id) => setThreadId(id));
   }, [inputText, isStreaming, resetSession, setOriginalText, startStream, threadId, setThreadId]);
 
@@ -31,10 +76,29 @@ export function ShadowPanel() {
     resetSession();
     resetShadow();
     setInputText("");
+    setActiveAnnotationId(null);
+    spanRefs.current = {};
   }, [resetSession, resetShadow]);
+
+  /** Scroll original-text pane to the annotation's highlighted span. */
+  const handleAnnotationClick = useCallback((ann: Annotation) => {
+    setActiveAnnotationId(ann.id);
+    const el = spanRefs.current[ann.id];
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, []);
+
+  /** Restore the full AI-corrected text (overwrite any manual edits). */
+  const handleApplyAll = useCallback(() => {
+    const target = shadowCorrectedText || draft;
+    if (target) setDraft(target);
+  }, [shadowCorrectedText, draft, setDraft]);
 
   // ── Comparison view ──────────────────────────────────────────────────────
   if (originalText) {
+    const segments = buildSegments(originalText, annotations);
+
     return (
       <div className="flex flex-col h-full bg-background overflow-hidden">
         {/* Status bar */}
@@ -45,7 +109,10 @@ export function ShadowPanel() {
               <span className="text-xs text-muted-foreground">Analizuję tekst...</span>
             </>
           ) : (
-            <span className="text-xs text-muted-foreground">Analiza zakończona</span>
+            <span className="text-xs text-muted-foreground">
+              Analiza zakończona
+              {annotations.length > 0 && ` · ${annotations.length} adnotacji`}
+            </span>
           )}
           <Button
             variant="ghost"
@@ -59,10 +126,19 @@ export function ShadowPanel() {
           </Button>
         </div>
 
-        {/* Two-column layout */}
-        <div className="flex flex-1 min-h-0 overflow-hidden flex-col md:flex-row">
-          {/* Left: Original text — read-only */}
-          <div className="w-full md:w-1/2 flex flex-col border-r overflow-hidden shrink-0">
+        {/* Three-column layout */}
+        <div className="flex flex-1 min-h-0 overflow-hidden">
+          {/* Column 1: Annotation list sidebar */}
+          <AnnotationList
+            annotations={annotations}
+            activeId={activeAnnotationId}
+            onAnnotationClick={handleAnnotationClick}
+            onApplyAll={handleApplyAll}
+            isStreaming={isStreaming}
+          />
+
+          {/* Column 2: Original text with highlighted annotation spans */}
+          <div className="flex-1 flex flex-col border-r overflow-hidden min-w-0">
             <div className="flex items-center gap-2 px-4 py-2 border-b bg-muted/10 shrink-0">
               <FileText className="h-3.5 w-3.5 text-muted-foreground" />
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -71,12 +147,37 @@ export function ShadowPanel() {
             </div>
             <div className="flex-1 overflow-y-auto p-4">
               <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-                {originalText}
+                {annotations.length > 0
+                  ? segments.map((seg, i) => {
+                      if (seg.type === "text") {
+                        return <span key={i}>{seg.content}</span>;
+                      }
+                      const isActive = activeAnnotationId === seg.annotation.id;
+                      return (
+                        <mark
+                          key={i}
+                          ref={(el) => {
+                            spanRefs.current[seg.annotation.id] = el;
+                          }}
+                          onClick={() => handleAnnotationClick(seg.annotation)}
+                          title={seg.annotation.reason}
+                          className={[
+                            "rounded cursor-pointer transition-colors duration-150",
+                            isActive
+                              ? "bg-amber-300 dark:bg-amber-600"
+                              : "bg-amber-100 dark:bg-amber-900/40 hover:bg-amber-200 dark:hover:bg-amber-800/60",
+                          ].join(" ")}
+                        >
+                          {seg.content}
+                        </mark>
+                      );
+                    })
+                  : originalText}
               </p>
             </div>
           </div>
 
-          {/* Right: Corrected text — editable after streaming */}
+          {/* Column 3: Corrected text — editable after streaming */}
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-muted/10">
             <div className="flex items-center gap-2 px-4 py-2 border-b bg-muted/10 shrink-0">
               <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
@@ -91,7 +192,7 @@ export function ShadowPanel() {
             </div>
             <div className="flex-1 overflow-hidden p-4">
               {isStreaming && !draft ? (
-                /* Skeleton while waiting for first tokens */
+                /* Skeleton while waiting for corrected text */
                 <div className="space-y-2.5">
                   <div className="h-3.5 bg-muted/50 rounded animate-pulse w-3/4" />
                   <div className="h-3.5 bg-muted/50 rounded animate-pulse w-full" />
