@@ -1,10 +1,21 @@
-from typing import Optional, TypedDict
+from typing import Literal, NotRequired, Optional, TypedDict
 
 
-class AuthorState(TypedDict):
-    # --- Input ---
-    topic: str
-    keywords: list[str]
+class Annotation(TypedDict):
+    """Single style/grammar annotation produced by shadow_annotate_node."""
+    id: str                     # stable unique ID, e.g. "ann_001"
+    original_span: str          # exact verbatim text to replace
+    replacement: str            # corrected replacement text
+    reason: str                 # brief explanation referencing author's style
+
+
+class BondState(TypedDict):
+    # --- Routing ---
+    mode: NotRequired[Literal["author", "shadow"]]  # omit → defaults to "author" branch
+
+    # --- Author mode input ---
+    topic: Optional[str]
+    keywords: Optional[list[str]]
     thread_id: str
     context_dynamic: Optional[str]  # run-specific context supplied at pipeline start
 
@@ -37,3 +48,11 @@ class AuthorState(TypedDict):
 
     # --- Output ---
     metadata_saved: bool
+
+    # --- Shadow mode fields ---
+    original_text: Optional[str]                # submitted text for style analysis
+    annotations: Optional[list[Annotation]]     # style corrections produced by shadow_annotate
+
+
+# Backward-compat alias — all existing Phase 2 node imports use AuthorState without modification
+AuthorState = BondState

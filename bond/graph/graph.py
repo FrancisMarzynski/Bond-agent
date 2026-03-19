@@ -1,9 +1,10 @@
 import os
 from contextlib import asynccontextmanager
+from typing import Literal
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
-from bond.graph.state import AuthorState
+from bond.graph.state import BondState
 from bond.config import settings
 from bond.graph.nodes.duplicate_check import duplicate_check_node as _duplicate_check_node
 from bond.graph.nodes.researcher import researcher_node as _researcher_node
@@ -12,10 +13,12 @@ from bond.graph.nodes.checkpoint_1 import checkpoint_1_node as _checkpoint_1_nod
 from bond.graph.nodes.writer import writer_node as _writer_node
 from bond.graph.nodes.checkpoint_2 import checkpoint_2_node as _checkpoint_2_node
 from bond.graph.nodes.save_metadata import save_metadata_node as _save_metadata_node
+from bond.graph.nodes.shadow_analyze import shadow_analyze_node as _shadow_analyze_node
+from bond.graph.nodes.shadow_annotate import shadow_annotate_node as _shadow_annotate_node
 
 
 # ---------------------------------------------------------------------------
-# Dynamic node loader — all 7 real implementations
+# Dynamic node loader — author mode nodes (7) + shadow mode nodes (2)
 # ---------------------------------------------------------------------------
 
 _node_registry: dict = {
@@ -26,6 +29,8 @@ _node_registry: dict = {
     "writer": _writer_node,
     "checkpoint_2": _checkpoint_2_node,
     "save_metadata": _save_metadata_node,
+    "shadow_analyze": _shadow_analyze_node,
+    "shadow_annotate": _shadow_annotate_node,
 }
 
 
@@ -38,21 +43,28 @@ def register_node(name: str, fn) -> None:
 # Routing functions (routing logic is stable — do not change in later plans)
 # ---------------------------------------------------------------------------
 
-def _route_after_duplicate_check(state: AuthorState) -> str:
+def route_mode(state: BondState) -> Literal["duplicate_check", "shadow_analyze"]:
+    """Route to Author or Shadow branch based on the 'mode' field at START."""
+    if state.get("mode") == "shadow":
+        return "shadow_analyze"
+    return "duplicate_check"
+
+
+def _route_after_duplicate_check(state: BondState) -> str:
     """Route to researcher unless user explicitly aborted the duplicate warning."""
     if state.get("duplicate_override") is False:
         return END
     return "researcher"
 
 
-def _route_after_cp1(state: AuthorState) -> str:
+def _route_after_cp1(state: BondState) -> str:
     """Loop back to structure node on rejection; advance to writer on approval."""
     if state.get("cp1_approved"):
         return "writer"
     return "structure"
 
 
-def _route_after_cp2(state: AuthorState) -> str:
+def _route_after_cp2(state: BondState) -> str:
     """Loop back to writer on rejection (soft cap enforced inside checkpoint_2 node);
     advance to save_metadata on approval."""
     if state.get("cp2_approved"):
@@ -65,14 +77,18 @@ def _route_after_cp2(state: AuthorState) -> str:
 # ---------------------------------------------------------------------------
 
 def build_author_graph() -> StateGraph:
-    builder = StateGraph(AuthorState)
+    builder = StateGraph(BondState)
 
-    # Register nodes (uses current registry — stubs until Plans 02-04 run)
+    # Register nodes (uses current registry)
     for name, fn in _node_registry.items():
         builder.add_node(name, fn)
 
-    # Edges
-    builder.add_edge(START, "duplicate_check")
+    # START → dual-branch routing (Author or Shadow)
+    builder.add_conditional_edges(
+        START,
+        route_mode,
+        {"duplicate_check": "duplicate_check", "shadow_analyze": "shadow_analyze"},
+    )
     builder.add_conditional_edges(
         "duplicate_check",
         _route_after_duplicate_check,
@@ -93,7 +109,15 @@ def build_author_graph() -> StateGraph:
     )
     builder.add_edge("save_metadata", END)
 
+    # Shadow branch edges (stubs — Plan 04-02 adds shadow_checkpoint between annotate and END)
+    builder.add_edge("shadow_analyze", "shadow_annotate")
+    builder.add_edge("shadow_annotate", END)
+
     return builder
+
+
+# Backward-compat alias
+build_bond_graph = build_author_graph
 
 
 @asynccontextmanager
