@@ -181,6 +181,9 @@ async def chat_stream(req: ChatRequest, request: Request):
                     )
             else:
                 st_values = state_snapshot.values
+                hard_cap_msg = st_values.get("hard_cap_message")
+                if hard_cap_msg:
+                    yield f"data: {StreamEvent(type='system_alert', data=hard_cap_msg).model_dump_json()}\n\n"
                 shadow_corrected = st_values.get("shadow_corrected_text") or ""
                 annotations = st_values.get("annotations") or []
                 if shadow_corrected:
@@ -261,6 +264,9 @@ async def chat_resume(req: ResumeRequest, request: Request):
                             f"data: {StreamEvent(type='hitl_pause', data=json.dumps(history_state['hitlPause'])).model_dump_json()}\n\n"
                         )
                 else:
+                    hard_cap_msg = state_snapshot.values.get("hard_cap_message")
+                    if hard_cap_msg:
+                        yield f"data: {StreamEvent(type='system_alert', data=hard_cap_msg).model_dump_json()}\n\n"
                     yield f"data: {StreamEvent(type='done', data='done').model_dump_json()}\n\n"
 
     return StreamingResponse(

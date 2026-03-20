@@ -142,6 +142,13 @@ async function consumeStream(
                             useShadowStore.getState().setAnnotations(annotations);
                             break;
                         }
+                        case "system_alert": {
+                            const alertMessage = typeof payload === "string" ? payload : (payload?.message || payload?.data || "");
+                            if (alertMessage) {
+                                store.setSystemAlert(alertMessage);
+                            }
+                            break;
+                        }
                         case "node_start":
                         case "node_end":
                             // Informational lifecycle events — no store integration yet.

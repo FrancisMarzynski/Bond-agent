@@ -57,6 +57,9 @@ class BondState(TypedDict):
     shadow_corrected_text: Optional[str]        # full text with all annotations applied
     shadow_corpus_fragments: Optional[list[dict]]  # raw corpus fragments from shadow_analyze → shadow_annotate
 
+    # --- Hard cap notification ---
+    hard_cap_message: NotRequired[Optional[str]]  # set when pipeline aborts due to HARD_CAP_ITERATIONS
+
 
 # Backward-compat alias — all existing Phase 2 node imports use AuthorState without modification
 AuthorState = BondState

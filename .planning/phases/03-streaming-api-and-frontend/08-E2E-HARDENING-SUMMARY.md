@@ -1,6 +1,6 @@
 # 08-E2E-HARDENING Podsumowanie: Zabezpieczenia end-to-end i obsługa błędów
 
-**Data ukończenia:** 2026-03-19
+**Data ukończenia:** 2026-03-19 (poprawka: 2026-03-20)
 **Faza:** 03 — Streaming API i Frontend
 **Plan:** 08 — End-to-End Hardening i Error Handling
 **Status:** ✅ Zakończone
@@ -17,6 +17,7 @@ Wzmocnienie odporności systemu na przypadki brzegowe i błędy operacyjne:
 - Mutex per-wątek w `/api/chat/resume` eliminuje race condition przy szybkim klikaniu "Odrzuć".
 - Frontend wykrywa zerwanie połączenia SSE i ponawia próbę lub wyświetla komunikat błędu.
 - Poprawiony typ `StreamEvent` — dodano brakujące wartości `shadow_corrected_text` i `annotations`.
+- **[Poprawka]** Przy uderzeniu w HARD_CAP pipeline wyświetla teraz jasny komunikat zamiast cichego zamknięcia (`system_alert` SSE + `hard_cap_message` w stanie grafu).
 
 ---
 
@@ -80,13 +81,17 @@ def checkpoint_1_node(state: AuthorState) -> dict | Command:
 
     # Hard cap — abort pipeline when iteration limit is reached
     if cp1_iterations >= HARD_CAP_ITERATIONS:
-        return Command(goto=END)
+        return Command(
+            goto=END,
+            update={"hard_cap_message": "Przekroczono limit poprawek struktury artykułu. Artykuł został wygenerowany w obecnej formie."},
+        )
 
     user_response = interrupt({...})
 ```
 
 **Zachowanie:** Po 10 odrzuceniach przez użytkownika checkpoint_1 automatycznie kończy pipeline
-przez `Command(goto=END)` — bez wyświetlania kolejnego okna HITL.
+przez `Command(goto=END, update={"hard_cap_message": "..."})` — zapisuje powód w stanie grafu
+i bez wyświetlania kolejnego okna HITL.
 
 ---
 
@@ -103,14 +108,17 @@ def checkpoint_2_node(state: AuthorState) -> dict | Command:
 
     # Hard cap — abort pipeline when iteration limit is reached
     if cp2_iterations >= HARD_CAP_ITERATIONS:
-        return Command(goto=END)
+        return Command(
+            goto=END,
+            update={"hard_cap_message": "Przekroczono limit poprawek artykułu. Artykuł został wygenerowany w obecnej formie."},
+        )
 
     # ... soft cap warning przy >= 3, interrupt(), walidacja odpowiedzi
 ```
 
 **Hierarchia limitów:**
 - Iteracja 3: soft warning (użytkownik widzi ostrzeżenie, może kontynuować)
-- Iteracja 10: hard abort (pipeline kończy się automatycznie)
+- Iteracja 10: hard abort (pipeline kończy się automatycznie, `hard_cap_message` zapisane w stanie)
 
 ---
 
@@ -313,7 +321,7 @@ zwraca SSE error zamiast czekać (co mogłoby prowadzić do nagromadzenia reques
 | Parametr | Wartość | Zachowanie |
 |----------|---------|------------|
 | `SOFT_CAP_ITERATIONS` (cp2) | 3 | Warning w payloadzie HITL — użytkownik może kontynuować |
-| `HARD_CAP_ITERATIONS` (cp1, cp2) | 10 | Automatyczny abort przez `Command(goto=END)` |
+| `HARD_CAP_ITERATIONS` (cp1, cp2) | 10 | Automatyczny abort przez `Command(goto=END, update={"hard_cap_message": "..."})` → SSE `system_alert` |
 | `_RECURSION_LIMIT` (LangGraph) | 50 | `GraphRecursionError` → SSE error event |
 
 ---
@@ -321,8 +329,10 @@ zwraca SSE error zamiast czekać (co mogłoby prowadzić do nagromadzenia reques
 ## Weryfikacja
 
 - `bond/schemas.py`: `StreamEvent(type="shadow_corrected_text", data="...")` — nie rzuca `ValidationError`
-- `checkpoint_1_node`: przy `cp1_iterations = 10` zwraca `Command(goto=END)` bez `interrupt()`
-- `checkpoint_2_node`: przy `cp2_iterations = 10` zwraca `Command(goto=END)` bez `interrupt()`
+- `checkpoint_1_node`: przy `cp1_iterations = 10` zwraca `Command(goto=END, update={"hard_cap_message": "..."})` bez `interrupt()`
+- `checkpoint_2_node`: przy `cp2_iterations = 10` zwraca `Command(goto=END, update={"hard_cap_message": "..."})` bez `interrupt()`
+- `/api/chat/stream` + `/api/chat/resume`: po zakończeniu pipeline sprawdza `hard_cap_message` w stanie → emituje SSE `system_alert` przed `done`
+- Frontend `consumeStream`: zdarzenie `system_alert` wywołuje `store.setSystemAlert(message)` bez przerywania strumienia
 - `/api/chat/stream`: tekst > 10 000 znaków → HTTP 422 przed uruchomieniem grafu
 - `/api/chat/resume`: drugi równoległy request → SSE `error` event natychmiast
 - `consumeStream`: strumień zakończony bez `done` → `fetchWithRetry` ponawia próbę

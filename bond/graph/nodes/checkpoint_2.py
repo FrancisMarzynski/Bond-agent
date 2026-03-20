@@ -31,7 +31,15 @@ def checkpoint_2_node(state: AuthorState) -> dict | Command:
 
     # Hard cap — abort pipeline when iteration limit is reached
     if cp2_iterations >= HARD_CAP_ITERATIONS:
-        return Command(goto=END)
+        return Command(
+            goto=END,
+            update={
+                "hard_cap_message": (
+                    "Przekroczono limit poprawek artykułu. "
+                    "Artykuł został wygenerowany w obecnej formie."
+                )
+            },
+        )
 
     # Build interrupt payload
     interrupt_payload = {
