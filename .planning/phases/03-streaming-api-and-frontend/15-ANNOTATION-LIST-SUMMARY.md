@@ -19,7 +19,7 @@ Sidebar z listą kart adnotacji:
 - **Nagłówek:** etykieta "Adnotacje (N)" + przycisk "Zastosuj" (widoczny tylko gdy są adnotacje).
 - **Karta adnotacji:** badge z ID (`ann_001`, ...) + reason (max 3 linie, `line-clamp-3`) + diff `original_span → replacement` (z ikoną `ChevronRight`).
 - **Aktywna karta:** podświetlona kolorem `bg-amber-50 border-amber-300` (dark: `amber-900/20`).
-- **Skeleton loaders:** 3 pulsujące bloki gdy `isStreaming && annotations.length === 0`.
+- **Skeleton loaders:** 3 pulsujące bloki gdy `isStreaming && annotations.length === 0`. Szerokość szkieletów ustawiana przez `style={{ width: "N%" }}` zamiast dynamicznych klas Tailwind (które PurgeCSS pomijałby przy template literal).
 - **Stan pusty:** komunikat "Brak adnotacji stylistycznych" po zakończeniu bez wyników.
 - Szerokość: `w-64`, `border-r`, scroll wewnętrzny.
 
@@ -28,7 +28,7 @@ Rozbudowany z 2-kolumnowego do 3-kolumnowego układu:
 - **Kolumna 1 (lewa):** `<AnnotationList>` — sidebar adnotacji.
 - **Kolumna 2 (środkowa):** Tekst oryginalny z podświetlonymi spanami adnotacji (`<mark>`). Kliknięcie marka aktywuje kartę i odwrotnie.
 - **Kolumna 3 (prawa):** Edytowalny textarea z poprawioną wersją (bez zmian w logice).
-- **`buildSegments()`:** helper dzielący tekst na segmenty `text` i `annotation` wg `start_index`/`end_index` — obsługuje nieaktualne/nakładające się spany.
+- **`buildSegments()`:** helper dzielący tekst na segmenty `text` i `annotation` wg `start_index`/`end_index` — obsługuje nieaktualne/nakładające się spany. Wynik memoizowany przez `useMemo([originalText, annotations])` — nie przelicza się przy każdej zmianie `draft` podczas streamingu.
 - **`spanRefs`:** `useRef<Record<string, HTMLElement | null>>` mapujący `ann.id → <mark>` — umożliwia `scrollIntoView` przy kliknięciu karty.
 - **Pasek statusu:** wyświetla `"Analiza zakończona · N adnotacji"` po zakończeniu.
 - Reset (`handleReset`) czyści `activeAnnotationId` i `spanRefs`.

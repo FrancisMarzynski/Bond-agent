@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 import { useShadowStore, type Annotation } from "@/store/shadowStore";
 import { useChatStore } from "@/store/chatStore";
 import { useStream } from "@/hooks/useStream";
@@ -95,9 +95,15 @@ export function ShadowPanel() {
     if (target) setDraft(target);
   }, [shadowCorrectedText, draft, setDraft]);
 
+  // Memoize segments — recalculate only when originalText or annotations change,
+  // not on every streaming draft update.
+  const segments = useMemo(
+    () => buildSegments(originalText, annotations),
+    [originalText, annotations]
+  );
+
   // ── Comparison view ──────────────────────────────────────────────────────
   if (originalText) {
-    const segments = buildSegments(originalText, annotations);
 
     return (
       <div className="flex flex-col h-full bg-background overflow-hidden">

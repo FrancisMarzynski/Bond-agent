@@ -58,7 +58,7 @@ export function AnnotationList({
           <>
             {[80, 64, 72].map((w) => (
               <div key={w} className="rounded-lg border p-3 space-y-2">
-                <div className={`h-2.5 bg-muted/50 rounded animate-pulse w-[${w}%]`} />
+                <div className="h-2.5 bg-muted/50 rounded animate-pulse" style={{ width: `${w}%` }} />
                 <div className="h-2 bg-muted/40 rounded animate-pulse w-full" />
                 <div className="h-2 bg-muted/40 rounded animate-pulse w-3/4" />
               </div>
