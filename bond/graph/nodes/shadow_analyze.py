@@ -1,7 +1,8 @@
 """Shadow analyze node — RAG corpus retrieval + comparative style analysis.
 
 Responsibility:
-1. Retrieve 3-5 most relevant fragments from ChromaDB corpus (two-pass: own texts preferred).
+1. Retrieve up to n most relevant fragments from ChromaDB corpus via two-pass retriever
+   (own_text preferred; external_blogger fallback when no own_text exists).
 2. Run LLM comparative analysis identifying tone, punctuation, and vocabulary differences.
 3. Store analysis in state["research_report"] (re-use of existing BondState field).
 4. Pass raw fragments in state["shadow_corpus_fragments"] for downstream shadow_annotate.
@@ -16,69 +17,30 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
 from bond.config import settings
+from bond.corpus.retriever import two_pass_retrieve
 from bond.graph.state import BondState
-from bond.store.chroma import get_or_create_corpus_collection
 
 logger = logging.getLogger(__name__)
 
-_MIN_OWN_FRAGMENTS = 3
 
 # ---------------------------------------------------------------------------
-# Corpus retrieval (two-pass: own texts → fallback to all)
+# Corpus retrieval — delegated to bond.corpus.retriever
 # ---------------------------------------------------------------------------
 
 def _retrieve_corpus_fragments(query_text: str, n: int) -> list[dict[str, Any]]:
-    """Two-pass ChromaDB retrieval.
+    """Retrieve corpus fragments via two-pass retriever.
 
-    Pass 1: source_type='own' fragments only (same author, strongest style signal).
-    Pass 2: all types — used when own-text pool yields fewer than _MIN_OWN_FRAGMENTS results.
+    Delegates to :func:`bond.corpus.retriever.two_pass_retrieve`:
+      Pass 1 — source_type='own' (own_text, strongest style signal).
+      Pass 2 — source_type='external' (external_blogger, fallback when no own_text).
+      Re-ranker — own_text fragments are always placed before external_blogger.
 
-    Returns a list of dicts with at least a 'text' key and any stored metadata fields.
+    Returns a list of dicts with at least a 'text' key and stored metadata fields.
     """
-    collection = get_or_create_corpus_collection()
-    if collection is None or collection.count() == 0:
+    fragments = two_pass_retrieve(query_text, n=n)
+    if not fragments:
         logger.warning("shadow_analyze: corpus is empty — no style fragments available.")
-        return []
-
-    safe_n = min(n, collection.count())
-
-    # Pass 1: own-text fragments
-    own_docs: list[str] = []
-    own_metas: list[dict] = []
-    try:
-        own_results = collection.query(
-            query_texts=[query_text],
-            n_results=safe_n,
-            where={"source_type": "own"},
-            include=["documents", "metadatas"],
-        )
-        own_docs = own_results["documents"][0] if own_results["documents"] else []
-        own_metas = own_results["metadatas"][0] if own_results["metadatas"] else []
-    except Exception as exc:
-        logger.warning("shadow_analyze: own-text pass failed: %s", exc)
-
-    if len(own_docs) >= _MIN_OWN_FRAGMENTS:
-        return [
-            {"text": doc, "source_type": "own", **meta}
-            for doc, meta in zip(own_docs[:n], own_metas[:n])
-        ]
-
-    # Pass 2: all source types as fallback
-    try:
-        all_results = collection.query(
-            query_texts=[query_text],
-            n_results=safe_n,
-            include=["documents", "metadatas"],
-        )
-        all_docs = all_results["documents"][0] if all_results["documents"] else []
-        all_metas = all_results["metadatas"][0] if all_results["metadatas"] else []
-        return [
-            {"text": doc, **meta}
-            for doc, meta in zip(all_docs[:n], all_metas[:n])
-        ]
-    except Exception as exc:
-        logger.warning("shadow_analyze: all-types pass failed: %s", exc)
-        return []
+    return fragments
 
 
 # ---------------------------------------------------------------------------
@@ -132,7 +94,9 @@ def shadow_analyze_node(state: BondState) -> dict:
     """Retrieve style corpus fragments and produce comparative analysis.
 
     AC compliance:
-    - Retrieves 3-5 most relevant corpus fragments (two-pass: own → all).
+    - Retrieves up to rag_top_k corpus fragments via two-pass retriever:
+        own_text (source_type='own') first; external_blogger fallback if none found.
+    - Re-ranker guarantees own_text fragments precede external_blogger in the prompt.
     - Prompt enforces comparative analysis across tone, punctuation, vocabulary.
     - Analysis stored in state["research_report"] (re-use of existing BondState field).
     - Raw fragments stored in state["shadow_corpus_fragments"] for shadow_annotate.

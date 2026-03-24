@@ -1,4 +1,9 @@
-from bond.store.chroma import get_corpus_collection
+"""Corpus smoke test — exercises two-pass retrieval with re-ranker.
+
+Uses :func:`bond.corpus.retriever.two_pass_retrieve` directly so that the
+smoke test validates exactly the same code path as the production pipeline.
+"""
+from bond.corpus.retriever import two_pass_retrieve
 from bond.config import settings
 
 DEFAULT_QUERY = "styl pisania storytelling angażujące treści"
@@ -8,64 +13,32 @@ def run_smoke_test(
     query: str = DEFAULT_QUERY,
     n_results: int | None = None,
 ) -> list[dict]:
-    """
-    Query ChromaDB using two-pass retrieval (own text preferred, external fills remainder).
-    Returns ranked results with cosine similarity scores and source metadata.
+    """Run two-pass retrieval smoke test.
 
-    Returns empty list with warning print if corpus is empty.
+    Returns ranked results with cosine similarity scores and source metadata.
+    Own_text fragments are guaranteed to appear before external_blogger fragments
+    (enforced by the re-ranker inside two_pass_retrieve).
+
+    Returns empty list with a warning if the corpus is empty.
     """
     if n_results is None:
         n_results = settings.rag_top_k
 
-    collection = get_corpus_collection()
-    if collection.count() == 0:
+    fragments = two_pass_retrieve(query, n=n_results)
+
+    if not fragments:
         print("WARN: Corpus is empty — smoke test returned no results")
         return []
 
-    # Pass 1: own text
-    own_results = _query(collection, query, n_results, source_type="own")
-    own_count = len(own_results)
-
-    if own_count >= n_results:
-        return own_results
-
-    # Pass 2: fill remainder from external
-    fill_count = n_results - own_count
-    ext_results = _query(collection, query, fill_count, source_type="external")
-
-    combined = own_results + ext_results
-    # Re-rank combined by score descending (own results already preferred)
-    combined.sort(key=lambda x: x["score"], reverse=True)
-    return combined
-
-
-def _query(collection, query: str, n: int, source_type: str) -> list[dict]:
-    """Query ChromaDB filtered by source_type. Returns [] if no results."""
-    try:
-        results = collection.query(
-            query_texts=[query],
-            n_results=n,
-            where={"source_type": source_type},
-            include=["documents", "metadatas", "distances"],
-        )
-    except Exception as e:
-        # ChromaDB raises if n_results > collection size for a filtered query
-        # Retry with n_results=1 as minimum to check availability
-        print(f"WARN: Retrieval for source_type={source_type} failed ({e}) — returning empty")
-        return []
-
-    docs = results.get("documents", [[]])[0]
-    metas = results.get("metadatas", [[]])[0]
-    distances = results.get("distances", [[]])[0]
-
     output = []
-    for rank, (doc, meta, dist) in enumerate(zip(docs, metas, distances), start=1):
+    for rank, frag in enumerate(fragments, start=1):
         output.append({
             "rank": rank,
-            "score": round(1.0 - dist, 4),  # cosine distance → similarity
-            "source_type": meta.get("source_type", "unknown"),
-            "article_title": meta.get("article_title", "unknown"),
-            "source_url": meta.get("source_url", ""),
-            "fragment": doc[:300] + ("..." if len(doc) > 300 else ""),
+            "score": frag.get("score", 0.0),
+            "source_type": frag.get("source_type", "unknown"),
+            "article_title": frag.get("article_title", "unknown"),
+            "source_url": frag.get("source_url", ""),
+            "fragment": frag["text"][:300] + ("..." if len(frag["text"]) > 300 else ""),
         })
+
     return output
