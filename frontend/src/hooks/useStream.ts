@@ -19,6 +19,11 @@ const HitlPauseSchema = z.object({
     checkpoint_id: z.string(),
     type: z.string(),
     iterations_remaining: z.number().optional(),
+    // Duplicate check fields
+    warning: z.string().optional(),
+    existing_title: z.string().optional(),
+    existing_date: z.string().optional(),
+    similarity_score: z.number().optional(),
 });
 const ErrorSchema = z.object({ message: z.string() });
 
@@ -108,6 +113,10 @@ async function consumeStream(
                                 checkpoint_id: result.data.checkpoint_id,
                                 type: result.data.type,
                                 iterations_remaining: result.data.iterations_remaining,
+                                warning: result.data.warning,
+                                existing_title: result.data.existing_title,
+                                existing_date: result.data.existing_date,
+                                similarity_score: result.data.similarity_score,
                             });
                             store.setStreaming(false);
                             endedCleanly = true;

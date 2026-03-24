@@ -5,7 +5,7 @@ import { useSession } from "@/hooks/useSession";
 import { useStream } from "@/hooks/useStream";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle2, XCircle, Database, X } from "lucide-react";
+import { CheckCircle2, XCircle, Database, X, AlertTriangle } from "lucide-react";
 
 export function CheckpointPanel() {
   const { hitlPause, isStreaming } = useChatStore();
@@ -17,10 +17,23 @@ export function CheckpointPanel() {
 
   if (!hitlPause || isStreaming) return null;
 
+  const isDuplicateCheck = hitlPause.checkpoint_id === "duplicate_check";
   const isCheckpoint2 = hitlPause.checkpoint_id === "cp2" ||
     hitlPause.checkpoint_id === "checkpoint_2";
   const iterationsRemaining = hitlPause.iterations_remaining;
 
+  // --- Duplicate check handlers ---
+  const handleDuplicateContinue = async () => {
+    if (!threadId) return;
+    await resumeStream(threadId, "approve", null, persistThreadId);
+  };
+
+  const handleDuplicateAbort = async () => {
+    if (!threadId) return;
+    await resumeStream(threadId, "reject", null, persistThreadId);
+  };
+
+  // --- Standard checkpoint handlers ---
   const handleApprove = async () => {
     if (!threadId) return;
     setShowFeedbackField(false);
@@ -45,6 +58,63 @@ export function CheckpointPanel() {
     await resumeStream(threadId, "reject", feedback, persistThreadId);
   };
 
+  // --- Duplicate check warning UI ---
+  if (isDuplicateCheck) {
+    return (
+      <div className="border border-amber-500/40 rounded-lg p-3 bg-amber-500/5 mx-4 mt-3 mb-3 flex flex-col gap-3 shrink-0">
+        <div className="flex items-start gap-2">
+          <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
+            <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+              Wykryto podobny temat
+            </span>
+            {hitlPause.existing_title && (
+              <span className="text-xs text-muted-foreground">
+                <span className="font-medium">Istniejący artykuł:</span>{" "}
+                {hitlPause.existing_title}
+              </span>
+            )}
+            {hitlPause.existing_date && (
+              <span className="text-xs text-muted-foreground">
+                <span className="font-medium">Data publikacji:</span>{" "}
+                {hitlPause.existing_date}
+              </span>
+            )}
+            {hitlPause.similarity_score !== undefined && (
+              <span className="text-xs text-muted-foreground">
+                <span className="font-medium">Podobieństwo:</span>{" "}
+                {Math.round(hitlPause.similarity_score * 100)}%
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDuplicateAbort}
+            disabled={isStreaming}
+            className="gap-1.5 text-destructive border-destructive/40 hover:bg-destructive/10"
+          >
+            <XCircle className="h-3.5 w-3.5" />
+            Anuluj
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleDuplicateContinue}
+            disabled={isStreaming}
+            className="gap-1.5 bg-amber-600 hover:bg-amber-700"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Kontynuuj mimo to
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Standard checkpoint UI (cp1 / cp2) ---
   return (
     <div className="border rounded-lg p-3 bg-muted/30 mx-4 mt-3 mb-3 flex flex-col gap-3 shrink-0">
       {/* Header row */}

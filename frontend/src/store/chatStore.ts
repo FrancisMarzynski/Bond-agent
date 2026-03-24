@@ -7,6 +7,11 @@ export type HitlPause = {
     checkpoint_id: string;
     type: string;
     iterations_remaining?: number;
+    // Duplicate check specific fields (checkpoint_id === "duplicate_check")
+    warning?: string;
+    existing_title?: string;
+    existing_date?: string;
+    similarity_score?: number;
 } | null;
 
 export interface ChatMessage {
