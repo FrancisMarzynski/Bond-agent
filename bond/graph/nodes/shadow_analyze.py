@@ -10,7 +10,6 @@ Responsibility:
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -21,26 +20,6 @@ from bond.corpus.retriever import two_pass_retrieve
 from bond.graph.state import BondState
 
 logger = logging.getLogger(__name__)
-
-
-# ---------------------------------------------------------------------------
-# Corpus retrieval — delegated to bond.corpus.retriever
-# ---------------------------------------------------------------------------
-
-def _retrieve_corpus_fragments(query_text: str, n: int) -> list[dict[str, Any]]:
-    """Retrieve corpus fragments via two-pass retriever.
-
-    Delegates to :func:`bond.corpus.retriever.two_pass_retrieve`:
-      Pass 1 — source_type='own' (own_text, strongest style signal).
-      Pass 2 — source_type='external' (external_blogger, fallback when no own_text).
-      Re-ranker — own_text fragments are always placed before external_blogger.
-
-    Returns a list of dicts with at least a 'text' key and stored metadata fields.
-    """
-    fragments = two_pass_retrieve(query_text, n=n)
-    if not fragments:
-        logger.warning("shadow_analyze: corpus is empty — no style fragments available.")
-    return fragments
 
 
 # ---------------------------------------------------------------------------
@@ -109,9 +88,7 @@ def shadow_analyze_node(state: BondState) -> dict:
             "shadow_corpus_fragments": [],
         }
 
-    # Retrieve corpus fragments
-    n = settings.rag_top_k  # default 5, configured in bond/config.py
-    fragments = _retrieve_corpus_fragments(original_text, n=n)
+    fragments = two_pass_retrieve(original_text, n=settings.rag_top_k)
     logger.info("shadow_analyze: retrieved %d corpus fragment(s).", len(fragments))
 
     if not fragments:
