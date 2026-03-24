@@ -26,6 +26,7 @@ researcher_node(state)
         │     bond_metadata.db → tabela search_cache
         │     Klucz: (query_hash, thread_id)
         │     Chroni przed podwójnym wywołaniem przy wznawianiu sesji.
+        │     Awaria SQLite: log.error + fallback do Warstwy 3 (nie przerywa pipeline'u).
         │
         └─ Warstwa 3: Exa MCP API (live call)
               Wywoływana tylko przy podwójnym cache miss.
@@ -53,29 +54,44 @@ async def save_cached_result(query_hash: str, thread_id: str, results_json: str)
     # INSERT OR REPLACE do search_cache
 ```
 
-Tabela jest tworzona leniwie (`CREATE TABLE IF NOT EXISTS`) przy pierwszym dostępie, bez potrzeby ręcznej migracji bazy.
+**Inicjalizacja jednorazowa:**
+- `os.makedirs` wywoływany raz przy imporcie modułu (poziom modułu, nie przy każdym zapytaniu).
+- `CREATE TABLE IF NOT EXISTS` wykonywany raz przez `_ensure_table_once()`, chroniony przez
+  `asyncio.Lock` + flagę `_table_ready`. Przy kolejnych wywołaniach flaga powoduje natychmiastowy powrót bez żadnych operacji I/O.
 
 Dane zapisywane do `bond_metadata.db` (ten sam plik co `metadata_log`).
 
 ### `bond/graph/nodes/researcher.py`
 
-Rozszerzono `researcher_node` o dwuwarstwowe sprawdzenie cache:
+Rozszerzono `researcher_node` o trójwarstwowe sprawdzenie cache z obsługą błędów SQLite:
 
 ```python
 if topic in cache:
     raw_results = cache[topic]           # Warstwa 1 — state dict
 else:
     query_hash = compute_query_hash(topic, keywords)
-    db_result = await get_cached_result(query_hash, thread_id)
+
+    db_result: str | None = None
+    try:
+        db_result = await get_cached_result(query_hash, thread_id)
+    except Exception as exc:
+        log.error("search_cache read failed, proceeding without cache: %s", exc)
 
     if db_result is not None:
         raw_results = db_result          # Warstwa 2 — SQLite
     else:
         raw_results = await _call_exa_mcp(topic, keywords)
-        await save_cached_result(query_hash, thread_id, raw_results)  # zapis
+        try:
+            await save_cached_result(query_hash, thread_id, raw_results)
+        except Exception as exc:
+            log.error("search_cache write failed (result not persisted): %s", exc)
 
     cache = {**cache, topic: raw_results}
 ```
+
+Cache jest "nice-to-have": każdy wyjątek SQLite jest logowany przez `logging.error`
+i agent kontynuuje pracę, uderzając bezpośrednio do Exa API. Pipeline nigdy nie jest
+przerywany z powodu awarii warstwy cache.
 
 `thread_id` jest odczytywane z `state.get("thread_id", "")` — pole obecne w `BondState` od fazy 2.
 
@@ -117,7 +133,7 @@ Dodano DDL `search_cache` do `METADATA_DDL`, tak aby `uv run python setup_db.py`
 | Ta sama sesja, ponowne wywołanie researcher (np. po odrzuceniu struktury) | Warstwa 1 (state dict) zwraca wynik — zero zapytań do DB ani API |
 | Nowa sesja po restarcie serwera, ten sam temat | Warstwa 2 (SQLite) zwraca wynik — zero wywołań Exa API |
 | Puste `thread_id` (harness bez thread_id) | `thread_id = ""` — cache działa, ale wpisy nie są izolowane per-sesję; akceptowalne w trybie dev |
-| Baza danych niedostępna | `aiosqlite.connect` rzuci wyjątek — podniesiony do wywołującego (celowe: nie maskujemy błędów storage) |
+| Baza danych niedostępna | Wyjątek łapany w `researcher_node` — `log.error` + fallback do Exa API; pipeline nie jest przerywany |
 
 ---
 
@@ -130,7 +146,8 @@ python3 -c "import ast; ast.parse(open('bond/db/search_cache.py').read())"   # O
 python3 -c "import ast; ast.parse(open('bond/graph/nodes/researcher.py').read())"  # OK
 ```
 
-Logika cache'u zgodna z istniejącym wzorcem `bond/db/metadata_log.py`:
-- Lazy schema creation (`_ensure_cache_table`) zamiast osobnej migracji
-- `os.makedirs` przed `aiosqlite.connect` — obsługa brakującego katalogu `data/`
+Zmiany po review kodu (uwagi kolegi):
+- `os.makedirs` przeniesiony na poziom modułu — jeden syscall przy imporcie, nie przy każdym zapytaniu
+- `_ensure_cache_table` zastąpiony przez `_ensure_table_once` z `asyncio.Lock` + `_table_ready` — DDL wykonywany dokładnie raz per proces
+- Błędy SQLite w `researcher_node` łapane przez `try/except` + `log.error` — fallback do Exa API bez przerywania pracy użytkownika
 - `INSERT OR REPLACE` — idempotentny zapis (bezpieczny przy równoległych wywołaniach)

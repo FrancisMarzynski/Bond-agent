@@ -7,10 +7,11 @@ of the canonical "topic + sorted keywords" string, making it stable across
 minor keyword reorderings.
 
 The table lives in bond_metadata.db alongside metadata_log.  Schema is
-created lazily via _ensure_cache_table(), so no manual migration is needed
-when deploying alongside an existing bond_metadata.db.
+initialised exactly once per process (guarded by _init_lock + _table_ready
+flag), so neither os.makedirs nor CREATE TABLE are repeated on every call.
 """
 
+import asyncio
 import hashlib
 import os
 from datetime import datetime, timezone
@@ -29,6 +30,32 @@ CREATE TABLE IF NOT EXISTS search_cache (
 );
 """
 
+# Ensure the data directory exists once at import time (sync, idempotent).
+os.makedirs(os.path.dirname(os.path.abspath(settings.metadata_db_path)), exist_ok=True)
+
+# One-shot table initialisation guard.
+_init_lock: asyncio.Lock | None = None
+_table_ready = False
+
+
+def _get_lock() -> asyncio.Lock:
+    global _init_lock
+    if _init_lock is None:
+        _init_lock = asyncio.Lock()
+    return _init_lock
+
+
+async def _ensure_table_once(conn: aiosqlite.Connection) -> None:
+    """Create search_cache table exactly once per process lifetime."""
+    global _table_ready
+    if _table_ready:
+        return
+    async with _get_lock():
+        if not _table_ready:
+            await conn.executescript(_CREATE_TABLE_SQL)
+            await conn.commit()
+            _table_ready = True
+
 
 def compute_query_hash(topic: str, keywords: list[str]) -> str:
     """Return a stable SHA-256 hex digest for (topic, keywords)."""
@@ -36,21 +63,13 @@ def compute_query_hash(topic: str, keywords: list[str]) -> str:
     return hashlib.sha256(canonical.encode()).hexdigest()
 
 
-async def _ensure_cache_table(conn: aiosqlite.Connection) -> None:
-    await conn.executescript(_CREATE_TABLE_SQL)
-    await conn.commit()
-
-
 async def get_cached_result(query_hash: str, thread_id: str) -> str | None:
     """
     Return cached raw results string for (query_hash, thread_id), or None on
     cache miss.
     """
-    os.makedirs(
-        os.path.dirname(os.path.abspath(settings.metadata_db_path)), exist_ok=True
-    )
     async with aiosqlite.connect(settings.metadata_db_path) as conn:
-        await _ensure_cache_table(conn)
+        await _ensure_table_once(conn)
         cursor = await conn.execute(
             "SELECT results_json FROM search_cache "
             "WHERE query_hash = ? AND thread_id = ?",
@@ -64,12 +83,9 @@ async def save_cached_result(
     query_hash: str, thread_id: str, results_json: str
 ) -> None:
     """Insert or replace a cache entry for (query_hash, thread_id)."""
-    os.makedirs(
-        os.path.dirname(os.path.abspath(settings.metadata_db_path)), exist_ok=True
-    )
     now = datetime.now(timezone.utc).isoformat()
     async with aiosqlite.connect(settings.metadata_db_path) as conn:
-        await _ensure_cache_table(conn)
+        await _ensure_table_once(conn)
         await conn.execute(
             "INSERT OR REPLACE INTO search_cache "
             "(query_hash, thread_id, results_json, timestamp) VALUES (?, ?, ?, ?)",

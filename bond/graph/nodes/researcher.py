@@ -1,3 +1,4 @@
+import logging
 import re
 
 from langchain_anthropic import ChatAnthropic
@@ -8,6 +9,8 @@ from bond.config import settings
 from bond.db.search_cache import compute_query_hash, get_cached_result, save_cached_result
 from bond.graph.state import AuthorState
 from bond.prompts.context import build_context_block
+
+log = logging.getLogger(__name__)
 
 EXA_MCP_URL = "https://mcp.exa.ai/mcp"
 _MIN_SOURCES = 3
@@ -113,15 +116,24 @@ async def researcher_node(state: AuthorState) -> dict:
         raw_results = cache[topic]
     else:
         query_hash = compute_query_hash(topic, keywords)
-        db_result = await get_cached_result(query_hash, thread_id)
+
+        # Layer 2 — SQLite session cache (AUTH-11).
+        # Cache is "nice-to-have": any storage failure is logged and bypassed.
+        db_result: str | None = None
+        try:
+            db_result = await get_cached_result(query_hash, thread_id)
+        except Exception as exc:
+            log.error("search_cache read failed, proceeding without cache: %s", exc)
 
         if db_result is not None:
-            # Layer 2 hit — SQLite session cache (AUTH-11)
             raw_results = db_result
         else:
-            # Layer 3 — live Exa MCP call; populate both caches
+            # Layer 3 — live Exa MCP call
             raw_results = await _call_exa_mcp(topic, keywords)
-            await save_cached_result(query_hash, thread_id, raw_results)
+            try:
+                await save_cached_result(query_hash, thread_id, raw_results)
+            except Exception as exc:
+                log.error("search_cache write failed (result not persisted): %s", exc)
 
         cache = {**cache, topic: raw_results}
 
