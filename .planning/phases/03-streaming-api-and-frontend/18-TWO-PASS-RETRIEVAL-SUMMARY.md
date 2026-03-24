@@ -19,22 +19,18 @@ w logice retrievalu Shadow Mode (Phase 1 Success Criteria 5).
 ```
 shadow_analyze_node
     │
-    └─► _retrieve_corpus_fragments(query, n)
+    └─► two_pass_retrieve(query, n)   ← bond/corpus/retriever.py
             │
-            └─► two_pass_retrieve(query, n)   ← bond/corpus/retriever.py
-                    │
-                    ├─ Pass 1: ChromaDB query (source_type='own')
-                    │       ┌── 0 wyników → Pass 2 (fallback)
-                    │       ├── 1..n-1 wyników → fill z external + rerank
-                    │       └── n wyników → zwróć own_text bez external
-                    │
-                    ├─ Pass 2 (fallback): ChromaDB query (source_type='external')
-                    │
-                    └─► rerank(fragments)
-                            │
-                            own_text zawsze przed external_blogger
-                            (stabilny sort, kolejność wewnątrz grupy zachowana)
+            ├─ Pass 1: ChromaDB query (SourceType.OWN_TEXT)
+            │       ┌── 0 wyników → Pass 2 (fallback)
+            │       ├── 1..n-1 wyników → fill z external → zwróć own + ext
+            │       └── n wyników → zwróć own_text bez external
+            │
+            └─ Pass 2 (fallback): ChromaDB query (SourceType.EXTERNAL_BLOGGER)
 ```
+
+`rerank(fragments)` jest dostępny jako publiczna funkcja dla zewnętrznych wywołujących
+potrzebujących wymusić kolejność na mieszanej liście.
 
 ---
 
@@ -51,7 +47,7 @@ Dedykowany moduł retrieval — punkt jednej prawdy dla logiki dwuprzebiegowej.
 | Scenariusz | Zachowanie |
 |---|---|
 | 0 own_text w korpusie | Zwraca `n` external_blogger (czysty fallback) |
-| 1..n-1 own_text | Uzupełnia brakujące miejsca z external, wywołuje `rerank` |
+| 1..n-1 own_text | Uzupełnia brakujące miejsca z external; zwraca `own + ext` |
 | ≥ n own_text | Zwraca tylko `n` own_text (bez external) |
 
 #### `rerank(fragments) → list[dict]`
@@ -74,9 +70,9 @@ i polami metadanych (`source_type`, `article_title`, `source_url`, …).
 - Brak gwarancji kolejności przy mieszanych wynikach.
 
 **Po:**
-- `_retrieve_corpus_fragments` deleguje do `bond.corpus.retriever.two_pass_retrieve`.
+- `shadow_analyze_node` wywołuje `two_pass_retrieve` bezpośrednio (usunięto wrapper).
 - Próg zmieniony na 0 (fallback wyłącznie gdy **brak** own_text).
-- Re-ranker gwarantuje own_text zawsze na początku promptu.
+- Kolejność own → external gwarantowana przez strukturę list, nie osobny sort.
 - Usunięto import `get_or_create_corpus_collection` (zarządzany przez retriever).
 
 ---
@@ -97,9 +93,9 @@ i polami metadanych (`source_type`, `article_title`, `source_url`, …).
 
 | AC | Status |
 |----|--------|
-| Retrieval próbuje najpierw 5 fragmentów z `own_text` | ✅ Pass 1 w `two_pass_retrieve` odpytuje ChromaDB z `where={"source_type": "own"}` |
+| Retrieval próbuje najpierw 5 fragmentów z `own_text` | ✅ Pass 1 w `two_pass_retrieve` odpytuje ChromaDB z `where={"source_type": SourceType.OWN_TEXT}` |
 | Fallback do `external_blogger` gdy brak own_text | ✅ Pass 2 uruchamiany wyłącznie gdy `len(own_fragments) == 0` |
-| Re-ranker zapewnia own_text zawsze pierwszy w prompcie | ✅ `rerank()` grupuje `source_type=='own'` przed pozostałymi, stabilny sort |
+| Re-ranker zapewnia own_text zawsze pierwszy w prompcie | ✅ Fill path: `own + ext` z natury w kolejności; `rerank()` dostępny dla zewnętrznych wywołujących |
 | Własna ścieżka kodu (nie inline w węźle) | ✅ `bond/corpus/retriever.py` — niezależny moduł |
 | Smoke test weryfikuje tę samą ścieżkę co produkcja | ✅ `smoke_test.py` importuje `two_pass_retrieve` wprost |
 
