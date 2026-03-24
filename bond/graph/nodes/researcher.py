@@ -5,6 +5,7 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_openai import ChatOpenAI
 
 from bond.config import settings
+from bond.db.search_cache import compute_query_hash, get_cached_result, save_cached_result
 from bond.graph.state import AuthorState
 from bond.prompts.context import build_context_block
 
@@ -87,7 +88,12 @@ Odpowiedź zacznij od nagłówka "### Synteza", a listę źródeł od "### Źró
 
 async def researcher_node(state: AuthorState) -> dict:
     """
-    Perform web research via Exa MCP. Checks session cache first (AUTH-10).
+    Perform web research via Exa MCP.  Cache lookup order (AUTH-10 / AUTH-11):
+
+    1. In-memory state cache  — avoids duplicate calls within the same graph run.
+    2. SQLite search_cache    — avoids duplicate calls across re-runs in the same
+                                session (same thread_id).  Table: bond_metadata.db.
+    3. Exa MCP API            — live search; result is written to both caches.
 
     Returns updated search_cache (raw MCP results string, keyed by topic)
     and formatted research_report (Markdown).
@@ -99,14 +105,24 @@ async def researcher_node(state: AuthorState) -> dict:
     """
     topic = state["topic"]
     keywords = state.get("keywords", [])
+    thread_id = state.get("thread_id", "")
     cache = state.get("search_cache", {})
 
     if topic in cache:
-        # Cache hit — no MCP call
+        # Layer 1 hit — in-memory state cache (AUTH-10)
         raw_results = cache[topic]
     else:
-        # Cache miss — call Exa via MCP
-        raw_results = await _call_exa_mcp(topic, keywords)
+        query_hash = compute_query_hash(topic, keywords)
+        db_result = await get_cached_result(query_hash, thread_id)
+
+        if db_result is not None:
+            # Layer 2 hit — SQLite session cache (AUTH-11)
+            raw_results = db_result
+        else:
+            # Layer 3 — live Exa MCP call; populate both caches
+            raw_results = await _call_exa_mcp(topic, keywords)
+            await save_cached_result(query_hash, thread_id, raw_results)
+
         cache = {**cache, topic: raw_results}
 
     context_block = build_context_block(state.get("context_dynamic"))

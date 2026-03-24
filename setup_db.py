@@ -71,6 +71,15 @@ CREATE TABLE IF NOT EXISTS metadata_log (
 
 CREATE INDEX IF NOT EXISTS idx_metadata_log_published_date
     ON metadata_log (published_date);
+
+-- AUTH-11: Exa search result cache, scoped per (query_hash, thread_id) session
+CREATE TABLE IF NOT EXISTS search_cache (
+    query_hash   TEXT NOT NULL,
+    thread_id    TEXT NOT NULL,
+    results_json TEXT NOT NULL,
+    timestamp    TEXT NOT NULL,
+    PRIMARY KEY (query_hash, thread_id)
+);
 """
 
 CHECKPOINTS_DDL = """
