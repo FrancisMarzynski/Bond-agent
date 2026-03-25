@@ -57,6 +57,11 @@ class BondState(TypedDict):
     shadow_corrected_text: Optional[str]        # full text with all annotations applied
     shadow_corpus_fragments: Optional[list[dict]]  # raw corpus fragments from shadow_analyze → shadow_annotate
 
+    # --- Shadow mode checkpoint ---
+    iteration_count: int                        # counts shadow annotation regeneration loops (hard cap at 3)
+    shadow_approved: Optional[bool]             # True after user approves shadow corrections
+    shadow_feedback: Optional[str]              # feedback from user when rejecting shadow annotations
+
     # --- Hard cap notification ---
     hard_cap_message: NotRequired[Optional[str]]  # set when pipeline aborts due to HARD_CAP_ITERATIONS
 

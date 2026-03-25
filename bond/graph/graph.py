@@ -15,6 +15,7 @@ from bond.graph.nodes.checkpoint_2 import checkpoint_2_node as _checkpoint_2_nod
 from bond.graph.nodes.save_metadata import save_metadata_node as _save_metadata_node
 from bond.graph.nodes.shadow_analyze import shadow_analyze_node as _shadow_analyze_node
 from bond.graph.nodes.shadow_annotate import shadow_annotate_node as _shadow_annotate_node
+from bond.graph.nodes.shadow_checkpoint import shadow_checkpoint_node as _shadow_checkpoint_node
 
 
 # ---------------------------------------------------------------------------
@@ -31,6 +32,7 @@ _node_registry: dict = {
     "save_metadata": _save_metadata_node,
     "shadow_analyze": _shadow_analyze_node,
     "shadow_annotate": _shadow_annotate_node,
+    "shadow_checkpoint": _shadow_checkpoint_node,
 }
 
 
@@ -109,9 +111,10 @@ def build_author_graph() -> StateGraph:
     )
     builder.add_edge("save_metadata", END)
 
-    # Shadow branch edges (stubs — Plan 04-02 adds shadow_checkpoint between annotate and END)
+    # Shadow branch: analyze → annotate → checkpoint (loops back to annotate on reject)
     builder.add_edge("shadow_analyze", "shadow_annotate")
-    builder.add_edge("shadow_annotate", END)
+    builder.add_edge("shadow_annotate", "shadow_checkpoint")
+    builder.add_edge("shadow_checkpoint", END)
 
     return builder
 

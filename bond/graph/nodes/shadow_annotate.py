@@ -109,16 +109,28 @@ Obowiązuje warunek: tekst[start_index:end_index] == original_span (dokładne do
 """
 
 
-def _build_user_prompt(original_text: str, fragments: list[dict]) -> str:
+def _build_user_prompt(
+    original_text: str,
+    fragments: list[dict],
+    feedback: str | None = None,
+) -> str:
     corpus_block = "\n\n---\n\n".join(
         f"[Fragment {i + 1}]\n{frag['text']}" for i, frag in enumerate(fragments)
     )
-    return (
+    base = (
         f"## TEKST DO KOREKTY\n\n{original_text}\n\n"
         f"## WZORCOWE FRAGMENTY KORPUSU AUTORA\n\n{corpus_block}\n\n"
+    )
+    if feedback:
+        base += (
+            f"## FEEDBACK Z POPRZEDNIEJ ITERACJI\n\n{feedback}\n\n"
+            "Uwzględnij powyższy feedback — popraw adnotacje zgodnie z uwagami użytkownika. "
+        )
+    base += (
         "Wygeneruj listę adnotacji stylistycznych. Dla każdej: podaj dokładny original_span, "
         "replacement, reason oraz start_index i end_index w tekście."
     )
+    return base
 
 
 # ---------------------------------------------------------------------------
@@ -239,6 +251,10 @@ def shadow_annotate_node(state: BondState) -> dict:
             "annotations will lack style reference."
         )
 
+    feedback: str | None = state.get("shadow_feedback") or None
+    if feedback:
+        logger.info("shadow_annotate: re-run with user feedback — incorporating into prompt.")
+
     # Select LLM (mirrors shadow_analyze model selection pattern)
     model = settings.draft_model
     if "claude" in model.lower():
@@ -248,7 +264,7 @@ def shadow_annotate_node(state: BondState) -> dict:
 
     structured_llm = llm.with_structured_output(AnnotationResult)
 
-    user_prompt = _build_user_prompt(original_text, fragments)
+    user_prompt = _build_user_prompt(original_text, fragments, feedback=feedback)
     result: AnnotationResult = structured_llm.invoke([
         {"role": "system", "content": _SYSTEM_PROMPT},
         {"role": "user", "content": user_prompt},
