@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "bond-drive": {
+      "command": "uv",
+      "args": ["run", "python", "-m", "bond.mcp.drive_server"],
+      "env": {
+        "GOOGLE_AUTH_METHOD": "oauth",
+        "GOOGLE_CREDENTIALS_PATH": "./credentials.json"
+      }
+    }
+  }
+}

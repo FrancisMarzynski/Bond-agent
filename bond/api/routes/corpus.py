@@ -7,12 +7,18 @@ from bond.models import (
     IngestUrlRequest,
     IngestDriveRequest,
     BatchIngestResult,
+    DriveFileInfo,
+    DriveIngestResult,
 )
 from bond.corpus.sources.text_source import ingest_text
 from bond.corpus.sources.file_source import extract_text
 from bond.corpus.ingestor import CorpusIngestor
 from bond.corpus.sources.url_source import ingest_blog
-from bond.corpus.sources.drive_source import ingest_drive_folder
+from bond.corpus.sources.drive_source import (
+    build_drive_service,
+    ingest_drive_folder,
+    list_folder_files,
+)
 from bond.store.article_log import get_article_count, get_chunk_count, get_articles
 from bond.corpus.smoke_test import run_smoke_test, DEFAULT_QUERY
 from bond.config import settings
@@ -132,6 +138,43 @@ async def ingest_drive_endpoint(request: IngestDriveRequest):
         articles_ingested=result["articles_ingested"],
         total_chunks=result["total_chunks"],
         source_type=request.source_type.value,
+        warnings=result.get("warnings", []),
+    )
+
+
+@router.post("/drive-ingest", response_model=DriveIngestResult)
+async def drive_ingest_endpoint(request: IngestDriveRequest):
+    """
+    List files in a Google Drive folder, then ingest all supported documents.
+    Returns a combined result: file listing + ingestion summary.
+    Triggered by the MCP bond-drive server or directly by the frontend.
+    """
+    if not request.folder_id.strip():
+        raise HTTPException(status_code=422, detail="folder_id must not be empty")
+
+    # List files first so the response includes what was found
+    try:
+        service = build_drive_service()
+        raw_files = list_folder_files(service, request.folder_id)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Drive auth failed: {e}")
+
+    files_info = [
+        DriveFileInfo(id=f["id"], name=f["name"], mime_type=f["mimeType"])
+        for f in raw_files
+    ]
+
+    result = ingest_drive_folder(
+        folder_id=request.folder_id,
+        source_type=request.source_type.value,
+    )
+
+    return DriveIngestResult(
+        files_found=len(raw_files),
+        articles_ingested=result["articles_ingested"],
+        total_chunks=result["total_chunks"],
+        source_type=request.source_type.value,
+        files=files_info,
         warnings=result.get("warnings", []),
     )
 

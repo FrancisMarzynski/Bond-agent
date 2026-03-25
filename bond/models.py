@@ -36,3 +36,18 @@ class BatchIngestResult(BaseModel):
     total_chunks: int
     source_type: str
     warnings: list[str] = []
+
+
+class DriveFileInfo(BaseModel):
+    id: str
+    name: str
+    mime_type: str
+
+
+class DriveIngestResult(BaseModel):
+    files_found: int
+    articles_ingested: int
+    total_chunks: int
+    source_type: str
+    files: list[DriveFileInfo] = []
+    warnings: list[str] = []
