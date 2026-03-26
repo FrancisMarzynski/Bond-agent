@@ -155,14 +155,9 @@ async def drive_ingest_endpoint(request: IngestDriveRequest):
     # List files first so the response includes what was found
     try:
         service = build_drive_service()
-        raw_files = list_folder_files(service, request.folder_id)
+        files = list_folder_files(service, request.folder_id)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Drive auth failed: {e}")
-
-    files_info = [
-        DriveFileInfo(id=f["id"], name=f["name"], mime_type=f["mimeType"])
-        for f in raw_files
-    ]
 
     result = ingest_drive_folder(
         folder_id=request.folder_id,
@@ -170,11 +165,11 @@ async def drive_ingest_endpoint(request: IngestDriveRequest):
     )
 
     return DriveIngestResult(
-        files_found=len(raw_files),
+        files_found=len(files),
         articles_ingested=result["articles_ingested"],
         total_chunks=result["total_chunks"],
         source_type=request.source_type.value,
-        files=files_info,
+        files=files,
         warnings=result.get("warnings", []),
     )
 

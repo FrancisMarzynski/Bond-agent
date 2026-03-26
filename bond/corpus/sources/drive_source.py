@@ -13,6 +13,7 @@ from googleapiclient.http import MediaIoBaseDownload
 from bond.config import settings
 from bond.corpus.sources.file_source import extract_text
 from bond.corpus.ingestor import CorpusIngestor
+from bond.models import DriveFileInfo
 
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 SUPPORTED_MIME_TYPES = {
@@ -50,7 +51,7 @@ def build_drive_service():
         return build("drive", "v3", credentials=creds)
 
 
-def list_folder_files(service, folder_id: str) -> list[dict]:
+def list_folder_files(service, folder_id: str) -> list[DriveFileInfo]:
     """List supported files in a Drive folder. Handles pagination up to 500 files."""
     query = f"'{folder_id}' in parents and trashed=false"
     files = []
@@ -68,7 +69,11 @@ def list_folder_files(service, folder_id: str) -> list[dict]:
         page_token = response.get("nextPageToken")
         if not page_token:
             break
-    return [f for f in files if f["mimeType"] in SUPPORTED_MIME_TYPES]
+    return [
+        DriveFileInfo(id=f["id"], name=f["name"], mime_type=f["mimeType"])
+        for f in files
+        if f["mimeType"] in SUPPORTED_MIME_TYPES
+    ]
 
 
 def download_file(service, file_id: str, mime_type: str) -> bytes | None:
@@ -125,31 +130,31 @@ def ingest_drive_folder(folder_id: str, source_type: str) -> dict:
     warnings = []
 
     for f in files:
-        content = download_file(service, f["id"], f["mimeType"])
+        content = download_file(service, f.id, f.mime_type)
         if content is None:
-            warnings.append(f"Could not download {f['name']} — skipped")
+            warnings.append(f"Could not download {f.name} — skipped")
             continue
 
         # Determine effective extension for file_source dispatch
-        ext = SUPPORTED_MIME_TYPES[f["mimeType"]].lstrip(".")
-        effective_name = f["name"] if "." in f["name"] else f"{f['name']}.{ext}"
+        ext = SUPPORTED_MIME_TYPES[f.mime_type].lstrip(".")
+        effective_name = f.name if "." in f.name else f"{f.name}.{ext}"
 
         text = extract_text(content, effective_name)
         if text is None:
-            warnings.append(f"Could not parse {f['name']} — skipped")
+            warnings.append(f"Could not parse {f.name} — skipped")
             continue
 
         result = ingestor.ingest(
             text=text,
-            title=f["name"],
+            title=f.name,
             source_type=source_type,
-            source_url=f"https://drive.google.com/file/d/{f['id']}",
+            source_url=f"https://drive.google.com/file/d/{f.id}",
         )
         if result["chunks_added"] > 0:
             total_chunks += result["chunks_added"]
             ingested_count += 1
         else:
-            warnings.append(f"{f['name']} too short to produce chunks — skipped")
+            warnings.append(f"{f.name} too short to produce chunks — skipped")
 
     return {
         "articles_ingested": ingested_count,

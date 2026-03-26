@@ -5,6 +5,8 @@ Exposes two tools to Claude Code / LangGraph agents:
 - drive_ingest       — download and ingest a folder into the corpus
 """
 
+import asyncio
+
 from mcp.server.fastmcp import FastMCP
 
 from bond.corpus.sources.drive_source import (
@@ -12,26 +14,29 @@ from bond.corpus.sources.drive_source import (
     ingest_drive_folder,
     list_folder_files,
 )
+from bond.models import DriveFileInfo, SourceType
 
 mcp = FastMCP("bond-drive")
 
 
 @mcp.tool()
-def list_drive_folder(folder_id: str) -> list[dict]:
+async def list_drive_folder(folder_id: str) -> list[DriveFileInfo]:
     """List all supported files (PDF, DOCX, TXT, Google Docs) in a Google Drive folder.
 
     Args:
         folder_id: The Google Drive folder ID (from the folder URL).
 
     Returns:
-        List of dicts with keys: id, name, mimeType.
+        List of DriveFileInfo with fields: id, name, mime_type.
     """
-    service = build_drive_service()
-    return list_folder_files(service, folder_id)
+    service = await asyncio.to_thread(build_drive_service)
+    return await asyncio.to_thread(list_folder_files, service, folder_id)
 
 
 @mcp.tool()
-def drive_ingest(folder_id: str, source_type: str = "own") -> dict:
+async def drive_ingest(
+    folder_id: str, source_type: SourceType = SourceType.OWN_TEXT
+) -> dict:
     """Download and ingest all supported files from a Google Drive folder into the corpus.
 
     Args:
@@ -41,13 +46,9 @@ def drive_ingest(folder_id: str, source_type: str = "own") -> dict:
     Returns:
         Dict with articles_ingested, total_chunks, and warnings list.
     """
-    if source_type not in ("own", "external"):
-        return {
-            "articles_ingested": 0,
-            "total_chunks": 0,
-            "warnings": [f"Invalid source_type '{source_type}'. Use 'own' or 'external'."],
-        }
-    return ingest_drive_folder(folder_id=folder_id, source_type=source_type)
+    return await asyncio.to_thread(
+        ingest_drive_folder, folder_id=folder_id, source_type=source_type.value
+    )
 
 
 if __name__ == "__main__":

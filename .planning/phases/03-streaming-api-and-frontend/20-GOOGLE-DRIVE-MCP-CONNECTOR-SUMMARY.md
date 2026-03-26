@@ -43,21 +43,25 @@ Claude Code / LangGraph Agent
 Pusty plik inicjujący pakiet MCP.
 
 ### `bond/mcp/drive_server.py` (nowy)
-FastMCP server rejestrujący dwa narzędzia:
+FastMCP server rejestrujący dwa narzędzia (oba `async`, I/O delegowane przez `asyncio.to_thread`):
 
 ```python
 mcp = FastMCP("bond-drive")
 
 @mcp.tool()
-def list_drive_folder(folder_id: str) -> list[dict]:
+async def list_drive_folder(folder_id: str) -> list[DriveFileInfo]:
     """Zwraca listę obsługiwanych plików w folderze Drive."""
-    service = build_drive_service()
-    return list_folder_files(service, folder_id)
+    service = await asyncio.to_thread(build_drive_service)
+    return await asyncio.to_thread(list_folder_files, service, folder_id)
 
 @mcp.tool()
-def drive_ingest(folder_id: str, source_type: str = "own") -> dict:
+async def drive_ingest(
+    folder_id: str, source_type: SourceType = SourceType.OWN_TEXT
+) -> dict:
     """Pobiera i ingestuje pliki z folderu Drive do korpusu."""
-    return ingest_drive_folder(folder_id=folder_id, source_type=source_type)
+    return await asyncio.to_thread(
+        ingest_drive_folder, folder_id=folder_id, source_type=source_type.value
+    )
 ```
 
 Uruchomienie: `uv run python -m bond.mcp.drive_server`
@@ -100,11 +104,14 @@ class DriveIngestResult(BaseModel):
     warnings: list[str] = []
 ```
 
+### `bond/corpus/sources/drive_source.py` (zaktualizowany)
+`list_folder_files` zwraca teraz `list[DriveFileInfo]` zamiast `list[dict]` — konwertuje odpowiedź Google API (`mimeType` → `mime_type`) bezpośrednio do modeli Pydantic. `ingest_drive_folder` używa atrybutów obiektów (`f.id`, `f.name`, `f.mime_type`) zamiast kluczy słownika.
+
 ### `bond/api/routes/corpus.py` (zaktualizowany)
 Dodano endpoint `POST /api/corpus/drive-ingest`:
-- Najpierw listuje pliki przez `build_drive_service()` + `list_folder_files()`
+- Najpierw listuje pliki przez `build_drive_service()` + `list_folder_files()` (zwraca `list[DriveFileInfo]`)
 - Następnie wywołuje `ingest_drive_folder()` w celu ingestion
-- Zwraca `DriveIngestResult` zawierający listing plików i podsumowanie ingestion
+- Zwraca `DriveIngestResult` zawierający listing plików i podsumowanie ingestion; ręczna konwersja słownikowa usunięta — `list_folder_files` dostarcza gotowe obiekty Pydantic
 
 Istniejący endpoint `POST /api/corpus/ingest/drive` pozostaje niezmieniony.
 
