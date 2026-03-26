@@ -10,6 +10,7 @@ Responsibility:
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -69,7 +70,7 @@ def _build_analyze_user_prompt(original_text: str, fragments: list[dict[str, Any
 # Node
 # ---------------------------------------------------------------------------
 
-def shadow_analyze_node(state: BondState) -> dict:
+async def shadow_analyze_node(state: BondState) -> dict:
     """Retrieve style corpus fragments and produce comparative analysis.
 
     AC compliance:
@@ -88,7 +89,7 @@ def shadow_analyze_node(state: BondState) -> dict:
             "shadow_corpus_fragments": [],
         }
 
-    fragments = two_pass_retrieve(original_text, n=settings.rag_top_k)
+    fragments = await two_pass_retrieve(original_text, n=settings.rag_top_k)
     logger.info("shadow_analyze: retrieved %d corpus fragment(s).", len(fragments))
 
     if not fragments:
@@ -109,10 +110,11 @@ def shadow_analyze_node(state: BondState) -> dict:
         llm = ChatOpenAI(model=model, max_tokens=2000)
 
     user_prompt = _build_analyze_user_prompt(original_text, fragments)
-    analysis: str = llm.invoke([
+    response = await llm.ainvoke([
         SystemMessage(content=_ANALYZE_SYSTEM_PROMPT),
         HumanMessage(content=user_prompt),
-    ]).content.strip()
+    ])
+    analysis: str = response.content.strip()
 
     return {
         "research_report": analysis,

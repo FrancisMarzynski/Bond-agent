@@ -228,7 +228,7 @@ def _apply_annotations(original: str, annotations: list[Annotation]) -> str:
 # Node
 # ---------------------------------------------------------------------------
 
-def shadow_annotate_node(state: BondState) -> dict:
+async def shadow_annotate_node(state: BondState) -> dict:
     """Generate structured style annotations and assemble corrected text.
 
     AC compliance:
@@ -265,7 +265,7 @@ def shadow_annotate_node(state: BondState) -> dict:
     structured_llm = llm.with_structured_output(AnnotationResult)
 
     user_prompt = _build_user_prompt(original_text, fragments, feedback=feedback)
-    result: AnnotationResult = structured_llm.invoke([
+    result: AnnotationResult = await structured_llm.ainvoke([
         {"role": "system", "content": _SYSTEM_PROMPT},
         {"role": "user", "content": user_prompt},
     ])

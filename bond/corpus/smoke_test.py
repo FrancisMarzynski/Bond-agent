@@ -9,7 +9,7 @@ from bond.config import settings
 DEFAULT_QUERY = "styl pisania storytelling angażujące treści"
 
 
-def run_smoke_test(
+async def run_smoke_test(
     query: str = DEFAULT_QUERY,
     n_results: int | None = None,
 ) -> list[dict]:
@@ -24,7 +24,7 @@ def run_smoke_test(
     if n_results is None:
         n_results = settings.rag_top_k
 
-    fragments = two_pass_retrieve(query, n=n_results)
+    fragments = await two_pass_retrieve(query, n=n_results)
 
     if not fragments:
         print("WARN: Corpus is empty — smoke test returned no results")

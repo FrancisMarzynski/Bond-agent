@@ -9,9 +9,13 @@ Retrieval priority (Phase 1 Success Criteria 5):
 Re-ranker — stable sort that guarantees own_text fragments always precede
              external_blogger fragments in the final list, regardless of
              their individual similarity scores.
+
+All public functions are async. Blocking ChromaDB calls are offloaded to a
+thread pool via asyncio.to_thread() so the event loop is never blocked.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
@@ -41,15 +45,12 @@ def rerank(fragments: list[dict[str, Any]]) -> list[dict[str, Any]]:
 # Low-level ChromaDB query helper
 # ---------------------------------------------------------------------------
 
-def _query_collection(
+def _sync_query_collection(
     query: str,
     n: int,
     source_type: SourceType | None = None,
 ) -> list[dict[str, Any]]:
-    """Query the style corpus collection and return a list of fragment dicts.
-
-    Returns [] on error or when the collection is empty.
-    """
+    """Synchronous ChromaDB query — intended to run inside asyncio.to_thread()."""
     collection = get_or_create_corpus_collection()
     if collection is None:
         return []
@@ -90,11 +91,23 @@ def _query_collection(
     return output
 
 
+async def _query_collection(
+    query: str,
+    n: int,
+    source_type: SourceType | None = None,
+) -> list[dict[str, Any]]:
+    """Async wrapper: runs blocking ChromaDB query in a thread pool.
+
+    Returns [] on error or when the collection is empty.
+    """
+    return await asyncio.to_thread(_sync_query_collection, query, n, source_type)
+
+
 # ---------------------------------------------------------------------------
 # Two-pass retrieval (public API)
 # ---------------------------------------------------------------------------
 
-def two_pass_retrieve(
+async def two_pass_retrieve(
     query: str,
     n: int | None = None,
 ) -> list[dict[str, Any]]:
@@ -113,12 +126,12 @@ def two_pass_retrieve(
     if n is None:
         n = settings.rag_top_k
 
-    own_fragments = _query_collection(query, n=n, source_type=SourceType.OWN_TEXT)
+    own_fragments = await _query_collection(query, n=n, source_type=SourceType.OWN_TEXT)
     logger.debug("retriever: Pass 1 — %d own_text fragment(s).", len(own_fragments))
 
     if not own_fragments:
         logger.info("retriever: no own_text fragments — falling back to external_blogger.")
-        ext_fragments = _query_collection(query, n=n, source_type=SourceType.EXTERNAL_BLOGGER)
+        ext_fragments = await _query_collection(query, n=n, source_type=SourceType.EXTERNAL_BLOGGER)
         logger.debug("retriever: Pass 2 — %d external_blogger fragment(s).", len(ext_fragments))
         return ext_fragments
 
@@ -126,7 +139,7 @@ def two_pass_retrieve(
         return own_fragments[:n]
 
     fill_count = n - len(own_fragments)
-    ext_fragments = _query_collection(query, n=fill_count, source_type=SourceType.EXTERNAL_BLOGGER)
+    ext_fragments = await _query_collection(query, n=fill_count, source_type=SourceType.EXTERNAL_BLOGGER)
     logger.debug("retriever: fill — %d external_blogger fragment(s) appended.", len(ext_fragments))
 
     return own_fragments + ext_fragments

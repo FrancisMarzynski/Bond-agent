@@ -1,6 +1,6 @@
 # 18-TWO-PASS-RETRIEVAL Podsumowanie: Priorytetyzacja własnego stylu w retrievalu
 
-**Data ukończenia:** 2026-03-24
+**Data ukończenia:** 2026-03-24 (async refactor: 2026-03-26)
 **Faza:** 03 — Streaming API i Frontend
 **Plan:** 18 — Two-pass Retrieval
 **Status:** ✅ Zakończone
@@ -42,7 +42,7 @@ Dedykowany moduł retrieval — punkt jednej prawdy dla logiki dwuprzebiegowej.
 
 **Eksportowane funkcje:**
 
-#### `two_pass_retrieve(query, n=None) → list[dict]`
+#### `async two_pass_retrieve(query, n=None) → list[dict]`
 
 | Scenariusz | Zachowanie |
 |---|---|
@@ -55,7 +55,7 @@ Dedykowany moduł retrieval — punkt jednej prawdy dla logiki dwuprzebiegowej.
 Stabilny re-ranker: all `source_type='own'` przed `source_type!='own'`.
 Kolejność wewnątrz każdej grupy (relevance score) jest zachowana.
 
-#### `_query_collection(query, n, source_type=None) → list[dict]`
+#### `async _query_collection(query, n, source_type=None) → list[dict]`
 
 Niskopoziomowy helper ChromaDB. Zwraca dicts z kluczami `text`, `score`
 i polami metadanych (`source_type`, `article_title`, `source_url`, …).
