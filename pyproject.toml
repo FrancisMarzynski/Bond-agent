@@ -28,6 +28,7 @@ dependencies = [
     "mcp>=1.0",
     "langchain-openai>=0.2",
     "langchain-anthropic>=0.2",
+    "sse-starlette>=1.6",
 ]
 
 [dependency-groups]

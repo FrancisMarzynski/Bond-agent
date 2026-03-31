@@ -189,6 +189,7 @@ dependencies = [
     { name = "python-multipart" },
     { name = "requests" },
     { name = "sentence-transformers" },
+    { name = "sse-starlette" },
     { name = "trafilatura" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -224,6 +225,7 @@ requires-dist = [
     { name = "python-multipart" },
     { name = "requests" },
     { name = "sentence-transformers", specifier = ">=3.0" },
+    { name = "sse-starlette", specifier = ">=1.6" },
     { name = "trafilatura", specifier = "==2.0.0" },
     { name = "uvicorn", extras = ["standard"] },
 ]

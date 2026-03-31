@@ -1,83 +1,125 @@
 import json
-from typing import AsyncIterator, Any
+import logging
+from typing import AsyncIterator, Any, Iterator
 
 from bond.schemas import StreamEvent
+
+logger = logging.getLogger(__name__)
+
+# Business nodes we surface to the frontend — internal LangGraph bookkeeping nodes
+# (__start__, __end__, router functions) are intentionally excluded.
+_KNOWN_NODES = frozenset({
+    "duplicate_check",
+    "researcher",
+    "structure",
+    "checkpoint_1",
+    "writer",
+    "checkpoint_2",
+    "save_metadata",
+    "shadow_analyze",
+    "shadow_annotate",
+    "shadow_checkpoint",
+})
+
+# Mapping from node name to the stage label expected by the frontend.
+_STAGE_MAP: dict[str, str] = {
+    "researcher": "research",
+    "structure": "structure",
+    "writer": "writing",
+    "save_metadata": "done",
+}
 
 
 async def parse_stream_events(events: AsyncIterator[Any]) -> AsyncIterator[str]:
     """
-    Asynchronously parses LangGraph stream events and yields formatted JSON strings.
-    
-    Args:
-        events: An asynchronous iterator of LangGraph events (from astream_events).
-        
-    Yields:
-        JSON formatted strings representing the parsed events.
-        Format: {"type": "node", "data": "<node_name>"} or {"type": "token", "data": "<text_chunk>"}
+    Parses LangGraph astream_events (v2) and yields raw JSON StreamEvent strings.
+
+    Handles three LangGraph event kinds:
+    - on_chain_start  → node_start  +  optional stage update
+    - on_chain_end    → node_end
+    - on_chat_model_stream → token  (empty chunks are dropped)
+
+    The caller is responsible for catching exceptions that propagate out of this
+    generator (e.g. model API errors, rate-limit errors).  The generator performs
+    best-effort cleanup of `events` in its finally block.
     """
-    async for event in events:
-        kind = event.get("event")
-        
-        # Handle start of a new node (chain)
-        if kind == "on_chain_start":
-            metadata = event.get("metadata", {})
-            # Look for the LangGraph node name. The exact structure might vary,
-            # but usually graph nodes have a specific 'langgraph_node' metadata or 
-            # we can use the 'name' field if it matches our known nodes.
-            # Assuming 'langgraph_node' is present for standard LangGraph nodes.
-            node_name = metadata.get("langgraph_node")
-            
-            # If for some reason langgraph_node is missing, fallback to 'name'
-            if not node_name:
-                 name = event.get("name")
-                 # Check if it's one of our target nodes
-                 if name in ["duplicate_check", "researcher", "structure", "writer", "save_metadata", "__start__", "__end__"]:
-                      node_name = name
-                      
-            if node_name:
-                yield StreamEvent(type="node_start", data=node_name).model_dump_json()
-                # Zmapuj node_name na stage (uproszczone mapowanie dla frontendu)
-                stage_map = {
-                    "researcher": "research",
-                    "structure": "structure",
-                    "writer": "writing",
-                    "save_metadata": "done"
-                }
-                if node_name in stage_map:
-                    yield StreamEvent(type="stage", data=json.dumps({"stage": stage_map[node_name], "status": "running"})).model_dump_json()
+    try:
+        async for event in events:
+            kind = event.get("event")
 
-        # Handle end of a node (chain)
-        elif kind == "on_chain_end":
-            metadata = event.get("metadata", {})
-            node_name = metadata.get("langgraph_node")
-            
-            if not node_name:
-                 name = event.get("name")
-                 if name in ["duplicate_check", "researcher", "structure", "writer", "save_metadata", "__start__", "__end__"]:
-                      node_name = name
-                      
-            if node_name:
-                yield StreamEvent(type="node_end", data=node_name).model_dump_json()
-                
-        # Handle streaming of chat model tokens
-        elif kind == "on_chat_model_stream":
-            chunk = event.get("data", {}).get("chunk")
-            if chunk:
-                # Extract text from the chunk. Depending on the model, it might be in .content
-                # or similar. Assuming standard LangChain AIMessageChunk.
-                if hasattr(chunk, "content"):
-                    text = chunk.content
-                    if isinstance(text, str):
+            if kind == "on_chain_start":
+                node_name = _extract_node_name(event)
+                if node_name:
+                    yield StreamEvent(type="node_start", data=node_name).model_dump_json()
+                    if node_name in _STAGE_MAP:
+                        yield StreamEvent(
+                            type="stage",
+                            data=json.dumps({"stage": _STAGE_MAP[node_name], "status": "running"}),
+                        ).model_dump_json()
+
+            elif kind == "on_chain_end":
+                node_name = _extract_node_name(event)
+                if node_name:
+                    yield StreamEvent(type="node_end", data=node_name).model_dump_json()
+
+            elif kind == "on_chat_model_stream":
+                chunk = event.get("data", {}).get("chunk")
+                if chunk is not None:
+                    for text in _iter_token_texts(chunk):
                         yield StreamEvent(type="token", data=text).model_dump_json()
-                    elif isinstance(text, list):
-                        # Some models return list of content blocks
-                        for block in text:
-                            if isinstance(block, dict) and block.get("type") == "text":
-                                yield StreamEvent(type="token", data=block.get("text")).model_dump_json()
-                elif isinstance(chunk, dict) and "content" in chunk:
-                     content = chunk["content"]
-                     if isinstance(content, str):
-                         yield StreamEvent(type="token", data=content).model_dump_json()
 
-    # Optional: emit an end event when the stream finishes
-    # yield json.dumps({"type": "end", "data": "done"})
+    finally:
+        # Best-effort cleanup: close the astream_events async iterator so that
+        # the underlying LangGraph tasks are cancelled when the client disconnects
+        # or an error occurs upstream.
+        if hasattr(events, "aclose"):
+            try:
+                await events.aclose()
+            except Exception:
+                pass
+
+
+# ---------------------------------------------------------------------------
+# Private helpers
+# ---------------------------------------------------------------------------
+
+def _extract_node_name(event: dict) -> str | None:
+    """
+    Return the business-logic node name from a LangGraph event, or None for
+    internal nodes (__start__, __end__, routing functions, etc.).
+    """
+    # Primary source: LangGraph sets this on every node event.
+    node_name = event.get("metadata", {}).get("langgraph_node")
+
+    # Fallback: top-level "name" field (present on some older event shapes).
+    if not node_name:
+        node_name = event.get("name", "")
+
+    return node_name if node_name in _KNOWN_NODES else None
+
+
+def _iter_token_texts(chunk: Any) -> Iterator[str]:
+    """
+    Yield individual non-empty text strings from an LLM streaming chunk.
+
+    Handles:
+    - AIMessageChunk with str content      (OpenAI / most models)
+    - AIMessageChunk with list[ContentBlock] (Anthropic extended format — each
+      block becomes a separate token to preserve streaming granularity)
+    - Plain dict with a "content" key
+    """
+    if hasattr(chunk, "content"):
+        content = chunk.content
+        if isinstance(content, str):
+            if content:
+                yield content
+        elif isinstance(content, list):
+            for block in content:
+                if isinstance(block, dict) and block.get("type") == "text":
+                    text = block.get("text", "")
+                    if text:
+                        yield text
+    elif isinstance(chunk, dict):
+        content = chunk.get("content", "")
+        if isinstance(content, str) and content:
+            yield content
