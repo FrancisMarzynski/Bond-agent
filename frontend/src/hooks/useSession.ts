@@ -93,26 +93,31 @@ export function useSession() {
     }, [setThreadId, setMode, loadSessionHistory]);
 
     const saveSessionMeta = (id: string, messages: any[]) => {
-        setSessions(prev => {
-            const updated = [...prev];
-            const idx = updated.findIndex((s) => s.id === id);
-            
-            const userMsg = messages.find((m) => m.role === "user");
-            let title = userMsg ? userMsg.content.slice(0, 30) : `Sesja ${id.slice(0, 8)}`;
-            if (title.length >= 30) title += "...";
+        const storedSessions = localStorage.getItem(SESSIONS_KEY);
+        let updated: SessionMeta[] = [];
+        try {
+            if (storedSessions) updated = JSON.parse(storedSessions);
+        } catch (e) {
+            console.error("Failed to parse sessions", e);
+        }
 
-            if (idx > -1) {
-                updated[idx].updatedAt = Date.now();
-                updated[idx].title = title;
-            } else {
-                updated.unshift({ id, title, updatedAt: Date.now() });
-            }
-            
-            const limited = updated.slice(0, 20); // Keep last 20
-            localStorage.setItem(SESSIONS_KEY, JSON.stringify(limited));
-            window.dispatchEvent(new Event("bond_sessions_changed"));
-            return limited;
-        });
+        const idx = updated.findIndex((s) => s.id === id);
+        
+        const userMsg = messages.find((m) => m.role === "user");
+        let title = userMsg ? userMsg.content.slice(0, 30) : `Sesja ${id.slice(0, 8)}`;
+        if (userMsg && userMsg.content.length >= 30) title += "...";
+
+        if (idx > -1) {
+            updated[idx].updatedAt = Date.now();
+            updated[idx].title = title;
+        } else {
+            updated.unshift({ id, title, updatedAt: Date.now() });
+        }
+        
+        const limited = updated.slice(0, 20); // Keep last 20
+        localStorage.setItem(SESSIONS_KEY, JSON.stringify(limited));
+        setSessions(limited);
+        window.dispatchEvent(new Event("bond_sessions_changed"));
     };
 
     const persistThreadId = (id: string) => {
