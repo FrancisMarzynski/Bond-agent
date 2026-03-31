@@ -64,10 +64,19 @@ def test_chat_stream_returns_sse(client):
         # Verify the chunks from fake_astream_events
         # lines[0] is now thread_id
         assert 'data: {"type":"thread_id"' in lines[0]
-        # lines[1] is node_start
-        assert 'data: {"type":"node_start","data":"researcher"}' in lines[1]
-        # lines[2] is stage (added in stream.py)
-        assert 'data: {"type":"stage","data":"{\\"stage\\": \\"research\\", \\"status\\": \\"running\\"}"}' in lines[2]
+        # lines[1] is node_start (JSON payload with node + label)
+        assert '"type":"node_start"' in lines[1]
+        node_start_event = json.loads(lines[1].removeprefix("data: "))
+        node_start_data = json.loads(node_start_event["data"])
+        assert node_start_data["node"] == "researcher"
+        assert "label" in node_start_data
+        # lines[2] is stage (added in stream.py, includes label)
+        assert '"type":"stage"' in lines[2]
+        stage_event = json.loads(lines[2].removeprefix("data: "))
+        stage_data = json.loads(stage_event["data"])
+        assert stage_data["stage"] == "research"
+        assert stage_data["status"] == "running"
+        assert "label" in stage_data
         # lines[3] is token
         assert 'data: {"type":"token","data":"Hel"}' in lines[3]
         # lines[4] is token

@@ -24,8 +24,15 @@ async def test_parse_stream_events_on_chain_start_with_langgraph_node():
     results = [json.loads(r) async for r in parse_stream_events(stream)]
     
     assert len(results) == 2
-    assert results[0] == {"type": "node_start", "data": "researcher"}
-    assert results[1] == {"type": "stage", "data": '{"stage": "research", "status": "running"}'}
+    assert results[0] == {
+        "type": "node_start",
+        "data": json.dumps({"node": "researcher", "label": "Wyszukuję informacje o temacie..."}),
+    }
+    stage_data = json.loads(results[1]["data"])
+    assert results[1]["type"] == "stage"
+    assert stage_data["stage"] == "research"
+    assert stage_data["status"] == "running"
+    assert stage_data["label"] == "Wyszukuję informacje o temacie..."
 
 
 @pytest.mark.asyncio
@@ -37,13 +44,20 @@ async def test_parse_stream_events_on_chain_start_fallback_name():
             "name": "writer"
         }
     ]
-    
+
     stream = mock_event_stream(events)
     results = [json.loads(r) async for r in parse_stream_events(stream)]
-    
+
     assert len(results) == 2
-    assert results[0] == {"type": "node_start", "data": "writer"}
-    assert results[1] == {"type": "stage", "data": '{"stage": "writing", "status": "running"}'}
+    assert results[0] == {
+        "type": "node_start",
+        "data": json.dumps({"node": "writer", "label": "Piszę treść artykułu..."}),
+    }
+    stage_data = json.loads(results[1]["data"])
+    assert results[1]["type"] == "stage"
+    assert stage_data["stage"] == "writing"
+    assert stage_data["status"] == "running"
+    assert stage_data["label"] == "Piszę treść artykułu..."
 
 
 @pytest.mark.asyncio
