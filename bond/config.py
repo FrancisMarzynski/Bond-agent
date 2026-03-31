@@ -22,4 +22,8 @@ class Settings(BaseSettings):
     # Phase 3: Streaming API and Frontend
     cors_origins: list[str] = ["http://localhost:3000"]
 
+    # Docker / ChromaDB HTTP client
+    chroma_host: str = ""
+    chroma_port: int = 8000
+
 settings = Settings()

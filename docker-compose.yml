@@ -1,0 +1,51 @@
+services:
+  bond-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.docker
+    volumes:
+      - bond-data:/app/data
+    depends_on:
+      chromadb:
+        condition: service_healthy
+    networks:
+      - bond-public
+      - bond-internal
+    restart: unless-stopped
+
+  chromadb:
+    image: chromadb/chroma:1.0.12
+    expose:
+      - "8000"
+    volumes:
+      - chroma-data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - PERSIST_DIRECTORY=/chroma/chroma
+      - ANONYMIZED_TELEMETRY=FALSE
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v2/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - bond-internal
+    restart: unless-stopped
+
+volumes:
+  bond-data:
+    driver: local
+  chroma-data:
+    driver: local
+
+networks:
+  bond-public:
+    driver: bridge
+  bond-internal:
+    driver: bridge
+    internal: true
