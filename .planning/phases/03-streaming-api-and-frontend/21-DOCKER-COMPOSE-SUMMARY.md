@@ -55,12 +55,28 @@ services:
     depends_on:
       chromadb:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:   { cpus: "1.0", memory: 512M }
+        reservations: { cpus: "0.25", memory: 128M }
+
+  bond-frontend:
+    ports: ["3000:3000"]
+    networks: [bond-public]
+    deploy:
+      resources:
+        limits:   { cpus: "0.5", memory: 256M }
+        reservations: { cpus: "0.1", memory: 64M }
 
   chromadb:
     image: chromadb/chroma:1.0.12
     expose: ["8000"]                    # tylko wewnętrznie
     networks: [bond-internal]
     volumes: [chroma-data:/chroma/chroma]
+    deploy:
+      resources:
+        limits:   { cpus: "1.0", memory: 1G }   # ← bufor na duże kolekcje
+        reservations: { cpus: "0.25", memory: 256M }
 
 networks:
   bond-public:   { driver: bridge }

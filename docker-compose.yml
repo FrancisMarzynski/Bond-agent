@@ -16,6 +16,14 @@ services:
       - bond-public
       - bond-internal
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
 
   bond-frontend:
     build:
@@ -30,6 +38,14 @@ services:
     networks:
       - bond-public
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
 
   chromadb:
     image: chromadb/chroma:1.0.12
@@ -50,6 +66,14 @@ services:
     networks:
       - bond-internal
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+        reservations:
+          cpus: "0.25"
+          memory: 256M
 
 volumes:
   bond-data:
