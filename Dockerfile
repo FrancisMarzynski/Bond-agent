@@ -5,17 +5,21 @@ WORKDIR /app
 # Install uv
 RUN pip install --no-cache-dir uv
 
-# Copy dependency files first (layer caching)
+# Copy dependency manifests first — layer cached until deps change
 COPY pyproject.toml uv.lock ./
 
-# Install dependencies into the system Python (no venv inside container)
-RUN uv sync --frozen --no-dev --no-editable
+# Install only third-party dependencies (skip the project itself)
+# This layer is cached as long as pyproject.toml/uv.lock don't change
+RUN uv sync --frozen --no-dev --no-install-project
 
 # Copy application source
 COPY bond/ ./bond/
 COPY setup_db.py ./
 
-# Create data directory (volumes will be mounted here)
+# Install the project itself (fast — deps already cached above)
+RUN uv sync --frozen --no-dev --no-editable
+
+# Create data directory (SQLite DBs and volumes mounted here)
 RUN mkdir -p /app/data
 
 # Expose API port
