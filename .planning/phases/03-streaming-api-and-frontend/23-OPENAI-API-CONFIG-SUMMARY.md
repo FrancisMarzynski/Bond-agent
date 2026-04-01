@@ -30,11 +30,11 @@ bond/config.py
             └── openai_max_retries: int = 3  (OPENAI_MAX_RETRIES env)
 
 bond/llm.py
+    ├── _build_llm(model, tokens, temperature) → BaseChatModel  [prywatna]
+    │       ├── "claude" in model → ChatAnthropic(timeout, max_retries, ...)
+    │       └── else              → ChatOpenAI(timeout, max_retries, ...)
     ├── get_research_llm(max_tokens?, temperature?) → BaseChatModel
-    └── get_draft_llm(max_tokens?, temperature?)    → BaseChatModel
-            │
-            ├── "claude" in model → ChatAnthropic(timeout, max_retries, ...)
-            └── else              → ChatOpenAI(timeout, max_retries, ...)
+    └── get_draft_llm(max_tokens?, temperature?)    → BaseChatModel (+ fallback na research_model)
 
 bond/graph/nodes/
     ├── researcher.py    → get_research_llm(max_tokens=2500)
@@ -78,11 +78,14 @@ def get_draft_llm(
 ) -> BaseChatModel: ...
 ```
 
-Obie funkcje:
+Prywatna funkcja pomocnicza `_build_llm(model, tokens, temperature)` zawiera całą logikę rozgałęzienia `ChatAnthropic` / `ChatOpenAI` — eliminuje duplikację między obiema publicznymi funkcjami.
+
+Obie publiczne funkcje:
 - Odczytują model z `settings.research_model` / `settings.draft_model`.
-- Stosują `timeout` i `max_retries` z ustawień globalnych.
-- Rozgałęziają na `ChatAnthropic` lub `ChatOpenAI` w zależności od nazwy modelu.
+- Stosują `timeout` i `max_retries` z ustawień globalnych (przez `_build_llm`).
 - Akceptują opcjonalne nadpisanie `max_tokens` i `temperature` — zachowana kompatybilność z obecnymi wywołaniami.
+
+`get_draft_llm` dodatkowo zwraca `primary.with_fallbacks([fallback])`, gdzie fallback to instancja na `research_model` — automatyczne przełączenie przy rate-limit lub niedostępności modelu głównego.
 
 ---
 
@@ -172,7 +175,8 @@ from bond.llm import get_research_llm, get_draft_llm
 r = get_research_llm()
 d = get_draft_llm()
 print(type(r).__name__, r.model_name, r.max_tokens)   # ChatOpenAI gpt-4o-mini 2500
-print(type(d).__name__, d.model_name, d.max_tokens)   # ChatOpenAI gpt-4o 4096
+# get_draft_llm zwraca teraz RunnableWithFallbacks — dostęp do primary przez .runnable
+print(type(d).__name__)                                # RunnableWithFallbacks
 "
 ```
 
