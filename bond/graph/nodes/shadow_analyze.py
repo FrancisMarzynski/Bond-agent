@@ -12,13 +12,12 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
 
 from bond.config import settings
 from bond.corpus.retriever import two_pass_retrieve
 from bond.graph.state import BondState
+from bond.llm import get_research_llm
 
 logger = logging.getLogger(__name__)
 
@@ -103,11 +102,7 @@ async def shadow_analyze_node(state: BondState) -> dict:
         }
 
     # Select LLM (mirrors researcher_node model selection pattern)
-    model = settings.research_model
-    if "claude" in model.lower():
-        llm = ChatAnthropic(model=model, max_tokens=2000)
-    else:
-        llm = ChatOpenAI(model=model, max_tokens=2000)
+    llm = get_research_llm(max_tokens=2000)
 
     user_prompt = _build_analyze_user_prompt(original_text, fragments)
     response = await llm.ainvoke([

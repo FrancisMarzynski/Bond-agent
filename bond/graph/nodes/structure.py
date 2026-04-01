@@ -1,17 +1,6 @@
-from langchain_anthropic import ChatAnthropic
-from langchain_openai import ChatOpenAI
-
-from bond.config import settings
 from bond.graph.state import AuthorState
+from bond.llm import get_research_llm
 from bond.prompts.context import build_context_block
-
-
-def _get_research_llm():
-    """Return LLM for research/analysis tasks based on RESEARCH_MODEL env var."""
-    model = settings.research_model
-    if "claude" in model.lower():
-        return ChatAnthropic(model=model, max_tokens=800)
-    return ChatOpenAI(model=model, max_tokens=800)
 
 
 def structure_node(state: AuthorState) -> dict:
@@ -19,7 +8,7 @@ def structure_node(state: AuthorState) -> dict:
     Generate H1/H2/H3 heading structure from research_report.
     On regeneration, incorporates cp1_feedback (user-edited outline + note).
     """
-    llm = _get_research_llm()
+    llm = get_research_llm(max_tokens=800)
     topic = state["topic"]
     keywords = state.get("keywords", [])
     primary_keyword = keywords[0] if keywords else topic

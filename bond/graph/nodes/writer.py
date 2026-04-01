@@ -2,12 +2,11 @@ import re
 from typing import Optional
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_anthropic import ChatAnthropic
-from langchain_openai import ChatOpenAI
 from langgraph.types import interrupt
 
 from bond.config import settings
 from bond.graph.state import AuthorState
+from bond.llm import get_draft_llm
 from bond.prompts.context import build_context_block
 from bond.prompts.writer import FORBIDDEN_WORD_STEMS, WRITER_SYSTEM_PROMPT
 from bond.store.chroma import get_corpus_collection
@@ -241,11 +240,7 @@ def writer_node(state: AuthorState) -> dict:
             return {"draft": None, "draft_validated": False}
 
     # Select DRAFT_MODEL LLM (temperature 0.5–0.7 per COMMUNICATION_STYLE.md §3)
-    draft_model = settings.draft_model
-    if "claude" in draft_model.lower():
-        llm = ChatAnthropic(model=draft_model, max_tokens=4096, temperature=0.7)
-    else:
-        llm = ChatOpenAI(model=draft_model, max_tokens=4096, temperature=0.7)
+    llm = get_draft_llm(max_tokens=4096, temperature=0.7)
 
     # Fetch RAG exemplars from Phase 1 corpus
     exemplars = _fetch_rag_exemplars(topic, n=5)

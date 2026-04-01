@@ -1,13 +1,11 @@
 import logging
 import re
 
-from langchain_anthropic import ChatAnthropic
 from langchain_mcp_adapters.client import MultiServerMCPClient
-from langchain_openai import ChatOpenAI
 
-from bond.config import settings
 from bond.db.search_cache import compute_query_hash, get_cached_result, save_cached_result
 from bond.graph.state import AuthorState
+from bond.llm import get_research_llm
 from bond.prompts.context import build_context_block
 
 log = logging.getLogger(__name__)
@@ -62,8 +60,6 @@ def _format_research_report(raw_results: str, topic: str, keywords: list[str], c
     1. Synthesis section: 2-3 paragraphs summarizing key themes across sources
     2. Numbered source list extracted from results
     """
-    research_model = settings.research_model
-
     context_section = f"\n{context_block}\n" if context_block else ""
     synthesis_prompt = f"""Jesteś redaktorem. Na podstawie poniższych wyników wyszukiwania napisz:{context_section}
 
@@ -79,11 +75,7 @@ WYNIKI WYSZUKIWANIA:
 
 Odpowiedź zacznij od nagłówka "### Synteza", a listę źródeł od "### Źródła"."""
 
-    if "claude" in research_model.lower():
-        llm = ChatAnthropic(model=research_model, max_tokens=2500)
-    else:
-        llm = ChatOpenAI(model=research_model, max_tokens=2500)
-
+    llm = get_research_llm(max_tokens=2500)
     formatted = llm.invoke(synthesis_prompt).content.strip()
 
     return f"## Raport z badań: {topic}\n\n{formatted}"

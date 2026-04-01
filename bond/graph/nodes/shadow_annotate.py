@@ -13,12 +13,10 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from langchain_anthropic import ChatAnthropic
-from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
-from bond.config import settings
 from bond.graph.state import Annotation, BondState
+from bond.llm import get_draft_llm
 
 logger = logging.getLogger(__name__)
 
@@ -255,12 +253,8 @@ async def shadow_annotate_node(state: BondState) -> dict:
     if feedback:
         logger.info("shadow_annotate: re-run with user feedback — incorporating into prompt.")
 
-    # Select LLM (mirrors shadow_analyze model selection pattern)
-    model = settings.draft_model
-    if "claude" in model.lower():
-        llm = ChatAnthropic(model=model, max_tokens=4096, temperature=0)
-    else:
-        llm = ChatOpenAI(model=model, max_tokens=4096, temperature=0)
+    # Select LLM — temperature=0 for deterministic structured output
+    llm = get_draft_llm(max_tokens=4096, temperature=0)
 
     structured_llm = llm.with_structured_output(AnnotationResult)
 
