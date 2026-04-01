@@ -17,6 +17,20 @@ services:
       - bond-internal
     restart: unless-stopped
 
+  bond-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - bond-api
+    networks:
+      - bond-public
+    restart: unless-stopped
+
   chromadb:
     image: chromadb/chroma:1.0.12
     expose:
