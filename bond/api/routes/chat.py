@@ -128,6 +128,14 @@ async def _stream_graph_events(graph, input_or_command, config: dict, request: R
     client_disconnected = False
     finished_cleanly = False
 
+    # Pull chunks from the inner generator without cancelling it on timeout.
+    # asyncio.wait_for cancels the wrapped coroutine on timeout in Python ≥3.11,
+    # which finalises the async generator prematurely (the next __anext__ call
+    # raises StopAsyncIteration even though the graph is still running).
+    # Instead we create a persistent Task for the next chunk and use asyncio.wait
+    # (which never cancels) to implement the heartbeat/disconnect poll loop.
+    chunk_task: asyncio.Task | None = None
+
     try:
         while True:
             # Check for client disconnect before every pull from the graph.
@@ -135,22 +143,28 @@ async def _stream_graph_events(graph, input_or_command, config: dict, request: R
                 client_disconnected = True
                 break
 
-            try:
-                chunk = await asyncio.wait_for(gen.__anext__(), timeout=1.0)
-                yield chunk
-                last_heartbeat = asyncio.get_event_loop().time()
+            if chunk_task is None:
+                chunk_task = asyncio.ensure_future(gen.__anext__())
 
-            except asyncio.TimeoutError:
-                # No event arrived within 1 s; maybe send a heartbeat.
+            done, _ = await asyncio.wait({chunk_task}, timeout=1.0)
+
+            if done:
+                try:
+                    chunk = chunk_task.result()
+                    chunk_task = None
+                    yield chunk
+                    last_heartbeat = asyncio.get_event_loop().time()
+                except StopAsyncIteration:
+                    # Inner generator exhausted.  Mark as clean only when no error occurred.
+                    chunk_task = None
+                    finished_cleanly = not had_error
+                    break
+            else:
+                # 1 s elapsed without a new chunk — maybe send a heartbeat.
                 now = asyncio.get_event_loop().time()
                 if now - last_heartbeat > 15.0:
                     yield StreamEvent(type="heartbeat", data="ping").model_dump_json()
                     last_heartbeat = now
-
-            except StopAsyncIteration:
-                # Inner generator exhausted.  Mark as clean only when no error occurred.
-                finished_cleanly = not had_error
-                break
 
     except asyncio.CancelledError:
         # Task was cancelled (e.g. ASGI server shutdown).  Treat as client disconnect.
@@ -163,6 +177,13 @@ async def _stream_graph_events(graph, input_or_command, config: dict, request: R
         yield StreamEvent(type="error", data=str(exc)).model_dump_json()
 
     finally:
+        # Cancel the pending chunk task (if any) to avoid a dangling Task warning.
+        if chunk_task is not None and not chunk_task.done():
+            chunk_task.cancel()
+            try:
+                await chunk_task
+            except (asyncio.CancelledError, StopAsyncIteration, Exception):
+                pass
         # Always close the inner generator so that parse_stream_events' finally block
         # runs and the astream_events iterator is released — freeing model connections.
         await gen.aclose()
