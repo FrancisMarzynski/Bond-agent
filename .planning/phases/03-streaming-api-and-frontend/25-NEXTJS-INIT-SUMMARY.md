@@ -1,8 +1,9 @@
 # 25-NEXTJS-INIT Podsumowanie: Inicjalizacja Next.js i konteneryzacja frontendu
 
-**Data ukończenia:** 2026-04-01
-**Faza:** 03 — Streaming API i Frontend
-**Plan:** 25 — Next.js Initialization & Frontend Docker
+**Data ukończenia:** 2026-04-01  
+**Poprawki code review:** 2026-04-03  
+**Faza:** 03 — Streaming API i Frontend  
+**Plan:** 25 — Next.js Initialization & Frontend Docker  
 **Status:** ✅ Zakończone
 
 ---
@@ -19,7 +20,7 @@ Frontend był już w pełni rozwinięty z wcześniejszych faz:
 
 | Element | Stan |
 |---------|------|
-| Next.js 16 (App Router) | ✅ `src/app/` z layout + pages |
+| Next.js 15 (App Router) | ✅ `src/app/` z layout + pages |
 | TypeScript | ✅ `tsconfig.json` ze `strict: true` |
 | Tailwind CSS v4 | ✅ `@import "tailwindcss"` w `globals.css` |
 | `src/components/` | ✅ 16 komponentów (ChatInterface, EditorPane, itp.) |
@@ -52,7 +53,24 @@ Trzy etapy eliminują `node_modules` z obrazu finalnego — Next.js standalone b
 
 ---
 
-## Nowe pliki
+## Architektura URL API
+
+Wszystkie wywołania API z przeglądarki używają **względnych ścieżek** (`/api/...`). Next.js serwer przekierowuje je do backendu przez mechanizm `rewrites` skonfigurowany w `next.config.ts`.
+
+```
+Przeglądarka → /api/chat/stream
+                    ↓ (rewrite, serwer Next.js)
+              http://bond-api:8000/api/chat/stream
+```
+
+Zalety:
+- Brak zmiennych `NEXT_PUBLIC_` — żaden URL backendu nie trafia do przeglądarki
+- Działa lokalnie (`API_URL` domyślnie `http://localhost:8000`) i w Dockerze (`http://bond-api:8000`)
+- Bez zmian kodu frontendu przy zmianie środowiska
+
+---
+
+## Nowe/zmodyfikowane pliki
 
 ### `frontend/Dockerfile`
 
@@ -103,23 +121,43 @@ Dockerfile
 .dockerignore
 ```
 
----
-
-## Zmodyfikowane pliki
-
 ### `frontend/next.config.ts`
 
-Dodano `output: "standalone"` — wymagane do budowania minimalnego bundle dla Dockera:
-
 ```ts
+import type { NextConfig } from "next";
+
+const API_URL = process.env.API_URL ?? "http://localhost:8000";
+
 const nextConfig: NextConfig = {
   output: "standalone",
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${API_URL}/api/:path*`,
+      },
+    ];
+  },
 };
+
+export default nextConfig;
 ```
 
-### `docker-compose.yml`
+- `output: "standalone"` — wymagane do budowania minimalnego bundle dla Dockera
+- `rewrites()` — proxy wszystkich wywołań `/api/*` do backendu; czyta `API_URL` z env w czasie startu serwera
 
-Dodano serwis `bond-frontend`:
+### `frontend/src/config.ts`
+
+```ts
+// Empty string = relative URL. All /api/* calls are proxied server-side
+// via next.config.ts rewrites (using the API_URL env var, not exposed to browser).
+export const API_URL = "";
+
+/** Maximum allowed file upload size in bytes (50 MB). */
+export const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
+```
+
+### `docker-compose.yml` — serwis `bond-frontend`
 
 ```yaml
 bond-frontend:
@@ -129,7 +167,7 @@ bond-frontend:
   ports:
     - "3000:3000"
   environment:
-    - NEXT_PUBLIC_API_URL=http://localhost:8000
+    - API_URL=http://bond-api:8000
   depends_on:
     - bond-api
   networks:
@@ -137,7 +175,7 @@ bond-frontend:
   restart: unless-stopped
 ```
 
-`NEXT_PUBLIC_API_URL` wskazuje na `bond-api` eksponowane na hoście pod portem 8000.
+`API_URL` wskazuje na wewnętrzną nazwę serwisu Docker — czytana przez Next.js serwer w czasie startu (nie przez przeglądarkę).
 
 ---
 
@@ -170,7 +208,7 @@ curl http://localhost:3000  # → HTTP 200 ✅
 
 | AC | Status |
 |----|--------|
-| Next.js 16 (App Router), Tailwind CSS v4, TypeScript | ✅ Wszystkie aktywne od wcześniejszych faz |
+| Next.js 15 (App Router), Tailwind CSS v4, TypeScript | ✅ Wszystkie aktywne od wcześniejszych faz |
 | Struktura `src/components`, `src/hooks`, `src/store` | ✅ 16 komponentów, 2 hooks, 2 stores (Zustand) |
 | Pomyślny deployment na Dockerze (HTTP 200) | ✅ `bond-frontend:local` — 298MB, serwer odpowiada HTTP 200 |
 
