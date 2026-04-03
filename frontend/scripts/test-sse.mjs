@@ -11,11 +11,19 @@ import assert from "node:assert/strict";
 // ---------------------------------------------------------------------------
 // SSEParser (pure JS port of frontend/src/lib/sse.ts)
 // ---------------------------------------------------------------------------
+const MAX_BUFFER_SIZE = 64 * 1024; // 64 KB
+
 class SSEParser {
     buffer = "";
 
     feed(chunk) {
         this.buffer += chunk;
+        if (this.buffer.length > MAX_BUFFER_SIZE) {
+            this.buffer = "";
+            throw new Error(
+                `SSEParser: buffer limit exceeded (${MAX_BUFFER_SIZE} bytes) — missing \\n\\n separator`
+            );
+        }
         const events = [];
         const parts = this.buffer.split("\n\n");
         this.buffer = parts.pop() ?? "";
@@ -115,6 +123,20 @@ test("SSEParser: obsługuje wieloliniowe pole data: (ciągłość)", () => {
     const events = parser.feed("data: line1\ndata: line2\n\n");
     assert.equal(events.length, 1);
     assert.equal(events[0].data, "line1\nline2");
+});
+
+test("SSEParser: rzuca błąd po przekroczeniu limitu bufora (brak \\n\\n)", () => {
+    const parser = new SSEParser();
+    const bigChunk = "data: " + "x".repeat(MAX_BUFFER_SIZE);
+    assert.throws(
+        () => parser.feed(bigChunk),
+        /buffer limit exceeded/,
+        "Powinien rzucić błąd przy przekroczeniu limitu bufora"
+    );
+    // Buffer should be reset after the error
+    const events = parser.feed("data: recovery\n\n");
+    assert.equal(events.length, 1);
+    assert.equal(events[0].data, "recovery");
 });
 
 // ---------------------------------------------------------------------------

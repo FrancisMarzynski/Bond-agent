@@ -52,14 +52,16 @@ Klasa `SSEParser` — parser graniczny chunków SSE.
 **Kluczowe właściwości:**
 - `buffer: string` — akumulator niekompletnych chunków między wywołaniami `feed()`
 - `feed(chunk: string): SSEEvent[]` — przetwarza nowy fragment, zwraca kompletne zdarzenia
+- `MAX_BUFFER_SIZE = 64 KB` — limit rozmiaru bufora chroniący przed nieskończonym wzrostem
 
 **Algorytm parsowania:**
 1. Doklejenie `chunk` do `buffer`.
-2. Podział `buffer` na bloki rozdzielone `\n\n`.
-3. Ostatni blok (potencjalnie niekompletny) wraca do `buffer`.
-4. Dla każdego bloku: iteracja linii z rozpoznaniem prefiksów `event:`, `id:`, `data:`.
-5. Wieloliniowe pola `data:` łączone przez `\n`.
-6. Bloki bez `data:` (np. komentarze heartbeat `": ping"`) są pomijane.
+2. Sprawdzenie limitu bufora: jeśli `buffer.length > 64 KB` → reset bufora + rzucenie `Error` (brakujący separator `\n\n`).
+3. Podział `buffer` na bloki rozdzielone `\n\n`.
+4. Ostatni blok (potencjalnie niekompletny) wraca do `buffer`.
+5. Dla każdego bloku: iteracja linii z rozpoznaniem prefiksów `event:`, `id:`, `data:`.
+6. Wieloliniowe pola `data:` łączone przez `\n`.
+7. Bloki bez `data:` (np. komentarze heartbeat `": ping"`) są pomijane.
 
 ```typescript
 export interface SSEEvent {
@@ -149,18 +151,19 @@ node frontend/scripts/test-sse.mjs --api-url http://localhost:8000
 ### Testy jednostkowe SSEParser
 
 ```
-✔ SSEParser: parsuje pojedyncze zdarzenie z prefiksem data:       (1.07ms)
-✔ SSEParser: obsługuje zdarzenie done                              (0.07ms)
-✔ SSEParser: obsługuje niekompletny chunk (boundary split)         (0.06ms)
-✔ SSEParser: parsuje wiele zdarzeń z jednego chunka                (0.07ms)
-✔ SSEParser: rozpoznaje pole event:                                (0.06ms)
-✔ SSEParser: rozpoznaje pole id:                                   (0.05ms)
-✔ SSEParser: ignoruje puste zdarzenia (brak pola data:)            (0.05ms)
-✔ SSEParser: obsługuje wieloliniowe pole data: (ciągłość)          (0.05ms)
-✔ FastAPI /health endpoint odpowiada (graceful skip gdy offline)   (51ms)
-✔ FastAPI /api/chat/stream zwraca SSE Content-Type (graceful skip) (2ms)
+✔ SSEParser: parsuje pojedyncze zdarzenie z prefiksem data:                  (1.07ms)
+✔ SSEParser: obsługuje zdarzenie done                                         (0.07ms)
+✔ SSEParser: obsługuje niekompletny chunk (boundary split)                    (0.06ms)
+✔ SSEParser: parsuje wiele zdarzeń z jednego chunka                           (0.07ms)
+✔ SSEParser: rozpoznaje pole event:                                           (0.06ms)
+✔ SSEParser: rozpoznaje pole id:                                              (0.05ms)
+✔ SSEParser: ignoruje puste zdarzenia (brak pola data:)                       (0.05ms)
+✔ SSEParser: obsługuje wieloliniowe pole data: (ciągłość)                     (0.05ms)
+✔ SSEParser: rzuca błąd po przekroczeniu limitu bufora (brak \n\n)            (0.25ms)
+✔ FastAPI /health endpoint odpowiada (graceful skip gdy offline)              (93ms)
+✔ FastAPI /api/chat/stream zwraca SSE Content-Type (graceful skip)            (4ms)
 
-tests 10 | pass 10 | fail 0
+tests 11 | pass 11 | fail 0
 ```
 
 ### Test połączenia z FastAPI (serwer uruchomiony)

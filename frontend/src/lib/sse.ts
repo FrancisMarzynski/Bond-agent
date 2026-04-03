@@ -5,11 +5,19 @@ export interface SSEEvent {
     data: string;
 }
 
+const MAX_BUFFER_SIZE = 64 * 1024; // 64 KB
+
 export class SSEParser {
     private buffer = "";
 
     feed(chunk: string): SSEEvent[] {
         this.buffer += chunk;
+        if (this.buffer.length > MAX_BUFFER_SIZE) {
+            this.buffer = "";
+            throw new Error(
+                `SSEParser: buffer limit exceeded (${MAX_BUFFER_SIZE} bytes) — missing \\n\\n separator`
+            );
+        }
         const events: SSEEvent[] = [];
         const parts = this.buffer.split("\n\n");
         // Last part may be incomplete — keep it in buffer
