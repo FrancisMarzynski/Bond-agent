@@ -15,7 +15,7 @@ from bond.graph.nodes.checkpoint_2 import checkpoint_2_node as _checkpoint_2_nod
 from bond.graph.nodes.save_metadata import save_metadata_node as _save_metadata_node
 from bond.graph.nodes.shadow_analyze import shadow_analyze_node as _shadow_analyze_node
 from bond.graph.nodes.shadow_annotate import shadow_annotate_node as _shadow_annotate_node
-from bond.graph.nodes.shadow_checkpoint import shadow_checkpoint_node as _shadow_checkpoint_node
+from bond.graph.nodes.shadow_checkpoint import shadow_checkpoint_node as _shadow_checkpoint_node, HARD_CAP_ITERATIONS
 
 
 # ---------------------------------------------------------------------------
@@ -74,6 +74,21 @@ def _route_after_cp2(state: BondState) -> str:
     return "writer"
 
 
+def _route_after_shadow_checkpoint(state: BondState) -> str:
+    """Route to END on approval or hard-cap; loop back to shadow_annotate on rejection.
+
+    Called only when the node returns a plain dict (approve case).
+    For reject/abort/hard-cap the node returns Command(goto=...) which takes precedence.
+    The path_map in add_conditional_edges also serves as the LangGraph declaration of all
+    valid destinations — required for Command(goto="shadow_annotate") to compile correctly.
+    """
+    if state.get("shadow_approved"):
+        return END
+    if state.get("iteration_count", 0) >= HARD_CAP_ITERATIONS:
+        return END
+    return "shadow_annotate"
+
+
 # ---------------------------------------------------------------------------
 # Graph builder
 # ---------------------------------------------------------------------------
@@ -114,7 +129,11 @@ def build_author_graph() -> StateGraph:
     # Shadow branch: analyze → annotate → checkpoint (loops back to annotate on reject)
     builder.add_edge("shadow_analyze", "shadow_annotate")
     builder.add_edge("shadow_annotate", "shadow_checkpoint")
-    builder.add_edge("shadow_checkpoint", END)
+    builder.add_conditional_edges(
+        "shadow_checkpoint",
+        _route_after_shadow_checkpoint,
+        {"shadow_annotate": "shadow_annotate", END: END},
+    )
 
     return builder
 
