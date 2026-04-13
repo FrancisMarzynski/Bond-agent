@@ -228,7 +228,7 @@ export function ShadowPanel() {
         <div className="space-y-1.5">
           <h2 className="text-lg font-semibold text-foreground">Tryb Cień</h2>
           <p className="text-sm text-muted-foreground">
-            Wklej tekst, który chcesz dopasować do stylu swojego korpusu.
+            Wklej dowolny tekst, a AI przepisze go tak, żeby brzmiał jak Twój.
           </p>
         </div>
         <Textarea

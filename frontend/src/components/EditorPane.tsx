@@ -25,7 +25,7 @@ export function EditorPane() {
   if (!draft && !isStreaming) {
     return (
       <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm p-8">
-        Draft will appear here as it is generated.
+        Wersja robocza pojawi się tutaj podczas generowania.
       </div>
     );
   }
