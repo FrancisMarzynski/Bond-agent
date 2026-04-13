@@ -199,7 +199,7 @@ Poboczne: {other_keywords}
 # Writer node
 # ---------------------------------------------------------------------------
 
-def writer_node(state: AuthorState) -> dict:
+async def writer_node(state: AuthorState) -> dict:
     """
     Generate SEO-compliant draft with RAG style injection and Tone of Voice enforcement.
 
@@ -266,7 +266,7 @@ def writer_node(state: AuthorState) -> dict:
             SystemMessage(content=WRITER_SYSTEM_PROMPT),
             HumanMessage(content=user_prompt),
         ]
-        draft = _clean_output(llm.invoke(messages).content)
+        draft = _clean_output((await llm.ainvoke(messages)).content)
         validation = _validate_draft(draft, primary_keyword, min_words)
 
         all_passed = all(validation.values())

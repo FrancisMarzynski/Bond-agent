@@ -52,7 +52,7 @@ def _count_sources(report: str) -> int:
     return len(re.findall(r"^\d+\.", report, re.MULTILINE))
 
 
-def _format_research_report(raw_results: str, topic: str, keywords: list[str], context_block: str = "") -> str:
+async def _format_research_report(raw_results: str, topic: str, keywords: list[str], context_block: str = "") -> str:
     """
     Format raw MCP search results into a structured Markdown report.
 
@@ -76,7 +76,7 @@ WYNIKI WYSZUKIWANIA:
 Odpowiedź zacznij od nagłówka "### Synteza", a listę źródeł od "### Źródła"."""
 
     llm = get_research_llm(max_tokens=2500)
-    formatted = llm.invoke(synthesis_prompt).content.strip()
+    formatted = (await llm.ainvoke(synthesis_prompt)).content.strip()
 
     return f"## Raport z badań: {topic}\n\n{formatted}"
 
@@ -130,7 +130,7 @@ async def researcher_node(state: AuthorState) -> dict:
         cache = {**cache, topic: raw_results}
 
     context_block = build_context_block(state.get("context_dynamic"))
-    report = _format_research_report(raw_results, topic, keywords, context_block)
+    report = await _format_research_report(raw_results, topic, keywords, context_block)
 
     source_count = _count_sources(report)
     if source_count < _MIN_SOURCES:

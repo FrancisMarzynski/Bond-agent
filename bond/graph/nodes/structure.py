@@ -3,7 +3,7 @@ from bond.llm import get_research_llm
 from bond.prompts.context import build_context_block
 
 
-def structure_node(state: AuthorState) -> dict:
+async def structure_node(state: AuthorState) -> dict:
     """
     Generate H1/H2/H3 heading structure from research_report.
     On regeneration, incorporates cp1_feedback (user-edited outline + note).
@@ -59,5 +59,5 @@ RAPORT BADAWCZY:
 
 Zwróć TYLKO strukturę nagłówków w formacie Markdown (# H1, ## H2, ### H3). Bez treści artykułu."""
 
-    heading_structure = llm.invoke(prompt).content.strip()
+    heading_structure = (await llm.ainvoke(prompt)).content.strip()
     return {"heading_structure": heading_structure}
