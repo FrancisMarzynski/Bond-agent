@@ -23,6 +23,9 @@ async def save_metadata_node(state: AuthorState) -> dict:
         thread_id=thread_id,
         topic=topic,
         mode="author",
+        tokens_used_research=state.get("tokens_used_research", 0),
+        tokens_used_draft=state.get("tokens_used_draft", 0),
+        estimated_cost_usd=state.get("estimated_cost_usd", 0.0),
     )
 
     # 2. ChromaDB jest synchroniczne — uruchomione w osobnym wątku, aby nie blokować event loopa

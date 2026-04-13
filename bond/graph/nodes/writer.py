@@ -6,7 +6,7 @@ from langgraph.types import interrupt
 
 from bond.config import settings
 from bond.graph.state import AuthorState
-from bond.llm import get_draft_llm
+from bond.llm import estimate_cost_usd, get_draft_llm
 from bond.prompts.context import build_context_block
 from bond.prompts.writer import FORBIDDEN_WORD_STEMS, WRITER_SYSTEM_PROMPT
 from bond.store.chroma import get_corpus_collection
@@ -250,6 +250,8 @@ async def writer_node(state: AuthorState) -> dict:
     draft = ""
     validation = {}
     max_attempts = 3
+    total_draft_input_tokens = 0
+    total_draft_output_tokens = 0
     for attempt in range(max_attempts):
         user_prompt = _build_writer_user_prompt(
             topic=topic,
@@ -266,18 +268,37 @@ async def writer_node(state: AuthorState) -> dict:
             SystemMessage(content=WRITER_SYSTEM_PROMPT),
             HumanMessage(content=user_prompt),
         ]
-        draft = _clean_output((await llm.ainvoke(messages)).content)
+        response = await llm.ainvoke(messages)
+        draft = _clean_output(response.content)
+
+        usage = response.usage_metadata or {}
+        total_draft_input_tokens += usage.get("input_tokens", 0)
+        total_draft_output_tokens += usage.get("output_tokens", 0)
+
         validation = _validate_draft(draft, primary_keyword, min_words)
 
         all_passed = all(validation.values())
         if all_passed:
-            return {"draft": draft, "draft_validated": True}
+            break
 
         if attempt < max_attempts - 1:
             failed = [k for k, v in validation.items() if not v]
             print(f"Writer auto-retry {attempt + 1}/{max_attempts - 1}: failed constraints: {failed}")
 
-    # All retries exhausted
-    failed_constraints = [k for k, v in validation.items() if not v]
-    print(f"WARNING: Draft failed validation after {max_attempts} attempts. Failed: {failed_constraints}")
-    return {"draft": draft, "draft_validated": False}
+    # All retries exhausted (or succeeded above)
+    if not all(validation.values()):
+        failed_constraints = [k for k, v in validation.items() if not v]
+        print(f"WARNING: Draft failed validation after {max_attempts} attempts. Failed: {failed_constraints}")
+
+    call_cost = estimate_cost_usd(
+        settings.draft_model, total_draft_input_tokens, total_draft_output_tokens
+    )
+    existing_draft_tokens = state.get("tokens_used_draft", 0)
+    existing_cost = state.get("estimated_cost_usd", 0.0)
+
+    return {
+        "draft": draft,
+        "draft_validated": all(validation.values()),
+        "tokens_used_draft": existing_draft_tokens + total_draft_input_tokens + total_draft_output_tokens,
+        "estimated_cost_usd": existing_cost + call_cost,
+    }

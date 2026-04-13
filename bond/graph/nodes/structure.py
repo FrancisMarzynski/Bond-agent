@@ -1,5 +1,6 @@
+from bond.config import settings
 from bond.graph.state import AuthorState
-from bond.llm import get_research_llm
+from bond.llm import estimate_cost_usd, get_research_llm
 from bond.prompts.context import build_context_block
 
 
@@ -59,5 +60,19 @@ RAPORT BADAWCZY:
 
 Zwróć TYLKO strukturę nagłówków w formacie Markdown (# H1, ## H2, ### H3). Bez treści artykułu."""
 
-    heading_structure = (await llm.ainvoke(prompt)).content.strip()
-    return {"heading_structure": heading_structure}
+    response = await llm.ainvoke(prompt)
+    heading_structure = response.content.strip()
+
+    usage = response.usage_metadata or {}
+    input_tokens = usage.get("input_tokens", 0)
+    output_tokens = usage.get("output_tokens", 0)
+    call_cost = estimate_cost_usd(settings.research_model, input_tokens, output_tokens)
+
+    existing_research_tokens = state.get("tokens_used_research", 0)
+    existing_cost = state.get("estimated_cost_usd", 0.0)
+
+    return {
+        "heading_structure": heading_structure,
+        "tokens_used_research": existing_research_tokens + input_tokens + output_tokens,
+        "estimated_cost_usd": existing_cost + call_cost,
+    }

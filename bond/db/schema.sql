@@ -7,7 +7,10 @@ CREATE TABLE IF NOT EXISTS metadata_log (
     topic TEXT NOT NULL,
     published_date TEXT NOT NULL,   -- ISO 8601 UTC
     mode TEXT NOT NULL DEFAULT 'author',
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    tokens_used_research INTEGER NOT NULL DEFAULT 0,
+    tokens_used_draft INTEGER NOT NULL DEFAULT 0,
+    estimated_cost_usd REAL NOT NULL DEFAULT 0.0
 );
 
 -- Indexes for common query patterns

@@ -3,9 +3,10 @@ import re
 
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
+from bond.config import settings
 from bond.db.search_cache import compute_query_hash, get_cached_result, save_cached_result
 from bond.graph.state import AuthorState
-from bond.llm import get_research_llm
+from bond.llm import estimate_cost_usd, get_research_llm
 from bond.prompts.context import build_context_block
 
 log = logging.getLogger(__name__)
@@ -52,13 +53,18 @@ def _count_sources(report: str) -> int:
     return len(re.findall(r"^\d+\.", report, re.MULTILINE))
 
 
-async def _format_research_report(raw_results: str, topic: str, keywords: list[str], context_block: str = "") -> str:
+async def _format_research_report(
+    raw_results: str, topic: str, keywords: list[str], context_block: str = ""
+) -> tuple[str, int, int]:
     """
     Format raw MCP search results into a structured Markdown report.
 
     Structure (per locked user decision):
     1. Synthesis section: 2-3 paragraphs summarizing key themes across sources
     2. Numbered source list extracted from results
+
+    Returns:
+        (report_markdown, input_tokens, output_tokens)
     """
     context_section = f"\n{context_block}\n" if context_block else ""
     synthesis_prompt = f"""Jesteś redaktorem. Na podstawie poniższych wyników wyszukiwania napisz:{context_section}
@@ -76,9 +82,14 @@ WYNIKI WYSZUKIWANIA:
 Odpowiedź zacznij od nagłówka "### Synteza", a listę źródeł od "### Źródła"."""
 
     llm = get_research_llm(max_tokens=2500)
-    formatted = (await llm.ainvoke(synthesis_prompt)).content.strip()
+    response = await llm.ainvoke(synthesis_prompt)
+    formatted = response.content.strip()
 
-    return f"## Raport z badań: {topic}\n\n{formatted}"
+    usage = response.usage_metadata or {}
+    input_tokens = usage.get("input_tokens", 0)
+    output_tokens = usage.get("output_tokens", 0)
+
+    return f"## Raport z badań: {topic}\n\n{formatted}", input_tokens, output_tokens
 
 
 async def researcher_node(state: AuthorState) -> dict:
@@ -130,7 +141,9 @@ async def researcher_node(state: AuthorState) -> dict:
         cache = {**cache, topic: raw_results}
 
     context_block = build_context_block(state.get("context_dynamic"))
-    report = await _format_research_report(raw_results, topic, keywords, context_block)
+    report, input_tokens, output_tokens = await _format_research_report(
+        raw_results, topic, keywords, context_block
+    )
 
     source_count = _count_sources(report)
     if source_count < _MIN_SOURCES:
@@ -139,7 +152,13 @@ async def researcher_node(state: AuthorState) -> dict:
             "Sprawdź połączenie z Exa MCP lub rozszerz zapytanie."
         )
 
+    existing_research_tokens = state.get("tokens_used_research", 0)
+    existing_cost = state.get("estimated_cost_usd", 0.0)
+    call_cost = estimate_cost_usd(settings.research_model, input_tokens, output_tokens)
+
     return {
         "research_report": report,
         "search_cache": cache,
+        "tokens_used_research": existing_research_tokens + input_tokens + output_tokens,
+        "estimated_cost_usd": existing_cost + call_cost,
     }

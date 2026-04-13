@@ -22,6 +22,32 @@ from bond.config import settings
 _RESEARCH_MAX_TOKENS = 2500
 _DRAFT_MAX_TOKENS = 4096
 
+# USD cost per 1 million tokens: {model_substring: (input_price, output_price)}
+# Prices are approximate and based on public OpenAI / Anthropic pricing pages.
+_MODEL_COSTS_USD_PER_1M: dict[str, tuple[float, float]] = {
+    "gpt-4o-mini": (0.15, 0.60),
+    "gpt-4o": (2.50, 10.00),
+    "claude-3-5-haiku": (0.80, 4.00),
+    "claude-3-5-sonnet": (3.00, 15.00),
+    "claude-3-opus": (15.00, 75.00),
+}
+
+
+def estimate_cost_usd(model: str, input_tokens: int, output_tokens: int) -> float:
+    """Return approximate USD cost for a single LLM call.
+
+    Matches ``model`` against the longest substring key in ``_MODEL_COSTS_USD_PER_1M``.
+    Falls back to gpt-4o pricing when no match is found (conservative over-estimate).
+    """
+    model_lower = model.lower()
+    matched_key = max(
+        (k for k in _MODEL_COSTS_USD_PER_1M if k in model_lower),
+        key=len,
+        default=None,
+    )
+    input_price, output_price = _MODEL_COSTS_USD_PER_1M.get(matched_key or "", (2.50, 10.00))
+    return (input_tokens * input_price + output_tokens * output_price) / 1_000_000
+
 
 def _build_llm(model: str, tokens: int, temperature: float) -> BaseChatModel:
     """Instantiate the correct LLM class based on model name."""

@@ -65,6 +65,11 @@ class BondState(TypedDict):
     # --- Hard cap notification ---
     hard_cap_message: NotRequired[Optional[str]]  # set when pipeline aborts due to HARD_CAP_ITERATIONS
 
+    # --- Token & cost tracking ---
+    tokens_used_research: NotRequired[int]   # tokens consumed by researcher + structure nodes
+    tokens_used_draft: NotRequired[int]      # tokens consumed by writer node (all retry attempts)
+    estimated_cost_usd: NotRequired[float]   # running total estimated cost in USD
+
 
 # Backward-compat alias — all existing Phase 2 node imports use AuthorState without modification
 AuthorState = BondState
