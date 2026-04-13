@@ -17,8 +17,7 @@ Dokument opisuje konkretne usprawnienia zidentyfikowane w kodzie. Każdy punkt z
    - [7. Pętla HITL w trybie Shadow jest zepsuta](#7-pętla-hitl-w-trybie-shadow-jest-zepsuta)
    - [8. Raport badawczy niewidoczny w UI](#8-raport-badawczy-niewidoczny-w-ui)
    - [9. Brak eksportu i kopiowania draftu](#9-brak-eksportu-i-kopiowania-draftu)
-   - [10. Brak trybu Repurposing i YouTube](#10-brak-trybu-repurposing-i-youtube)
-   - [11. Brak historii sesji](#11-brak-historii-sesji)
+   - [10. Brak historii sesji](#10-brak-historii-sesji)
 3. [Architektura i niezawodność](#architektura-i-niezawodność)
    - [12. Blokujące wywołania LLM w asynchronicznym grafie](#12-blokujące-wywołania-llm-w-asynchronicznym-grafie)
    - [13. Cache wyszukiwań nie jest współdzielony między sesjami](#13-cache-wyszukiwań-nie-jest-współdzielony-między-sesjami)
@@ -260,26 +259,7 @@ Przyciski widoczne tylko gdy `draft` nie jest pusty i `!isStreaming`.
 
 ---
 
-### 10. Brak trybu Repurposing i YouTube
-
-**Problem**
-
-`PROJECT.md` wymienia dwa tryby jako aktywne wymagania:
-
-- **Repurposing** — artykuł blogowy → posty na Facebook, LinkedIn, Instagram, X z zachowaniem limitów znaków
-- **YouTube → Artykuł** — pobieranie transkrypcji przez `youtube-transcript-api`, generowanie draftu
-
-Żaden z nich nie ma implementacji — brak węzłów w grafie, brak routingu, brak UI.
-
-**Rozwiązanie**
-
-**Repurposing** jest stosunkowo prostą implementacją: jedno wywołanie LLM per platforma z konkretnymi ograniczeniami (280 znaków dla X, 700 dla Facebooka, 3000 dla LinkedIn). Nie wymaga RAG ani HITL — wystarczy pojedynczy węzeł i nowy tryb w `route_mode()`. Może działać jako post-processing po zatwierdzeniu draftu w trybie Author.
-
-**YouTube** wymaga: walidacji URL YouTube, wywołania `youtube-transcript-api` (biblioteka dostępna w `pyproject.toml` jako potencjalna zależność), parsowania transkrypcji do czystego tekstu, a następnie uruchomienia pipeline'u writer z transkrypcją zamiast research_report.
-
----
-
-### 11. Brak historii sesji
+### 10. Brak historii sesji
 
 **Problem**
 
@@ -413,6 +393,4 @@ log.warning("Draft failed validation after %d attempts. Failed: %s", max_attempt
 | 11 | Reranking RAG (#2) | Średni | Jakość stylu |
 | 12 | Metadane fragmentów RAG (#3) | Średni | Jakość stylu |
 | 13 | Śledzenie kosztów per artykuł (#15) | Średni | Monitoring |
-| 14 | Tryb Repurposing (#10) | Średni | Funkcjonalność |
-| 15 | Historia sesji w UI (#11) | Wysoki | UX |
-| 16 | Tryb YouTube → Artykuł (#10) | Wysoki | Funkcjonalność |
+| 14 | Historia sesji w UI (#10) | Wysoki | UX |
