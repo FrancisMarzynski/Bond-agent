@@ -1,9 +1,13 @@
+import logging
+
 from pydantic import ValidationError
 from langgraph.types import interrupt, Command
 from langgraph.graph import END
 
 from bond.graph.state import AuthorState
 from bond.schemas import CheckpointResponse
+
+log = logging.getLogger(__name__)
 
 SOFT_CAP_ITERATIONS = 3
 HARD_CAP_ITERATIONS = 10
@@ -31,6 +35,13 @@ def checkpoint_2_node(state: AuthorState) -> dict | Command:
 
     # Hard cap — abort pipeline when iteration limit is reached
     if cp2_iterations >= HARD_CAP_ITERATIONS:
+        log.warning(
+            "checkpoint_2: hard cap reached — terminating pipeline after %d/%d iterations "
+            "(thread_id=%s)",
+            cp2_iterations,
+            HARD_CAP_ITERATIONS,
+            state.get("thread_id", "unknown"),
+        )
         return Command(
             goto=END,
             update={

@@ -14,12 +14,16 @@ SHAD-04 compliance:
 """
 from __future__ import annotations
 
+import logging
+
 from pydantic import ValidationError
 from langgraph.types import interrupt, Command
 from langgraph.graph import END
 
 from bond.graph.state import BondState
 from bond.schemas import CheckpointResponse
+
+log = logging.getLogger(__name__)
 
 HARD_CAP_ITERATIONS = 3
 
@@ -42,6 +46,13 @@ def shadow_checkpoint_node(state: BondState) -> dict | Command:
 
     # Hard cap — abort shadow pipeline when iteration limit is reached
     if iteration_count >= HARD_CAP_ITERATIONS:
+        log.warning(
+            "shadow_checkpoint: hard cap reached — terminating pipeline after %d/%d iterations "
+            "(thread_id=%s)",
+            iteration_count,
+            HARD_CAP_ITERATIONS,
+            state.get("thread_id", "unknown"),
+        )
         return Command(
             goto=END,
             update={
