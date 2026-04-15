@@ -1,3 +1,4 @@
+import logging
 import re
 from typing import Optional
 
@@ -10,6 +11,8 @@ from bond.llm import estimate_cost_usd, get_draft_llm
 from bond.prompts.context import build_context_block
 from bond.prompts.writer import FORBIDDEN_WORD_STEMS, WRITER_SYSTEM_PROMPT
 from bond.store.chroma import get_corpus_collection
+
+log = logging.getLogger(__name__)
 
 LOW_CORPUS_THRESHOLD = 10
 
@@ -283,12 +286,12 @@ async def writer_node(state: AuthorState) -> dict:
 
         if attempt < max_attempts - 1:
             failed = [k for k, v in validation.items() if not v]
-            print(f"Writer auto-retry {attempt + 1}/{max_attempts - 1}: failed constraints: {failed}")
+            log.warning("Writer auto-retry %d/%d: failed constraints: %s", attempt + 1, max_attempts - 1, failed)
 
     # All retries exhausted (or succeeded above)
     if not all(validation.values()):
         failed_constraints = [k for k, v in validation.items() if not v]
-        print(f"WARNING: Draft failed validation after {max_attempts} attempts. Failed: {failed_constraints}")
+        log.warning("Draft failed validation after %d attempts. Failed: %s", max_attempts, failed_constraints)
 
     call_cost = estimate_cost_usd(
         settings.draft_model, total_draft_input_tokens, total_draft_output_tokens

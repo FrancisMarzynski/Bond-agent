@@ -1,10 +1,15 @@
 """Blog URL scraper using trafilatura for article extraction."""
 
 import json
+import logging
+
 import trafilatura
 from trafilatura.sitemaps import sitemap_search
+
 from bond.config import settings
 from bond.corpus.ingestor import CorpusIngestor
+
+log = logging.getLogger(__name__)
 
 
 def scrape_blog(url: str) -> list[dict]:
@@ -20,27 +25,25 @@ def scrape_blog(url: str) -> list[dict]:
     max_posts = settings.max_blog_posts
 
     if len(urls) > max_posts:
-        print(
-            f"WARN: Found {len(urls)} posts at {url}; limiting to {max_posts} (MAX_BLOG_POSTS)"
-        )
+        log.warning("Found %d posts at %s; limiting to %d (MAX_BLOG_POSTS)", len(urls), url, max_posts)
         urls = list(urls)[:max_posts]
 
-    print(f"INFO: Scraping {len(urls)} posts from {url}")
+    log.info("Scraping %d posts from %s", len(urls), url)
 
     for post_url in urls:
         try:
             downloaded = trafilatura.fetch_url(post_url)
             if downloaded is None:
-                print(f"WARN: Could not fetch {post_url} — skipping")
+                log.warning("Could not fetch %s — skipping", post_url)
                 continue
             raw = trafilatura.extract(downloaded, output_format="json")
             if raw is None:
-                print(f"WARN: No article content found at {post_url} — skipping")
+                log.warning("No article content found at %s — skipping", post_url)
                 continue
             data = json.loads(raw)
             text = data.get("text", "")
             if not text.strip():
-                print(f"WARN: Empty text extracted from {post_url} — skipping")
+                log.warning("Empty text extracted from %s — skipping", post_url)
                 continue
             articles.append(
                 {
@@ -50,7 +53,7 @@ def scrape_blog(url: str) -> list[dict]:
                 }
             )
         except Exception as e:
-            print(f"WARN: {post_url} failed ({type(e).__name__}: {e}) — skipping")
+            log.warning("%s failed (%s: %s) — skipping", post_url, type(e).__name__, e)
 
     return articles
 
@@ -61,7 +64,7 @@ def ingest_blog(url: str, source_type: str) -> dict:
     """
     articles = scrape_blog(url)
     if not articles:
-        print(f"WARN: No articles extracted from {url}")
+        log.warning("No articles extracted from %s", url)
         return {
             "articles_ingested": 0,
             "total_chunks": 0,

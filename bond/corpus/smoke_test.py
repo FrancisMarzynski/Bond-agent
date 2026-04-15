@@ -3,8 +3,12 @@
 Uses :func:`bond.corpus.retriever.two_pass_retrieve` directly so that the
 smoke test validates exactly the same code path as the production pipeline.
 """
+import logging
+
 from bond.corpus.retriever import two_pass_retrieve
 from bond.config import settings
+
+log = logging.getLogger(__name__)
 
 DEFAULT_QUERY = "styl pisania storytelling angażujące treści"
 
@@ -27,7 +31,7 @@ async def run_smoke_test(
     fragments = await two_pass_retrieve(query, n=n_results)
 
     if not fragments:
-        print("WARN: Corpus is empty — smoke test returned no results")
+        log.warning("Corpus is empty — smoke test returned no results")
         return []
 
     output = []

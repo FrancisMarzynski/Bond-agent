@@ -1,7 +1,10 @@
 """Google Drive folder downloader using google-api-python-client v3."""
 
 import io
+import logging
 import os
+
+log = logging.getLogger(__name__)
 
 from google.auth.transport.requests import Request
 from google.oauth2 import service_account
@@ -92,7 +95,7 @@ def download_file(service, file_id: str, mime_type: str) -> bytes | None:
             _, done = downloader.next_chunk()
         return buffer.getvalue()
     except Exception as e:
-        print(f"WARN: Download failed for file {file_id}: {e} — skipping")
+        log.warning("Download failed for file %s: %s — skipping", file_id, e)
         return None
 
 
@@ -119,10 +122,10 @@ def ingest_drive_folder(folder_id: str, source_type: str) -> dict:
             "If using service_account auth, ensure the folder is shared with the service account email. "
             "Check GOOGLE_CREDENTIALS_PATH for the service account email address."
         )
-        print(f"WARN: {warning_msg}")
+        log.warning("%s", warning_msg)
         return {"articles_ingested": 0, "total_chunks": 0, "warnings": [warning_msg]}
 
-    print(f"INFO: Found {len(files)} supported files in Drive folder {folder_id}")
+    log.info("Found %d supported files in Drive folder %s", len(files), folder_id)
 
     ingestor = CorpusIngestor()
     total_chunks = 0

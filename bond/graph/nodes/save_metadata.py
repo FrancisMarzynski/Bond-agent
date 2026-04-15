@@ -1,9 +1,12 @@
 import asyncio
+import logging
 from datetime import datetime, timezone
 
 from bond.db.metadata_log import save_article_metadata
 from bond.graph.state import AuthorState
 from bond.store.chroma import add_topic_to_metadata_collection
+
+log = logging.getLogger(__name__)
 
 
 async def save_metadata_node(state: AuthorState) -> dict:
@@ -36,5 +39,5 @@ async def save_metadata_node(state: AuthorState) -> dict:
         published_date=published_date,
     )
 
-    print(f"Metadane zapisane: topic='{topic}', thread_id={thread_id}")
+    log.info("Metadane zapisane: topic='%s', thread_id=%s", topic, thread_id)
     return {"metadata_saved": True}

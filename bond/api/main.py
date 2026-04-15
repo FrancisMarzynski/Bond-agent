@@ -1,4 +1,6 @@
 import asyncio
+import logging
+import sys
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
@@ -10,6 +12,13 @@ from bond.config import settings
 from bond.api.routes.corpus import router as corpus_router
 from bond.api.routes.chat import router as chat_router
 from bond.graph.graph import compile_graph
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+    stream=sys.stdout,
+)
 
 
 @asynccontextmanager
