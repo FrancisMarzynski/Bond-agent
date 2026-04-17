@@ -15,6 +15,28 @@ from bond.store.chroma import get_corpus_collection
 log = logging.getLogger(__name__)
 
 LOW_CORPUS_THRESHOLD = 10
+_RERANK_FETCH_N = 15  # Candidates fetched before reranking
+
+# Module-level singleton — model loaded once per process
+_ranker = None
+
+
+def _get_ranker():
+    global _ranker
+    if _ranker is None:
+        from flashrank import Ranker
+        # ms-marco-MultiBERT-L-12 supports multilingual text (incl. Polish)
+        _ranker = Ranker(model_name="ms-marco-MultiBERT-L-12", cache_dir="/tmp/flashrank")
+    return _ranker
+
+
+def _rerank(query: str, candidates: list[str], top_n: int) -> list[str]:
+    """Rerank candidates with FlashRank cross-encoder; returns top_n texts by score."""
+    from flashrank import RerankRequest
+    passages = [{"id": i, "text": doc} for i, doc in enumerate(candidates)]
+    request = RerankRequest(query=query, passages=passages)
+    ranked = _get_ranker().rerank(request)
+    return [r["text"] for r in ranked[:top_n]]
 
 
 # ---------------------------------------------------------------------------
@@ -24,18 +46,25 @@ LOW_CORPUS_THRESHOLD = 10
 def _fetch_rag_exemplars(topic: str, n: int = 5) -> list[str]:
     """
     Fetch style exemplar fragments from Phase 1 corpus.
-    Prefers own_text source; falls back to all types if < 3 own-text results found.
-    Returns a list of text strings.
+
+    1. Retrieves up to _RERANK_FETCH_N (15) candidates via cosine similarity.
+       Prefers own_text source; falls back to all types if < 3 own-text results.
+    2. Reranks candidates with FlashRank cross-encoder (ms-marco-MultiBERT-L-12).
+    3. Returns top n (default 5) fragments by rerank score.
+
+    Falls back to cosine-similarity order if reranking fails.
     """
     collection = get_corpus_collection()
     if collection is None or collection.count() == 0:
         return []
 
+    fetch_n = min(_RERANK_FETCH_N, collection.count())
+
     # Try own_text first
     try:
         own_results = collection.query(
             query_texts=[topic],
-            n_results=n,
+            n_results=fetch_n,
             where={"source_type": "own"},
             include=["documents"],
         )
@@ -43,19 +72,33 @@ def _fetch_rag_exemplars(topic: str, n: int = 5) -> list[str]:
     except Exception:
         own_docs = []
 
+    candidates: list[str]
     if len(own_docs) >= 3:
-        return own_docs[:n]
+        candidates = own_docs
+    else:
+        # Fall back to all source types
+        try:
+            all_results = collection.query(
+                query_texts=[topic],
+                n_results=fetch_n,
+                include=["documents"],
+            )
+            candidates = all_results["documents"][0] if all_results["documents"] else []
+        except Exception:
+            candidates = []
 
-    # Fall back to all source types
-    try:
-        all_results = collection.query(
-            query_texts=[topic],
-            n_results=n,
-            include=["documents"],
-        )
-        return all_results["documents"][0] if all_results["documents"] else []
-    except Exception:
+    if not candidates:
         return []
+
+    if len(candidates) <= n:
+        # Nothing to rerank — fewer candidates than requested
+        return candidates[:n]
+
+    try:
+        return _rerank(topic, candidates, top_n=n)
+    except Exception as exc:
+        log.warning("FlashRank reranking failed, using cosine order: %s", exc)
+        return candidates[:n]
 
 
 # ---------------------------------------------------------------------------
