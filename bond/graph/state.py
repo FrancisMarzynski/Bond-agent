@@ -29,7 +29,8 @@ class BondState(TypedDict):
     # search_cache keys are topic strings; values are list[dict] with title/url/summary
     # Full text is stripped after report generation to avoid state bloat (Pitfall 4)
     search_cache: dict
-    research_report: Optional[str]      # formatted Markdown report
+    research_report: Optional[str]      # formatted Markdown report (rendered from research_data)
+    research_data: NotRequired[Optional[dict]]  # structured research output: {fakty, statystyki, zrodla}
 
     # --- Structure ---
     heading_structure: Optional[str]    # H1/H2/H3 outline as Markdown

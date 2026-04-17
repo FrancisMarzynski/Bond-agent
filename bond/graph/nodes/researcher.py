@@ -39,6 +39,54 @@ class ResearchQueries(BaseModel):
         return [self.general, self.stats, self.case_study]
 
 
+class SourceItem(BaseModel):
+    """Single cited source extracted from Exa results."""
+
+    title: str
+    url: str
+    summary: str
+
+    @field_validator("url")
+    @classmethod
+    def clean_url(cls, v: str) -> str:
+        return v.strip().rstrip(".,;")
+
+
+class ResearchData(BaseModel):
+    """Structured research output split into facts, statistics, and sources."""
+
+    fakty: list[str]
+    statystyki: list[str]
+    zrodla: list[SourceItem]
+
+    @field_validator("fakty", "statystyki")
+    @classmethod
+    def strip_items(cls, v: list[str]) -> list[str]:
+        return [item.strip() for item in v if item.strip()]
+
+    def to_markdown(self, topic: str) -> str:
+        """Render structured data as a Markdown report for downstream nodes."""
+        parts = [f"## Raport z badań: {topic}"]
+
+        if self.fakty:
+            facts_block = "\n".join(f"- {f}" for f in self.fakty)
+            parts.append(f"### Fakty\n{facts_block}")
+
+        if self.statystyki:
+            stats_block = "\n".join(f"- {s}" for s in self.statystyki)
+            parts.append(f"### Statystyki\n{stats_block}")
+
+        if self.zrodla:
+            source_lines = []
+            for i, src in enumerate(self.zrodla, 1):
+                source_lines.append(
+                    f"{i}. **{src.title}**\n   {src.url}\n   {src.summary}"
+                )
+            parts.append("### Źródła\n" + "\n\n".join(source_lines))
+
+        return "\n\n".join(parts)
+
+
 # Module-level tools cache — fetched once per process, reused across node calls.
 _exa_tools_cache: list | None = None
 
@@ -146,48 +194,56 @@ def _deduplicate_sections(labeled_sections: list[tuple[str, str]]) -> tuple[str,
     return "\n\n".join(output_parts), unique_count
 
 
-def _count_sources(report: str) -> int:
-    """Count numbered source entries (lines starting with digit + dot) in the report."""
-    return len(re.findall(r"^\d+\.", report, re.MULTILINE))
-
-
-async def _format_research_report(
-    raw_results: str, topic: str, keywords: list[str], context_block: str = ""
-) -> tuple[str, int, int]:
+async def _synthesize_structured(
+    raw_results: str,
+    topic: str,
+    keywords: list[str],
+    context_block: str = "",
+) -> tuple[ResearchData, int, int]:
     """
-    Format raw MCP search results into a structured Markdown report.
+    Map-reduce synthesis: extract Facts, Statistics, and Sources as structured data.
 
-    Structure (per locked user decision):
-    1. Synthesis section: 2-3 paragraphs summarizing key themes across sources
-    2. Numbered source list extracted from results
+    Uses with_structured_output(ResearchData, include_raw=True) to enforce the
+    Pydantic schema and still capture LLM token usage from the raw AIMessage.
 
     Returns:
-        (report_markdown, input_tokens, output_tokens)
+        (ResearchData, input_tokens, output_tokens)
     """
     context_section = f"\n{context_block}\n" if context_block else ""
-    synthesis_prompt = f"""Jesteś redaktorem. Na podstawie poniższych wyników wyszukiwania napisz:{context_section}
+    prompt = f"""Jesteś analitykiem badań. Przeanalizuj poniższe wyniki wyszukiwania i wyekstraktuj dane w 3 kategoriach:{context_section}
 
-1. SYNTEZA (2-3 akapity): krótkie podsumowanie głównych tematów i trendów dotyczących "{topic}" (słowa kluczowe: {', '.join(keywords)}). Pisz po polsku. Nie cytuj źródeł bezpośrednio — syntezuj idee.
-
-2. ŹRÓDŁA: wypisz ponumerowaną listę artykułów z wyników. Format każdej pozycji:
-N. **Tytuł**
-   URL
-   2-3 zdania streszczenia
+TEMAT: {topic}
+SŁOWA KLUCZOWE: {', '.join(keywords)}
 
 WYNIKI WYSZUKIWANIA:
 {raw_results}
 
-Odpowiedź zacznij od nagłówka "### Synteza", a listę źródeł od "### Źródła"."""
+Wyekstraktuj:
+- fakty: lista 5-10 kluczowych twierdzeń merytorycznych (po polsku, zwięźle — sam fakt lub wniosek, bez danych liczbowych)
+- statystyki: lista 5-10 konkretnych danych liczbowych wyekstraktowanych ze źródeł (format: "N% / N mln / N lat — krótki kontekst")
+- zrodla: lista wszystkich unikalnych artykułów (każde: title, url, summary 1-2 zdania po polsku)"""
 
-    llm = get_research_llm(max_tokens=2500)
-    response = await llm.ainvoke(synthesis_prompt)
-    formatted = response.content.strip()
+    llm = get_research_llm(max_tokens=3000)
+    structured_llm = llm.with_structured_output(ResearchData, include_raw=True)
+    raw_output: dict = await structured_llm.ainvoke(prompt)
 
-    usage = response.usage_metadata or {}
+    data: ResearchData | None = raw_output.get("parsed")
+    parsing_error = raw_output.get("parsing_error")
+    if data is None:
+        raise ValueError(f"Structured synthesis failed to parse LLM output: {parsing_error}")
+
+    raw_response = raw_output.get("raw")
+    usage = (raw_response.usage_metadata or {}) if raw_response else {}
     input_tokens = usage.get("input_tokens", 0)
     output_tokens = usage.get("output_tokens", 0)
 
-    return f"## Raport z badań: {topic}\n\n{formatted}", input_tokens, output_tokens
+    log.info(
+        "synthesis: %d facts, %d stats, %d sources",
+        len(data.fakty),
+        len(data.statystyki),
+        len(data.zrodla),
+    )
+    return data, input_tokens, output_tokens
 
 
 async def researcher_node(state: AuthorState) -> dict:
@@ -249,16 +305,18 @@ async def researcher_node(state: AuthorState) -> dict:
         cache = {**cache, topic: raw_results}
 
     context_block = build_context_block(state.get("context_dynamic"))
-    report, input_tokens, output_tokens = await _format_research_report(
+    research_data, input_tokens, output_tokens = await _synthesize_structured(
         raw_results, topic, keywords, context_block
     )
 
-    source_count = _count_sources(report)
+    source_count = len(research_data.zrodla)
     if source_count < _MIN_SOURCES:
         raise ValueError(
             f"Raport zawiera tylko {source_count} źródeł — wymagane minimum {_MIN_SOURCES}. "
             "Sprawdź połączenie z Exa MCP lub rozszerz zapytanie."
         )
+
+    report = research_data.to_markdown(topic)
 
     existing_research_tokens = state.get("tokens_used_research", 0)
     existing_cost = state.get("estimated_cost_usd", 0.0)
@@ -266,6 +324,7 @@ async def researcher_node(state: AuthorState) -> dict:
 
     return {
         "research_report": report,
+        "research_data": research_data.model_dump(),
         "search_cache": cache,
         "tokens_used_research": existing_research_tokens + input_tokens + output_tokens,
         "estimated_cost_usd": existing_cost + call_cost,
