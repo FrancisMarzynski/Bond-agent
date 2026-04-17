@@ -30,27 +30,32 @@ def _get_ranker():
     return _ranker
 
 
-def _rerank(query: str, candidates: list[str], top_n: int) -> list[str]:
-    """Rerank candidates with FlashRank cross-encoder; returns top_n texts by score."""
+def _rerank(query: str, candidates: list[dict], top_n: int) -> list[dict]:
+    """Rerank candidate dicts by FlashRank score on their 'text' field.
+
+    Each candidate dict must contain a 'text' key. The original dict is
+    returned (with all metadata preserved), sorted by cross-encoder score.
+    """
     from flashrank import RerankRequest
-    passages = [{"id": i, "text": doc} for i, doc in enumerate(candidates)]
+    passages = [{"id": i, "text": c["text"]} for i, c in enumerate(candidates)]
     request = RerankRequest(query=query, passages=passages)
     ranked = _get_ranker().rerank(request)
-    return [r["text"] for r in ranked[:top_n]]
+    return [candidates[r["id"]] for r in ranked[:top_n]]
 
 
 # ---------------------------------------------------------------------------
 # RAG exemplar retrieval
 # ---------------------------------------------------------------------------
 
-def _fetch_rag_exemplars(topic: str, n: int = 5) -> list[str]:
+def _fetch_rag_exemplars(topic: str, n: int = 5) -> list[dict]:
     """
     Fetch style exemplar fragments from Phase 1 corpus.
 
-    1. Retrieves up to _RERANK_FETCH_N (15) candidates via cosine similarity.
+    1. Retrieves up to _RERANK_FETCH_N (15) candidates via cosine similarity,
+       including section_type and article_type metadata.
        Prefers own_text source; falls back to all types if < 3 own-text results.
     2. Reranks candidates with FlashRank cross-encoder (ms-marco-MultiBERT-L-12).
-    3. Returns top n (default 5) fragments by rerank score.
+    3. Returns top n (default 5) dicts: {text, article_type, section_type}.
 
     Falls back to cosine-similarity order if reranking fails.
     """
@@ -60,30 +65,43 @@ def _fetch_rag_exemplars(topic: str, n: int = 5) -> list[str]:
 
     fetch_n = min(_RERANK_FETCH_N, collection.count())
 
+    def _to_dicts(docs: list, metas: list) -> list[dict]:
+        return [
+            {
+                "text": doc,
+                "article_type": meta.get("article_type", meta.get("source_type", "")),
+                "section_type": meta.get("section_type", ""),
+            }
+            for doc, meta in zip(docs, metas)
+        ]
+
     # Try own_text first
     try:
         own_results = collection.query(
             query_texts=[topic],
             n_results=fetch_n,
             where={"source_type": "own"},
-            include=["documents"],
+            include=["documents", "metadatas"],
         )
         own_docs = own_results["documents"][0] if own_results["documents"] else []
+        own_metas = own_results["metadatas"][0] if own_results["metadatas"] else []
     except Exception:
-        own_docs = []
+        own_docs, own_metas = [], []
 
-    candidates: list[str]
+    candidates: list[dict]
     if len(own_docs) >= 3:
-        candidates = own_docs
+        candidates = _to_dicts(own_docs, own_metas)
     else:
         # Fall back to all source types
         try:
             all_results = collection.query(
                 query_texts=[topic],
                 n_results=fetch_n,
-                include=["documents"],
+                include=["documents", "metadatas"],
             )
-            candidates = all_results["documents"][0] if all_results["documents"] else []
+            all_docs = all_results["documents"][0] if all_results["documents"] else []
+            all_metas = all_results["metadatas"][0] if all_results["metadatas"] else []
+            candidates = _to_dicts(all_docs, all_metas)
         except Exception:
             candidates = []
 
@@ -169,12 +187,20 @@ def _validate_draft(draft: str, primary_keyword: str, min_words: int) -> dict[st
 # Prompt builder (user message only — system prompt is in bond/prompts/writer.py)
 # ---------------------------------------------------------------------------
 
+def _format_exemplar(ex: dict) -> str:
+    """Render a single exemplar dict as a labelled few-shot block."""
+    article_type = ex.get("article_type") or "?"
+    section_type = ex.get("section_type") or "?"
+    label = f"[Typ: {article_type} | Sekcja: {section_type}]"
+    return f"{label}\n{ex['text']}"
+
+
 def _build_writer_user_prompt(
     topic: str,
     keywords: list[str],
     heading_structure: str,
     research_report: str,
-    exemplars: list[str],
+    exemplars: list[dict],
     min_words: int,
     context_block: str = "",
     cp2_feedback: Optional[str] = None,
@@ -186,10 +212,14 @@ def _build_writer_user_prompt(
 
     exemplar_section = ""
     if exemplars:
-        formatted = "\n\n---\n\n".join(exemplars[:5])
+        formatted = "\n\n---\n\n".join(_format_exemplar(e) for e in exemplars[:5])
         exemplar_section = f"""
 ## WZORCE STYLISTYCZNE (Few-Shot)
-Pisz w podobnym tonie i stylu — nie kopiuj treści, tylko styl.
+Poniższe fragmenty pochodzą z korpusu stylistycznego. Każdy opatrzony jest etykietą [Typ: X | Sekcja: Y]:
+- **Typ**: "own" = artykuły autora (priorytet stylistyczny), "external" = artykuły zewnętrzne (wzorzec uzupełniający)
+- **Sekcja**: "wstęp" = fragment otwierający artykuł, "rozwinięcie" = fragment głównej części
+
+Przejmij ton, rytm zdań i sposób argumentacji — szczególnie z fragmentów "own". Nie kopiuj treści, adaptuj styl.
 
 {formatted}
 
