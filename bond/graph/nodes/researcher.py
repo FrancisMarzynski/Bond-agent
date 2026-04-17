@@ -2,6 +2,7 @@ import logging
 import re
 
 from langchain_mcp_adapters.client import MultiServerMCPClient
+from pydantic import BaseModel, field_validator
 
 from bond.config import settings
 from bond.db.search_cache import compute_query_hash, get_cached_result, save_cached_result
@@ -13,6 +14,25 @@ log = logging.getLogger(__name__)
 
 EXA_MCP_URL = "https://mcp.exa.ai/mcp"
 _MIN_SOURCES = 3
+
+
+class ResearchQueries(BaseModel):
+    """Exactly 3 Exa search queries covering different angles of the topic."""
+
+    general: str
+    stats: str
+    case_study: str
+
+    @field_validator("general", "stats", "case_study")
+    @classmethod
+    def not_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("query must not be empty")
+        return v.strip()
+
+    def as_list(self) -> list[str]:
+        return [self.general, self.stats, self.case_study]
+
 
 # Module-level tools cache — fetched once per process, reused across node calls.
 _exa_tools_cache: list | None = None
@@ -28,6 +48,30 @@ async def _get_exa_tools() -> list:
     )
     _exa_tools_cache = await client.get_tools()
     return _exa_tools_cache
+
+
+async def _generate_sub_queries(topic: str, keywords: list[str]) -> ResearchQueries:
+    """Generate 3 diverse Exa queries (General, Stats, Case Study) via structured LLM output."""
+    kw_str = ", ".join(keywords) if keywords else topic
+    prompt = f"""Jesteś specjalistą SEO. Wygeneruj 3 zapytania do wyszukiwarki Exa dla artykułu o temacie: "{topic}" (słowa kluczowe: {kw_str}).
+
+Każde zapytanie musi pokrywać inny kąt:
+- general: ogólne tło i kontekst tematu
+- stats: liczby, statystyki, dane rynkowe, raporty
+- case_study: przykłady wdrożeń, studia przypadku, konkretne realizacje
+
+Zapytania pisz po polsku lub angielsku (wybierz język, który da lepsze wyniki). Każde zapytanie: 5-12 słów, precyzyjne, wyszukiwarkowo skuteczne."""
+
+    llm = get_research_llm(max_tokens=300, temperature=0)
+    structured_llm = llm.with_structured_output(ResearchQueries)
+    result: ResearchQueries = await structured_llm.ainvoke(prompt)
+    log.info(
+        "sub-queries generated — general=%r stats=%r case_study=%r",
+        result.general,
+        result.stats,
+        result.case_study,
+    )
+    return result
 
 
 async def _call_exa_mcp(query: str, keywords: list[str], num_results: int = 8) -> str:
@@ -121,7 +165,6 @@ async def researcher_node(state: AuthorState) -> dict:
         query_hash = compute_query_hash(topic, keywords)
 
         # Layer 2 — SQLite session cache (AUTH-11).
-        # Cache is "nice-to-have": any storage failure is logged and bypassed.
         db_result: str | None = None
         try:
             db_result = await get_cached_result(query_hash, thread_id)
@@ -131,8 +174,16 @@ async def researcher_node(state: AuthorState) -> dict:
         if db_result is not None:
             raw_results = db_result
         else:
-            # Layer 3 — live Exa MCP call
-            raw_results = await _call_exa_mcp(topic, keywords)
+            # Layer 3 — multi-query Exa MCP calls (General / Stats / Case Study)
+            sub_queries = await _generate_sub_queries(topic, keywords)
+            parts: list[str] = []
+            for label, query in zip(
+                ["General", "Stats", "Case Study"], sub_queries.as_list()
+            ):
+                log.info("exa search [%s]: %r", label, query)
+                section = await _call_exa_mcp(query, keywords, num_results=6)
+                parts.append(f"### {label}\n{section}")
+            raw_results = "\n\n".join(parts)
             try:
                 await save_cached_result(query_hash, thread_id, raw_results)
             except Exception as exc:
