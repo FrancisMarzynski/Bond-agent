@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 
@@ -14,6 +15,10 @@ log = logging.getLogger(__name__)
 
 EXA_MCP_URL = "https://mcp.exa.ai/mcp"
 _MIN_SOURCES = 3
+_MAX_UNIQUE_SOURCES = 20
+
+# Matches any http/https URL (stops at whitespace or common closing punctuation).
+_URL_RE = re.compile(r"https?://[^\s\])\">'\,]+")
 
 
 class ResearchQueries(BaseModel):
@@ -90,6 +95,55 @@ async def _call_exa_mcp(query: str, keywords: list[str], num_results: int = 8) -
         )
     result = await web_search.ainvoke({"query": search_query, "numResults": num_results})
     return result if isinstance(result, str) else str(result)
+
+
+def _deduplicate_sections(labeled_sections: list[tuple[str, str]]) -> tuple[str, int]:
+    """
+    Merge labeled result sections, deduplicating entries by their first URL.
+
+    Each Exa result block starts with a digit-dot prefix (e.g. "1. Title").
+    We split on those boundaries, extract the primary URL from each block,
+    and keep only the first occurrence.  Stops after _MAX_UNIQUE_SOURCES unique
+    sources have been collected across all sections.
+
+    Args:
+        labeled_sections: [(label, raw_exa_string), ...]
+
+    Returns:
+        (combined_markdown_string, unique_source_count)
+    """
+    seen_urls: set[str] = set()
+    output_parts: list[str] = []
+
+    for label, section in labeled_sections:
+        # Split before each numbered result entry.
+        blocks = re.split(r"(?m)^(?=\d+\.)", section)
+        kept: list[str] = []
+        for block in blocks:
+            stripped = block.strip()
+            if not stripped:
+                continue
+            urls = _URL_RE.findall(stripped)
+            if not urls:
+                # Non-result preamble text — keep as-is
+                kept.append(block)
+                continue
+            primary_url = urls[0].rstrip(".,;")
+            if primary_url in seen_urls:
+                log.debug("dedup: skipping duplicate URL %s", primary_url)
+                continue
+            if len(seen_urls) >= _MAX_UNIQUE_SOURCES:
+                log.debug("dedup: reached max unique sources (%d), skipping", _MAX_UNIQUE_SOURCES)
+                continue
+            seen_urls.add(primary_url)
+            kept.append(block)
+
+        if kept:
+            output_parts.append(f"### {label}\n" + "".join(kept))
+
+    unique_count = len(seen_urls)
+    log.info("dedup: %d unique sources retained (max %d)", unique_count, _MAX_UNIQUE_SOURCES)
+    return "\n\n".join(output_parts), unique_count
 
 
 def _count_sources(report: str) -> int:
@@ -174,16 +228,19 @@ async def researcher_node(state: AuthorState) -> dict:
         if db_result is not None:
             raw_results = db_result
         else:
-            # Layer 3 — multi-query Exa MCP calls (General / Stats / Case Study)
+            # Layer 3 — parallel multi-query Exa MCP calls (General / Stats / Case Study)
             sub_queries = await _generate_sub_queries(topic, keywords)
-            parts: list[str] = []
-            for label, query in zip(
-                ["General", "Stats", "Case Study"], sub_queries.as_list()
-            ):
+            labels = ["General", "Stats", "Case Study"]
+            queries = sub_queries.as_list()
+            for label, query in zip(labels, queries):
                 log.info("exa search [%s]: %r", label, query)
-                section = await _call_exa_mcp(query, keywords, num_results=6)
-                parts.append(f"### {label}\n{section}")
-            raw_results = "\n\n".join(parts)
+
+            sections: list[str] = await asyncio.gather(
+                *[_call_exa_mcp(q, keywords, num_results=8) for q in queries]
+            )
+            labeled = list(zip(labels, sections))
+            raw_results, unique_count = _deduplicate_sections(labeled)
+            log.info("exa parallel search complete: %d unique sources", unique_count)
             try:
                 await save_cached_result(query_hash, thread_id, raw_results)
             except Exception as exc:
