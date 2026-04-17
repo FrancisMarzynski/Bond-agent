@@ -4,6 +4,12 @@ from bond.store.chroma import get_or_create_corpus_collection
 from bond.store.article_log import log_article
 from bond.corpus.chunker import chunk_article
 
+
+def _section_type(chunk_index: int) -> str:
+    """Return section label based on position within article."""
+    return "wstęp" if chunk_index == 0 else "rozwinięcie"
+
+
 class CorpusIngestor:
     def ingest(
         self,
@@ -28,12 +34,14 @@ class CorpusIngestor:
         metadatas = [
             {
                 "source_type": source_type,
+                "article_type": source_type,
                 "article_id": article_id,
                 "article_title": title,
                 "source_url": source_url,
                 "ingested_at": now,
+                "section_type": _section_type(i),
             }
-            for _ in chunks
+            for i, _ in enumerate(chunks)
         ]
         collection.add(documents=chunks, metadatas=metadatas, ids=ids)
         log_article(article_id, source_type, title, source_url, len(chunks))
