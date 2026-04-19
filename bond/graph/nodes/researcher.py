@@ -274,10 +274,10 @@ async def researcher_node(state: AuthorState) -> dict:
     else:
         query_hash = compute_query_hash(topic, keywords)
 
-        # Layer 2 — SQLite session cache (AUTH-11).
+        # Layer 2 — SQLite cross-session cache (keyed by query_hash only, TTL 7 days).
         db_result: str | None = None
         try:
-            db_result = await get_cached_result(query_hash, thread_id)
+            db_result = await get_cached_result(query_hash)
         except Exception as exc:
             log.error("search_cache read failed, proceeding without cache: %s", exc)
 
@@ -298,7 +298,7 @@ async def researcher_node(state: AuthorState) -> dict:
             raw_results, unique_count = _deduplicate_sections(labeled)
             log.info("exa parallel search complete: %d unique sources", unique_count)
             try:
-                await save_cached_result(query_hash, thread_id, raw_results)
+                await save_cached_result(query_hash, raw_results, thread_id)
             except Exception as exc:
                 log.error("search_cache write failed (result not persisted): %s", exc)
 
