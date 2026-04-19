@@ -1,6 +1,6 @@
 from bond.config import settings
 from bond.graph.state import AuthorState
-from bond.llm import estimate_cost_usd, get_research_llm
+from bond.llm import estimate_cost_usd, get_draft_llm
 from bond.prompts.context import build_context_block
 
 
@@ -9,7 +9,7 @@ async def structure_node(state: AuthorState) -> dict:
     Generate H1/H2/H3 heading structure from research_report.
     On regeneration, incorporates cp1_feedback (user-edited outline + note).
     """
-    llm = get_research_llm(max_tokens=800)
+    llm = get_draft_llm(max_tokens=800, temperature=0)
     topic = state["topic"]
     keywords = state.get("keywords", [])
     primary_keyword = keywords[0] if keywords else topic
@@ -66,7 +66,7 @@ Zwróć TYLKO strukturę nagłówków w formacie Markdown (# H1, ## H2, ### H3).
     usage = response.usage_metadata or {}
     input_tokens = usage.get("input_tokens", 0)
     output_tokens = usage.get("output_tokens", 0)
-    call_cost = estimate_cost_usd(settings.research_model, input_tokens, output_tokens)
+    call_cost = estimate_cost_usd(settings.draft_model, input_tokens, output_tokens)
 
     existing_research_tokens = state.get("tokens_used_research", 0)
     existing_cost = state.get("estimated_cost_usd", 0.0)
