@@ -149,6 +149,17 @@ def _clean_output(text: str) -> str:
 # SEO + tone constraint validation
 # ---------------------------------------------------------------------------
 
+def _count_body_words(draft: str) -> int:
+    """Count words in draft body, excluding heading lines (# H1..H3) and Meta-description."""
+    body_lines = [
+        line for line in draft.split("\n")
+        if line.strip()
+        and not line.strip().startswith("#")
+        and not re.match(r"^Meta[- ]?[Dd]escription", line.strip(), re.IGNORECASE)
+    ]
+    return len(" ".join(body_lines).split())
+
+
 def _check_forbidden_words(draft: str) -> list[str]:
     """Return list of forbidden word stems found in draft (stem = catches all inflected forms)."""
     draft_lower = draft.lower()
@@ -171,14 +182,13 @@ def _validate_draft(draft: str, primary_keyword: str, min_words: int) -> dict[st
     )
     meta_desc = meta_match.group(1).strip() if meta_match else ""
 
-    word_count = len(draft.split())
     pk_lower = primary_keyword.lower()
 
     return {
         "keyword_in_h1": bool(h1_lines and pk_lower in h1_lines[0].lower()),
         "keyword_in_first_para": pk_lower in first_para.lower(),
         "meta_desc_length_ok": 150 <= len(meta_desc) <= 160,
-        "word_count_ok": word_count >= min_words,
+        "word_count_ok": _count_body_words(draft) >= min_words,
         "no_forbidden_words": len(_check_forbidden_words(draft)) == 0,
     }
 
