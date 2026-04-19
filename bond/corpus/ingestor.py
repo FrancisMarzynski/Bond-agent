@@ -21,6 +21,10 @@ class CorpusIngestor:
         """
         Chunk text, embed into ChromaDB, log article to SQLite.
         Returns: {"article_id": str, "chunks_added": int}
+
+        KONTRAKT-KRYTYCZNE: format ID chunka to "{uuid}_{index}".
+        Skrypt migracyjny (migrate_add_metadata.py) parsuje indeks z tego sufiksu
+        przez _parse_chunk_index(). Nie zmieniaj tego formatu bez aktualizacji tamtego skryptu.
         """
         chunks = chunk_article(text)
         if not chunks:
@@ -30,9 +34,6 @@ class CorpusIngestor:
         now = datetime.now(timezone.utc).isoformat()
 
         collection = get_or_create_corpus_collection()
-        # KONTRAKT-KRYTYCZNE: format ID chunka to "{uuid}_{index}" — skrypt migracyjny
-        # (migrate_add_metadata.py) parsuje indeks z tego sufiksu przez _parse_chunk_index().
-        # Nie zmieniaj tego formatu bez aktualizacji tamtego skryptu.
         ids = [f"{article_id}_{i}" for i in range(len(chunks))]
         metadatas = [
             {
