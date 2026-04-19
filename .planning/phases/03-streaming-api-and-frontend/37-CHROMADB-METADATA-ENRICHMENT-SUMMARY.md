@@ -93,6 +93,8 @@ def _parse_chunk_index(chunk_id: str) -> int:
     return int(chunk_id.rsplit("_", 1)[-1])
 ```
 
+> ⚠️ **KONTRAKT-KRYTYCZNE:** `_parse_chunk_index` opiera się na sufixie `_N` w ID chunku. Format ID w `ingestor.py` (`{uuid}_{index}`) jest umową między ingestorem a skryptem migracyjnym. Zmiana formatu ID w `ingestor.py` bez aktualizacji tego skryptu spowoduje jego błędne działanie.
+
 Skrypt jest idempotentny: chunki z już ustawionymi polami `section_type` i `article_type` są pomijane.
 
 ---
