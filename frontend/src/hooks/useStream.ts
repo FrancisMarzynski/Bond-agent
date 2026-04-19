@@ -19,6 +19,9 @@ const HitlPauseSchema = z.object({
     checkpoint_id: z.string(),
     type: z.string(),
     iterations_remaining: z.number().optional(),
+    // Checkpoint 1 fields
+    research_report: z.string().optional(),
+    heading_structure: z.string().optional(),
     // Duplicate check fields
     warning: z.string().optional(),
     existing_title: z.string().optional(),
@@ -113,6 +116,8 @@ async function consumeStream(
                                 checkpoint_id: result.data.checkpoint_id,
                                 type: result.data.type,
                                 iterations_remaining: result.data.iterations_remaining,
+                                research_report: result.data.research_report,
+                                heading_structure: result.data.heading_structure,
                                 warning: result.data.warning,
                                 existing_title: result.data.existing_title,
                                 existing_date: result.data.existing_date,

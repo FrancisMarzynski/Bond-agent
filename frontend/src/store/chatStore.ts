@@ -7,6 +7,9 @@ export type HitlPause = {
     checkpoint_id: string;
     type: string;
     iterations_remaining?: number;
+    // Checkpoint 1 fields
+    research_report?: string;
+    heading_structure?: string;
     // Duplicate check specific fields (checkpoint_id === "duplicate_check")
     warning?: string;
     existing_title?: string;

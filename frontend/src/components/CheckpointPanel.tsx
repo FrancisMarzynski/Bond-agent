@@ -5,7 +5,7 @@ import { useSession } from "@/hooks/useSession";
 import { useStream } from "@/hooks/useStream";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle2, XCircle, Database, X, AlertTriangle } from "lucide-react";
+import { CheckCircle2, XCircle, Database, X, AlertTriangle, ChevronDown, ChevronRight, ScrollText } from "lucide-react";
 
 export function CheckpointPanel() {
   const { hitlPause, isStreaming } = useChatStore();
@@ -14,6 +14,7 @@ export function CheckpointPanel() {
 
   const [showFeedbackField, setShowFeedbackField] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
+  const [researchOpen, setResearchOpen] = useState(true);
 
   if (!hitlPause || isStreaming) return null;
 
@@ -114,9 +115,36 @@ export function CheckpointPanel() {
     );
   }
 
+  const isCheckpoint1 = !isCheckpoint2 && !isDuplicateCheck;
+  const researchReport = hitlPause.research_report;
+
   // --- Standard checkpoint UI (cp1 / cp2) ---
   return (
     <div className="border rounded-lg p-3 bg-muted/30 mx-4 mt-3 mb-3 flex flex-col gap-3 shrink-0">
+      {/* Collapsible research report — shown only at checkpoint_1 */}
+      {isCheckpoint1 && researchReport && (
+        <div className="flex flex-col gap-1.5">
+          <button
+            type="button"
+            onClick={() => setResearchOpen((o) => !o)}
+            className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors w-full text-left"
+          >
+            {researchOpen ? (
+              <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+            ) : (
+              <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+            )}
+            <ScrollText className="h-3.5 w-3.5 shrink-0" />
+            Raport Badawczy
+          </button>
+          {researchOpen && (
+            <pre className="text-xs text-muted-foreground whitespace-pre-wrap break-words font-sans leading-relaxed max-h-60 overflow-y-auto rounded border border-border/50 bg-background/60 p-2.5">
+              {researchReport}
+            </pre>
+          )}
+        </div>
+      )}
+
       {/* Header row */}
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-xs text-muted-foreground mr-auto">
