@@ -16,9 +16,11 @@ export function EditorPane() {
   // Automatyczne przewijanie edytora do najnowszych fragmentów tekstu
   useEffect(() => {
     if (isStreaming && containerRef.current) {
-      const previewContainer = containerRef.current.querySelector(".w-md-editor-preview");
+      const previewContainer = containerRef.current.querySelector<HTMLElement>(".w-md-editor-preview");
       if (previewContainer) {
         previewContainer.scrollTop = previewContainer.scrollHeight;
+      } else {
+        containerRef.current.scrollTop = containerRef.current.scrollHeight;
       }
     }
   }, [draft, isStreaming]);
@@ -36,7 +38,9 @@ export function EditorPane() {
     const a = document.createElement("a");
     a.href = url;
     a.download = "draft.md";
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
 

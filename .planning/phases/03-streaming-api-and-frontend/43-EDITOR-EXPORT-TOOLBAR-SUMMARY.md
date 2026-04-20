@@ -57,10 +57,19 @@ function handleDownloadMd() {
   const a = document.createElement("a");
   a.href = url;
   a.download = "draft.md";
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
 ```
+
+---
+
+## Poprawki (20.04)
+
+- **`handleDownloadMd`**: element `<a>` jest teraz tymczasowo wpinany do `document.body` przed `click()` i usuwany zaraz po — wymagane przez Safari i inne przeglądarki, które blokują pobieranie przez elementy spoza drzewa DOM.
+- **`useEffect` scroll**: dodano `querySelector<HTMLElement>` dla poprawnego typowania TypeScript oraz fallback `else` na kontener rodzica — zapobiega cichemu przestaniu działania scrollowania gdy klasa `.w-md-editor-preview` zmieni się po aktualizacji biblioteki.
 
 ---
 
