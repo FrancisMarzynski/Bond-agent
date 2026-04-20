@@ -115,7 +115,7 @@ export function CheckpointPanel() {
     );
   }
 
-  const isCheckpoint1 = !isCheckpoint2 && !isDuplicateCheck;
+  const isCheckpoint1 = hitlPause.checkpoint_id === "checkpoint_1";
   const researchReport = hitlPause.research_report;
 
   // --- Standard checkpoint UI (cp1 / cp2) ---

@@ -67,8 +67,10 @@ store.setHitlPause({
 | Ikony nagłówka | — | `ChevronDown` / `ChevronRight` + `ScrollText` z lucide-react |
 | Prezentacja tekstu | — | `<pre>` z `whitespace-pre-wrap`, `max-h-60`, `overflow-y-auto` |
 
-**Warunek widoczności:**
+**Warunek widoczności** (sprawdzany bezpośrednio przez `checkpoint_id`, nie przez negację pozostałych stanów):
 ```tsx
+const isCheckpoint1 = hitlPause.checkpoint_id === "checkpoint_1";
+
 {isCheckpoint1 && researchReport && (
   <div className="flex flex-col gap-1.5">
     <button onClick={() => setResearchOpen((o) => !o)} ...>
