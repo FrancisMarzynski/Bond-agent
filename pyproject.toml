@@ -30,6 +30,8 @@ dependencies = [
     "langchain-anthropic>=0.2",
     "sse-starlette>=1.6",
     "flashrank>=0.0.8",
+    "markdown>=3.0",
+    "beautifulsoup4>=4.0",
 ]
 
 [dependency-groups]

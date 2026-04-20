@@ -2,6 +2,9 @@ import logging
 import re
 from typing import Optional
 
+import markdown as _md
+from bs4 import BeautifulSoup
+
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.types import interrupt
 
@@ -149,15 +152,21 @@ def _clean_output(text: str) -> str:
 # SEO + tone constraint validation
 # ---------------------------------------------------------------------------
 
-def _count_body_words(draft: str) -> int:
-    """Count words in draft body, excluding heading lines (# H1..H3) and Meta-description."""
-    body_lines = [
-        line for line in draft.split("\n")
-        if line.strip()
-        and not line.strip().startswith("#")
-        and not re.match(r"^Meta[- ]?[Dd]escription", line.strip(), re.IGNORECASE)
-    ]
-    return len(" ".join(body_lines).split())
+def _parse_draft_to_soup(draft: str) -> BeautifulSoup:
+    """Parse Markdown draft to BeautifulSoup tree (understands fenced code blocks)."""
+    html = _md.markdown(draft, extensions=["fenced_code"])
+    return BeautifulSoup(html, "html.parser")
+
+
+def _count_body_words(soup: BeautifulSoup) -> int:
+    """Count body words, excluding heading and Meta-description nodes."""
+    soup_copy = BeautifulSoup(str(soup), "html.parser")
+    for tag in soup_copy.find_all(["h1", "h2", "h3", "h4", "h5", "h6"]):
+        tag.decompose()
+    for p in soup_copy.find_all("p"):
+        if re.match(r"^Meta[- ]?[Dd]escription", p.get_text().strip(), re.IGNORECASE):
+            p.decompose()
+    return len(soup_copy.get_text().split())
 
 
 def _check_forbidden_words(draft: str) -> list[str]:
@@ -168,27 +177,30 @@ def _check_forbidden_words(draft: str) -> list[str]:
 
 def _validate_draft(draft: str, primary_keyword: str, min_words: int) -> dict[str, bool]:
     """Check all hard constraints. Returns dict of constraint_name -> passed."""
-    lines = draft.split("\n")
-    h1_lines = [l for l in lines if re.match(r"^#\s+", l)]
+    soup = _parse_draft_to_soup(draft)
+
+    h1 = soup.find("h1")
+    h1_text = h1.get_text() if h1 else ""
+
     first_para = next(
-        (l.strip() for l in lines if l.strip() and not l.strip().startswith("#")),
+        (p.get_text().strip() for p in soup.find_all("p") if p.get_text().strip()),
         ""
     )
 
-    meta_match = re.search(
-        r"(?:Meta[- ]?[Dd]escription|Meta opis)[:\s]+(.+)",
-        draft,
-        re.IGNORECASE,
-    )
-    meta_desc = meta_match.group(1).strip() if meta_match else ""
+    meta_desc = ""
+    for p in soup.find_all("p"):
+        m = re.match(r"^Meta[- ]?[Dd]escription[:\s]+(.+)", p.get_text().strip(), re.IGNORECASE)
+        if m:
+            meta_desc = m.group(1).strip()
+            break
 
     pk_lower = primary_keyword.lower()
 
     return {
-        "keyword_in_h1": bool(h1_lines and pk_lower in h1_lines[0].lower()),
+        "keyword_in_h1": bool(h1_text and pk_lower in h1_text.lower()),
         "keyword_in_first_para": pk_lower in first_para.lower(),
         "meta_desc_length_ok": 150 <= len(meta_desc) <= 160,
-        "word_count_ok": _count_body_words(draft) >= min_words,
+        "word_count_ok": _count_body_words(soup) >= min_words,
         "no_forbidden_words": len(_check_forbidden_words(draft)) == 0,
     }
 
