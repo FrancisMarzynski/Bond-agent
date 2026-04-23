@@ -9,11 +9,13 @@ import {
   AlertCircle,
   Loader2,
   FileUp,
+  HardDrive,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { API_URL, MAX_FILE_SIZE_BYTES } from "@/config";
 
-type Tab = "text" | "link" | "file";
+type Tab = "text" | "link" | "file" | "drive";
 type SourceType = "own" | "external";
 
 interface CorpusAddFormProps {
@@ -64,6 +66,8 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [justSucceeded, setJustSucceeded] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
+  const [progress, setProgress] = useState(0);
 
   // Text tab state
   const [textTitle, setTextTitle] = useState("");
@@ -81,16 +85,43 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-clear the inline success indicator after 2 s
+  // Drive tab state
+  const [driveFolder, setDriveFolder] = useState("");
+  const [driveSource, setDriveSource] = useState<SourceType>("own");
+
+  // Simulated progress bar: counts up to ~85% while loading, snaps to 100% on success
+  useEffect(() => {
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    if (loading) {
+      setProgress(5);
+      intervalId = setInterval(() => {
+        setProgress((p) => Math.min(p + Math.random() * 12 + 3, 85));
+      }, 400);
+    } else if (justSucceeded) {
+      setProgress(100);
+    } else {
+      timeoutId = setTimeout(() => setProgress(0), 600);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [loading, justSucceeded]);
+
+  // Auto-clear the success indicator after 3 s
   useEffect(() => {
     if (!justSucceeded) return;
-    const id = setTimeout(() => setJustSucceeded(false), 2000);
+    const id = setTimeout(() => setJustSucceeded(false), 3000);
     return () => clearTimeout(id);
   }, [justSucceeded]);
 
   function resetState() {
     setError(null);
     setJustSucceeded(false);
+    setSuccessMsg("");
     setLoading(false);
   }
 
@@ -124,6 +155,7 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
       await res.json();
       setTextContent("");
       setTextTitle("");
+      setSuccessMsg("Tekst dodany do korpusu");
       setJustSucceeded(true);
       onSuccess();
     } catch (err) {
@@ -156,6 +188,7 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
       }
       await res.json();
       setLinkUrl("");
+      setSuccessMsg("Artykuł pobrany i dodany");
       setJustSucceeded(true);
       onSuccess();
     } catch (err) {
@@ -190,10 +223,44 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
       await res.json();
       setFile(null);
       setFileTitle("");
+      setSuccessMsg("Plik zaindeksowany");
       setJustSucceeded(true);
       onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Błąd przesyłania pliku");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDriveSubmit(e: FormEvent) {
+    e.preventDefault();
+    const trimmed = driveFolder.trim();
+    if (!trimmed) {
+      setError("Podaj ID folderu Google Drive.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_URL}/api/corpus/ingest/drive`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folder_id: trimmed, source_type: driveSource }),
+      });
+      if (!res.ok) {
+        const detail = await res.json().catch(() => null);
+        throw new Error(detail?.detail ?? `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      setDriveFolder("");
+      setSuccessMsg(
+        `Zaindeksowano ${data.articles_ingested} plik(ów) · ${data.total_chunks} fragmentów`
+      );
+      setJustSucceeded(true);
+      onSuccess();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Błąd indeksowania Drive");
     } finally {
       setLoading(false);
     }
@@ -232,7 +299,18 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
     { id: "text", label: "Tekst", icon: <FileText className="h-3 w-3" /> },
     { id: "link", label: "Link", icon: <Link2 className="h-3 w-3" /> },
     { id: "file", label: "Plik", icon: <Upload className="h-3 w-3" /> },
+    { id: "drive", label: "Drive", icon: <HardDrive className="h-3 w-3" /> },
   ];
+
+  function SuccessBanner() {
+    if (!justSucceeded) return null;
+    return (
+      <div className="flex items-start gap-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 px-2 py-1.5">
+        <CheckCircle2 className="h-3 w-3 text-emerald-500 mt-0.5 shrink-0" />
+        <p className="text-xs text-emerald-600 dark:text-emerald-400 leading-snug">{successMsg}</p>
+      </div>
+    );
+  }
 
   function ErrorBanner() {
     if (!error) return null;
@@ -259,6 +337,14 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
+
+      {/* Progress bar — visible during loading and briefly on success */}
+      {progress > 0 && (
+        <Progress
+          value={progress}
+          className="h-0.5 rounded-none"
+        />
+      )}
 
       {/* Tabs */}
       <div className="flex border-b">
@@ -299,17 +385,9 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
             />
             <div className="flex items-center justify-between">
               <SourceTypeToggle value={textSource} onChange={setTextSource} />
-              <div className="flex items-center gap-2">
-                {justSucceeded && (
-                  <span className="flex items-center gap-1 text-xs text-emerald-500">
-                    <CheckCircle2 className="h-3 w-3" />
-                    Dodano
-                  </span>
-                )}
-                <Button type="submit" size="sm" disabled={loading} className="h-7 text-xs">
-                  {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Dodaj"}
-                </Button>
-              </div>
+              <Button type="submit" size="sm" disabled={loading} className="h-7 text-xs">
+                {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Dodaj"}
+              </Button>
             </div>
           </form>
         )}
@@ -329,17 +407,9 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
             </p>
             <div className="flex items-center justify-between">
               <SourceTypeToggle value={linkSource} onChange={setLinkSource} />
-              <div className="flex items-center gap-2">
-                {justSucceeded && (
-                  <span className="flex items-center gap-1 text-xs text-emerald-500">
-                    <CheckCircle2 className="h-3 w-3" />
-                    Pobrano
-                  </span>
-                )}
-                <Button type="submit" size="sm" disabled={loading} className="h-7 text-xs">
-                  {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Pobierz"}
-                </Button>
-              </div>
+              <Button type="submit" size="sm" disabled={loading} className="h-7 text-xs">
+                {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Pobierz"}
+              </Button>
             </div>
           </form>
         )}
@@ -406,27 +476,45 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
 
             <div className="flex items-center justify-between">
               <SourceTypeToggle value={fileSource} onChange={setFileSource} />
-              <div className="flex items-center gap-2">
-                {justSucceeded && (
-                  <span className="flex items-center gap-1 text-xs text-emerald-500">
-                    <CheckCircle2 className="h-3 w-3" />
-                    Wysłano
-                  </span>
-                )}
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={!file || loading}
-                  className="h-7 text-xs"
-                >
-                  {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Prześlij"}
-                </Button>
-              </div>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={!file || loading}
+                className="h-7 text-xs"
+              >
+                {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Prześlij"}
+              </Button>
             </div>
           </form>
         )}
 
-        {/* Error banner */}
+        {/* DRIVE TAB */}
+        {activeTab === "drive" && (
+          <form onSubmit={handleDriveSubmit} className="space-y-2">
+            <input
+              type="text"
+              placeholder="ID folderu Google Drive"
+              value={driveFolder}
+              onChange={(e) => setDriveFolder(e.target.value)}
+              className="w-full text-xs bg-background border rounded px-2 py-1.5 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring font-mono"
+            />
+            <p className="text-xs text-muted-foreground leading-snug">
+              ID z URL folderu:{" "}
+              <span className="font-mono text-muted-foreground/70 break-all">
+                …/folders/<strong>ID_FOLDERU</strong>
+              </span>
+            </p>
+            <div className="flex items-center justify-between">
+              <SourceTypeToggle value={driveSource} onChange={setDriveSource} />
+              <Button type="submit" size="sm" disabled={loading} className="h-7 text-xs">
+                {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Indeksuj"}
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {/* Status banners */}
+        <SuccessBanner />
         <ErrorBanner />
       </div>
     </div>
