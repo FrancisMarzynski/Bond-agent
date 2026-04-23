@@ -4,6 +4,7 @@ import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
 import { ModeToggle } from "@/components/ModeToggle";
 import { SessionProvider } from "@/components/SessionProvider";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,9 +26,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </header>
           <main className="flex-1 overflow-hidden flex flex-col">
             <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-              <SessionProvider>
-                {children}
-              </SessionProvider>
+              <ErrorBoundary>
+                <SessionProvider>
+                  {children}
+                </SessionProvider>
+              </ErrorBoundary>
             </div>
           </main>
         </div>

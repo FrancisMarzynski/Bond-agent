@@ -5,8 +5,14 @@ import { useShadowStore } from "@/store/shadowStore";
 import { SSEParser } from "@/lib/sse";
 import { z } from "zod";
 import { API_URL } from "@/config";
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 3000;
+const MAX_RETRIES = 5;
+const BASE_DELAY_MS = 1_000;
+const MAX_DELAY_MS = 30_000;
+
+function backoffDelay(attempt: number): number {
+    const exponential = Math.min(BASE_DELAY_MS * 2 ** attempt, MAX_DELAY_MS);
+    return exponential + Math.random() * 500; // jitter avoids thundering-herd on shared infra
+}
 
 // ---------------------------------------------------------------------------
 // Zod schemas — defined once at module scope, not re-created on every event.
@@ -217,6 +223,7 @@ async function fetchWithRetry(
             const headers: Record<string, string> = {
                 "Content-Type": "application/json",
             };
+            // Allows the backend to resume SSE from the last delivered event.
             if (store.lastEventId) {
                 headers["Last-Event-ID"] = store.lastEventId;
             }
@@ -233,22 +240,27 @@ async function fetchWithRetry(
             }
 
             const endedCleanly = await consumeStream(response, signal, onThreadId);
+            store.setReconnecting(false);
             if (!endedCleanly) {
-                // Stream ended without a terminal event — treat as a recoverable disconnect
+                // Stream ended without a terminal event — treat as a recoverable disconnect.
                 throw new Error("Połączenie SSE zerwane przed zakończeniem strumienia.");
             }
             return; // Success — exit retry loop
         } catch (e: unknown) {
             if (e instanceof Error && e.name === "AbortError") {
+                store.setReconnecting(false);
                 return; // Intentional abort — exit cleanly
             }
             attempt++;
             if (attempt <= MAX_RETRIES) {
+                const delay = backoffDelay(attempt - 1);
+                store.setReconnecting(true);
                 store.setSystemAlert(
                     `Połączenie zerwane. Próbuję ponownie (${attempt}/${MAX_RETRIES})...`
                 );
-                await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
+                await new Promise((resolve) => setTimeout(resolve, delay));
             } else {
+                store.setReconnecting(false);
                 store.setSystemAlert(
                     `[Błąd krytyczny]: Nie udało się nawiązać stabilnego połączenia po ${MAX_RETRIES} próbach. Odśwież stronę.`
                 );

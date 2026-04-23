@@ -1,7 +1,7 @@
 "use client";
 import { useChatStore, type Stage } from "@/store/chatStore";
 import { cn } from "@/lib/utils";
-import { CheckCircle2, Circle, Loader2, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Circle, Loader2, RefreshCw, XCircle } from "lucide-react";
 
 const STEPS: { id: Stage; label: string }[] = [
     { id: "research", label: "Research" },
@@ -14,11 +14,10 @@ function stepIndex(stage: Stage): number {
 }
 
 export function StageProgress() {
-    const { stage, stageStatus, isStreaming } = useChatStore();
+    const { stage, stageStatus, isStreaming, isReconnecting, systemAlert, setSystemAlert } = useChatStore();
 
-    // Only show stepper when a session is active.
-    // Ensure we don't hide the stepper if we crashed at any stage other than idle.
-    if (stage === "idle" && !isStreaming) return null;
+    // Always render when reconnecting or there's an alert so banners are visible.
+    if (stage === "idle" && !isStreaming && !isReconnecting && !systemAlert) return null;
 
     // Znajdź najdalszy krok, który został osiągnięty (nie jest "pending")
     let furthestIdx = -1;
@@ -32,7 +31,31 @@ export function StageProgress() {
     const activeIdx = currentStageIdx !== -1 ? currentStageIdx : furthestIdx;
 
     return (
-        <div className="border-b px-4 py-3 bg-muted/20">
+        <div className="border-b bg-muted/20">
+            {/* Reconnecting banner */}
+            {isReconnecting && (
+                <div className="flex items-center gap-2 px-4 py-1.5 text-xs text-amber-700 bg-amber-50 border-b border-amber-200">
+                    <RefreshCw className="h-3 w-3 animate-spin shrink-0" />
+                    <span>Wznawianie połączenia SSE...</span>
+                </div>
+            )}
+
+            {/* System alert banner (hard-cap, critical errors) */}
+            {systemAlert && !isReconnecting && (
+                <div className="flex items-start gap-2 px-4 py-1.5 text-xs text-amber-800 bg-amber-50 border-b border-amber-200">
+                    <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />
+                    <span className="flex-1">{systemAlert}</span>
+                    <button
+                        onClick={() => setSystemAlert(undefined)}
+                        className="shrink-0 text-amber-600 hover:text-amber-900 leading-none"
+                        aria-label="Zamknij"
+                    >
+                        ×
+                    </button>
+                </div>
+            )}
+
+        <div className="px-4 py-3">
             <ol className="flex items-center gap-0">
                 {STEPS.map((step, idx) => {
                     const status = stageStatus[step.id];
@@ -70,6 +93,7 @@ export function StageProgress() {
                     );
                 })}
             </ol>
+        </div>
         </div>
     );
 }

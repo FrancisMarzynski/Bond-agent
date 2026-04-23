@@ -31,6 +31,7 @@ interface ChatStore {
     messages: ChatMessage[];
     hitlPause: HitlPause;
     isStreaming: boolean;
+    isReconnecting: boolean;
     lastEventId?: string;
     systemAlert?: string;
     /** AbortController belonging to the current active stream. Stored here
@@ -45,6 +46,7 @@ interface ChatStore {
     setDraft: (draft: string) => void;
     setHitlPause: (pause: HitlPause) => void;
     setStreaming: (v: boolean) => void;
+    setReconnecting: (v: boolean) => void;
     setLastEventId: (id: string | undefined) => void;
     setSystemAlert: (alert: string | undefined) => void;
     addMessage: (msg: ChatMessage) => void;
@@ -74,6 +76,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     messages: [],
     hitlPause: null,
     isStreaming: false,
+    isReconnecting: false,
     lastEventId: undefined,
     systemAlert: undefined,
     activeController: null,
@@ -86,6 +89,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     setDraft: (draft) => set({ draft }),
     setHitlPause: (hitlPause) => set({ hitlPause }),
     setStreaming: (isStreaming) => set({ isStreaming }),
+    setReconnecting: (isReconnecting) => set({ isReconnecting }),
     setLastEventId: (lastEventId) => set({ lastEventId }),
     setSystemAlert: (systemAlert) => set({ systemAlert }),
     addMessage: (msg) => set((s) => ({ messages: [...s.messages, msg] })),
@@ -98,6 +102,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
             messages: [],
             hitlPause: null,
             isStreaming: false,
+            isReconnecting: false,
             lastEventId: undefined,
             systemAlert: undefined,
             activeController: null,

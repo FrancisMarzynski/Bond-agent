@@ -9,13 +9,13 @@ from bond.config import settings
 from bond.graph.nodes.duplicate_check import duplicate_check_node as _duplicate_check_node
 from bond.graph.nodes.researcher import researcher_node as _researcher_node
 from bond.graph.nodes.structure import structure_node as _structure_node
-from bond.graph.nodes.checkpoint_1 import checkpoint_1_node as _checkpoint_1_node
+from bond.graph.nodes.checkpoint_1 import checkpoint_1_node as _checkpoint_1_node, HARD_CAP_ITERATIONS as _CP1_HARD_CAP
 from bond.graph.nodes.writer import writer_node as _writer_node
-from bond.graph.nodes.checkpoint_2 import checkpoint_2_node as _checkpoint_2_node
+from bond.graph.nodes.checkpoint_2 import checkpoint_2_node as _checkpoint_2_node, HARD_CAP_ITERATIONS as _CP2_HARD_CAP
 from bond.graph.nodes.save_metadata import save_metadata_node as _save_metadata_node
 from bond.graph.nodes.shadow_analyze import shadow_analyze_node as _shadow_analyze_node
 from bond.graph.nodes.shadow_annotate import shadow_annotate_node as _shadow_annotate_node
-from bond.graph.nodes.shadow_checkpoint import shadow_checkpoint_node as _shadow_checkpoint_node, HARD_CAP_ITERATIONS
+from bond.graph.nodes.shadow_checkpoint import shadow_checkpoint_node as _shadow_checkpoint_node, HARD_CAP_ITERATIONS as _SHADOW_HARD_CAP
 
 
 # ---------------------------------------------------------------------------
@@ -60,7 +60,13 @@ def _route_after_duplicate_check(state: BondState) -> str:
 
 
 def _route_after_cp1(state: BondState) -> str:
-    """Loop back to structure node on rejection; advance to writer on approval."""
+    """Loop back to structure node on rejection; advance to writer on approval.
+
+    Safety cap: if cp1_iterations has reached the hard cap (defence-in-depth behind
+    the node-level Command(goto=END)), route directly to END to prevent infinite loops.
+    """
+    if state.get("cp1_iterations", 0) >= _CP1_HARD_CAP:
+        return END
     if state.get("cp1_approved"):
         return "writer"
     return "structure"
@@ -68,7 +74,12 @@ def _route_after_cp1(state: BondState) -> str:
 
 def _route_after_cp2(state: BondState) -> str:
     """Loop back to writer on rejection (soft cap enforced inside checkpoint_2 node);
-    advance to save_metadata on approval."""
+    advance to save_metadata on approval.
+
+    Safety cap: mirrors the node-level hard cap as a routing-layer backstop.
+    """
+    if state.get("cp2_iterations", 0) >= _CP2_HARD_CAP:
+        return END
     if state.get("cp2_approved"):
         return "save_metadata"
     return "writer"
@@ -84,7 +95,7 @@ def _route_after_shadow_checkpoint(state: BondState) -> str:
     """
     if state.get("shadow_approved"):
         return END
-    if state.get("iteration_count", 0) >= HARD_CAP_ITERATIONS:
+    if state.get("iteration_count", 0) >= _SHADOW_HARD_CAP:
         return END
     return "shadow_annotate"
 
