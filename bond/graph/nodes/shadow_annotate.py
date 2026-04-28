@@ -30,40 +30,40 @@ class AnnotationItem(BaseModel):
 
     id: str = Field(
         description=(
-            "Unique stable annotation ID, e.g. 'ann_001', 'ann_002'. "
-            "Assigned in order of appearance in the text."
+            "Stabilny identyfikator adnotacji, np. 'ann_001', 'ann_002'. "
+            "Nadawaj go zgodnie z kolejnością występowania w tekście."
         )
     )
     original_span: str = Field(
         description=(
-            "Exact verbatim text fragment from the submitted text to be replaced. "
-            "Must be at least 10 characters and unique within the text. "
-            "If the phrase repeats, include enough surrounding words to disambiguate."
+            "Dokładny, dosłowny fragment z nadesłanego tekstu, który ma zostać zastąpiony. "
+            "Powinien mieć co najmniej 10 znaków i być jednoznaczny w obrębie tekstu. "
+            "Jeżeli fraza powtarza się wielokrotnie, dołącz wystarczająco szeroki kontekst."
         )
     )
     replacement: str = Field(
         description=(
-            "Corrected replacement text aligned with the author's style corpus. "
-            "Preserve surrounding punctuation and capitalisation context."
+            "Poprawiona wersja fragmentu zgodna ze stylem autora z korpusu. "
+            "Zachowaj poprawną interpunkcję i kontekst wielkich liter."
         )
     )
     reason: str = Field(
         description=(
-            "Brief explanation (1-2 sentences) referencing the author's style, "
-            "e.g. 'Your style favours active voice; this removes the passive construction.'"
+            "Krótkie uzasadnienie po polsku (1-2 zdania), odnoszące się do stylu autora. "
+            "Nie używaj angielskich zdań ani angielskich zwrotów o stylu autora."
         )
     )
     start_index: int = Field(
         description=(
-            "Character start index (inclusive, 0-based) of original_span "
-            "in the submitted text. Must satisfy: "
+            "Indeks początkowy znaku (włącznie, 0-based) dla original_span "
+            "w nadesłanym tekście. Musi zachodzić warunek: "
             "text[start_index:end_index] == original_span."
         )
     )
     end_index: int = Field(
         description=(
-            "Character end index (exclusive, 0-based) of original_span "
-            "in the submitted text. Must satisfy: "
+            "Indeks końcowy znaku (wyłącznie, 0-based) dla original_span "
+            "w nadesłanym tekście. Musi zachodzić warunek: "
             "text[start_index:end_index] == original_span."
         )
     )
@@ -74,16 +74,16 @@ class AnnotationResult(BaseModel):
 
     annotations: list[AnnotationItem] = Field(
         description=(
-            "All style corrections ordered by start_index (ascending). "
-            "Cover ALL significant deviations from the author's style corpus — "
-            "tone, vocabulary, rhythm, punctuation."
+            "Wszystkie poprawki stylistyczne uporządkowane rosnąco po start_index. "
+            "Uwzględnij wszystkie istotne odchylenia od stylu autora — "
+            "ton, słownictwo, rytm i interpunkcję."
         )
     )
     alignment_summary: str = Field(
         default="",
         description=(
-            "Optional 1-2 sentence overall summary of the text's style alignment. "
-            "Include ONLY when annotation count exceeds 5; otherwise leave empty."
+            "Opcjonalne, krótkie podsumowanie po polsku (1-2 zdania) o zgodności tekstu ze stylem autora. "
+            "Uzupełnij je tylko wtedy, gdy liczba adnotacji przekracza 5; w przeciwnym razie pozostaw puste."
         ),
     )
 
@@ -104,6 +104,10 @@ Analizujesz trzy obszary:
 Dla każdej adnotacji MUSISZ podać precyzyjne indeksy znakowe (start_index, end_index) \
 wskazujące pozycję cytatu original_span w nadesłanym tekście.
 Obowiązuje warunek: tekst[start_index:end_index] == original_span (dokładne dopasowanie).\
+
+Wszystkie pola tekstowe odpowiedzi muszą być po polsku.
+W szczególności pole `reason` ma być zawsze po polsku i ma opisywać decyzję redakcyjną, \
+a nie instruować użytkownika po angielsku. Nie używaj angielskich formułek o stylu autora.\
 """
 
 
@@ -126,7 +130,8 @@ def _build_user_prompt(
         )
     base += (
         "Wygeneruj listę adnotacji stylistycznych. Dla każdej: podaj dokładny original_span, "
-        "replacement, reason oraz start_index i end_index w tekście."
+        "replacement, reason oraz start_index i end_index w tekście. "
+        "Pole `reason` napisz wyłącznie po polsku."
     )
     return base
 

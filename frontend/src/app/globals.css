@@ -130,3 +130,32 @@
     min-height: 100svh;
   }
 }
+
+@media (max-width: 640px) {
+  .w-md-editor.w-md-editor-show-live .w-md-editor-content {
+    overflow: visible;
+  }
+
+  .w-md-editor.w-md-editor-show-live .w-md-editor-input,
+  .w-md-editor.w-md-editor-show-live .w-md-editor-preview {
+    width: 100% !important;
+    min-width: 0;
+  }
+
+  .w-md-editor.w-md-editor-show-live .w-md-editor-input {
+    height: auto;
+    min-height: 16rem;
+  }
+
+  .w-md-editor.w-md-editor-show-live .w-md-editor-preview {
+    position: static;
+    min-height: 16rem;
+    border-top: 1px solid var(--md-editor-box-shadow-color);
+    border-radius: 0 0 5px 5px;
+    box-shadow: none;
+  }
+
+  .w-md-editor.w-md-editor-show-live .w-md-editor-text {
+    min-height: 16rem;
+  }
+}

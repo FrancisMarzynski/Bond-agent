@@ -58,6 +58,12 @@ export function CheckpointPanel() {
     const feedback = feedbackText.trim() || null;
     setShowFeedbackField(false);
     setFeedbackText("");
+    if (isCheckpoint1) {
+      await resumeStream(threadId, "reject", null, persistThreadId, {
+        note: feedback,
+      });
+      return;
+    }
     await resumeStream(threadId, "reject", feedback, persistThreadId);
   };
 

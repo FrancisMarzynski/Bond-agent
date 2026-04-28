@@ -23,6 +23,18 @@ interface CorpusAddFormProps {
   onClose: () => void;
 }
 
+function getHttpFallbackError(status: number): string {
+  return `Błąd serwera (HTTP ${status})`;
+}
+
+function getPolishCountForm(count: number, one: string, few: string, many: string): string {
+  if (count === 1) return one;
+  if (count % 10 >= 2 && count % 10 <= 4 && !(count % 100 >= 12 && count % 100 <= 14)) {
+    return few;
+  }
+  return many;
+}
+
 function SourceTypeToggle({
   value,
   onChange,
@@ -150,7 +162,7 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
       });
       if (!res.ok) {
         const detail = await res.json().catch(() => null);
-        throw new Error(detail?.detail ?? `HTTP ${res.status}`);
+        throw new Error(detail?.detail ?? getHttpFallbackError(res.status));
       }
       await res.json();
       setTextContent("");
@@ -184,7 +196,7 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
       });
       if (!res.ok) {
         const detail = await res.json().catch(() => null);
-        throw new Error(detail?.detail ?? `HTTP ${res.status}`);
+        throw new Error(detail?.detail ?? getHttpFallbackError(res.status));
       }
       await res.json();
       setLinkUrl("");
@@ -218,7 +230,7 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
       });
       if (!res.ok) {
         const detail = await res.json().catch(() => null);
-        throw new Error(detail?.detail ?? `HTTP ${res.status}`);
+        throw new Error(detail?.detail ?? getHttpFallbackError(res.status));
       }
       await res.json();
       setFile(null);
@@ -250,12 +262,13 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
       });
       if (!res.ok) {
         const detail = await res.json().catch(() => null);
-        throw new Error(detail?.detail ?? `HTTP ${res.status}`);
+        throw new Error(detail?.detail ?? getHttpFallbackError(res.status));
       }
       const data = await res.json();
       setDriveFolder("");
       setSuccessMsg(
-        `Zaindeksowano ${data.articles_ingested} plik(ów) · ${data.total_chunks} fragmentów`
+        `Zaindeksowano ${data.articles_ingested} ${getPolishCountForm(data.articles_ingested, "plik", "pliki", "plików")} · ` +
+          `${data.total_chunks} ${getPolishCountForm(data.total_chunks, "fragment", "fragmenty", "fragmentów")}`
       );
       setJustSucceeded(true);
       onSuccess();

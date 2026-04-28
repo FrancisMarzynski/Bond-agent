@@ -26,6 +26,14 @@ from bond.config import settings
 router = APIRouter(prefix="/api/corpus", tags=["corpus"])
 
 
+def _polish_count_form(count: int, one: str, few: str, many: str) -> str:
+    if count == 1:
+        return one
+    if count % 10 in {2, 3, 4} and count % 100 not in {12, 13, 14}:
+        return few
+    return many
+
+
 class DocumentInfo(BaseModel):
     article_id: str
     title: str
@@ -51,7 +59,7 @@ class SmokeTestResult(BaseModel):
 @router.post("/ingest/text", response_model=IngestResult)
 async def ingest_text_endpoint(request: IngestTextRequest):
     if not request.text.strip():
-        raise HTTPException(status_code=422, detail="text must not be empty")
+        raise HTTPException(status_code=422, detail="Treść nie może być pusta.")
     result = ingest_text(
         text=request.text,
         source_type=request.source_type.value,
@@ -78,7 +86,7 @@ async def ingest_file_endpoint(
     except ValueError:
         raise HTTPException(
             status_code=422,
-            detail=f"source_type must be 'own' or 'external', got: {source_type}",
+            detail=f"Pole source_type musi mieć wartość 'own' albo 'external'; otrzymano: {source_type}",
         )
 
     content = await file.read()
@@ -88,7 +96,7 @@ async def ingest_file_endpoint(
     text = extract_text(content, filename)
     warnings = []
     if text is None:
-        warnings.append(f"Could not parse {filename} — file skipped")
+        warnings.append(f"Nie udało się odczytać pliku {filename} — plik został pominięty.")
         return IngestResult(
             article_id="",
             title=effective_title,
@@ -116,7 +124,7 @@ async def ingest_file_endpoint(
 @router.post("/ingest/url", response_model=BatchIngestResult)
 async def ingest_url_endpoint(request: IngestUrlRequest):
     if not request.url.strip():
-        raise HTTPException(status_code=422, detail="url must not be empty")
+        raise HTTPException(status_code=422, detail="Adres URL nie może być pusty.")
     try:
         validated_url = validate_public_url(
             request.url,
@@ -137,7 +145,7 @@ async def ingest_url_endpoint(request: IngestUrlRequest):
 @router.post("/ingest/drive", response_model=BatchIngestResult)
 async def ingest_drive_endpoint(request: IngestDriveRequest):
     if not request.folder_id.strip():
-        raise HTTPException(status_code=422, detail="folder_id must not be empty")
+        raise HTTPException(status_code=422, detail="ID folderu nie może być puste.")
     result = ingest_drive_folder(
         folder_id=request.folder_id,
         source_type=request.source_type.value,
@@ -158,14 +166,17 @@ async def drive_ingest_endpoint(request: IngestDriveRequest):
     Triggered by the MCP bond-drive server or directly by the frontend.
     """
     if not request.folder_id.strip():
-        raise HTTPException(status_code=422, detail="folder_id must not be empty")
+        raise HTTPException(status_code=422, detail="ID folderu nie może być puste.")
 
     # List files first so the response includes what was found
     try:
         service = build_drive_service()
         files = list_folder_files(service, request.folder_id)
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Drive auth failed: {e}")
+        raise HTTPException(
+            status_code=502,
+            detail=f"Autoryzacja Google Drive nie powiodła się: {e}",
+        )
 
     result = ingest_drive_folder(
         folder_id=request.folder_id,
@@ -194,8 +205,11 @@ async def corpus_status_endpoint():
     warning = None
     if article_count < settings.low_corpus_threshold:
         warning = (
-            f"Corpus contains only {article_count} article(s). "
-            f"Recommend at least {settings.low_corpus_threshold} articles for reliable style retrieval."
+            f"Korpus zawiera tylko {article_count} "
+            f"{_polish_count_form(article_count, 'artykuł', 'artykuły', 'artykułów')}. "
+            f"Zalecane minimum to {settings.low_corpus_threshold} "
+            f"{_polish_count_form(settings.low_corpus_threshold, 'artykuł', 'artykuły', 'artykułów')} "
+            "dla wiarygodnego dopasowania stylu."
         )
 
     documents = [DocumentInfo(**doc) for doc in get_articles()]

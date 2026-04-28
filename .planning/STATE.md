@@ -10,7 +10,7 @@ See: .planning/PROJECT.md (updated 2026-04-28)
 ## Current Position
 
 Phase: Post-Phase 4 — v1 SIGNED OFF
-Last activity: 2026-04-28 — dodano `scripts/calibrate_thresholds.py` + `bond/validation/threshold_calibration.py`, wygenerowano artefakty `.planning/artifacts/threshold-calibration-20260428-175144/summary.{md,json}`, ujednolicono writer low-corpus gate do `settings.low_corpus_threshold` + `articles.db` article_count, potwierdzono na lokalnych danych pozostawienie defaultów `low_corpus_threshold=10` i `duplicate_threshold=0.85`, wykryto drift `metadata_log` SQLite (`4`) vs Chroma duplicate collection (`3`) i domknięto targeted unit suite dla writer/calibration
+Last activity: 2026-04-28 — po pełnym lokalnym passie E2E (`agent-browser`) dla corpus/author/shadow/responsive domknięto też sweep lokalizacji user-facing komunikatów w frontendzie i backendzie (Shadow annotations `reason`, stepper, błędy streamingu, URL ingest/Drive/Corpus warnings, fallback Shadow error, accessible labels), potwierdzony dodatkowym browser pass; drift `metadata_log` SQLite ↔ Chroma pozostaje najbliższym follow-upem
 Status: v1 formalnie signed off; brak otwartych blockerów dla Author, Shadow, recovery/HITL, layoutów mobile/tablet ani hardeningu `/api/corpus/ingest/url`
 
 Progress: [██████████] 100% dla v1 + transport hardening / REC-01/02/03 + responsive remediation
@@ -36,6 +36,10 @@ Progress: [██████████] 100% dla v1 + transport hardening / R
 17. **URL ingest SSRF hardening już obecny w kodzie** — `/api/corpus/ingest/url` waliduje publiczne hosty przed scrapingiem, a testy pokrywają loopback, localhost, link-local, schematy inne niż HTTP(S) oraz skipowanie niebezpiecznych URL-i odkrytych przez sitemap.
 18. **Token-aware research carry-through** — `structure_node` i fresh-draft path w `writer_node` nie tną już ślepo `research_report` po znakach; pełny raport przechodzi bez zmian, gdy mieści się w budżecie modelu, a przy ciasnym budżecie prompt degraduje się sekcyjnie przez `research_data` (fakty/statystyki najpierw, potem redukcja źródeł).
 19. **Threshold calibration harness** — lokalny skrypt `scripts/calibrate_thresholds.py` analizuje `articles.db`, `bond_metadata.db` i Chroma, zapisuje artefakty pod `.planning/artifacts/threshold-calibration-20260428-175144/` i konserwatywnie utrzymuje defaulty `10` / `0.85`, bo obecna próba nie uzasadnia ich ruszania.
+20. **CP1 reject payload aligned with backend contract** — frontend wysyła teraz `note` (i opcjonalnie `edited_structure`) przy odrzuceniu `checkpoint_1`, więc struktura rzeczywiście zmienia się po feedbacku użytkownika.
+21. **Author draft streaming cleanup** — edytor dopisuje tokeny tylko podczas aktywnego node’a `writer`, a przy `checkpoint_2` nadpisuje bufor finalnym draftem z historii zamiast zostawiać zlepione próby / `<thinking>`.
+22. **Mobile live editor remediation** — `@uiw/react-md-editor` w trybie `live` poniżej `640px` stackuje input i preview pionowo zamiast nakładać je lub ściskać w dwie kolumny.
+23. **Polish-only UI/message sweep** — user-facing teksty w Shadow/Author/Corpus są już spójnie po polsku, włącznie z `shadow_annotate.reason`, SSRF/Drive warnings, fallbackami błędów i `ModeToggle` accessible label `Przełącz tryb`.
 
 ## Browser Validation Notes
 
@@ -175,6 +179,6 @@ Potwierdzone zachowania:
 ## Session Continuity
 
 Last session: 2026-04-28
-Stopped at: domknięto lokalną kalibrację progów (`scripts/calibrate_thresholds.py` + artefakty w `.planning/artifacts/threshold-calibration-20260428-175144/`), pozostawiono defaulty `low_corpus_threshold=10` i `duplicate_threshold=0.85`, a jako follow-up wykryto drift SQLite↔Chroma w duplicate metadata
+Stopped at: domknięto pełny lokalny E2E dla corpus/author/shadow/responsive, sweep lokalizacji user-facing komunikatów oraz browserowe potwierdzenie polskiego UI; jako follow-up pozostaje drift SQLite↔Chroma w duplicate metadata
 Resume file: None
 Next task: zbadać i naprawić drift `metadata_log` SQLite ↔ Chroma duplicate collection, tak aby duplicate check miał pełny coverage opublikowanych tematów

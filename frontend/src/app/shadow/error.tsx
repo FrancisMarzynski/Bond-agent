@@ -17,10 +17,10 @@ export default function ShadowError({ error, reset }: ErrorProps) {
             <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-6 max-w-md w-full text-center space-y-4">
                 <div className="flex items-center justify-center gap-2 text-destructive">
                     <AlertTriangle className="h-5 w-5" />
-                    <h2 className="text-base font-semibold">Błąd trybu Shadow</h2>
+                    <h2 className="text-base font-semibold">Błąd trybu Cień</h2>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                    {error.message || "Wystąpił nieoczekiwany błąd w widoku Shadow Mode."}
+                    {error.message || "Wystąpił nieoczekiwany błąd w widoku trybu Cień."}
                 </p>
                 {error.digest && (
                     <p className="text-xs text-muted-foreground/60 font-mono">ID: {error.digest}</p>

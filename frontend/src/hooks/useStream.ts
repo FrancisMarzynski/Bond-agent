@@ -55,6 +55,10 @@ function parseNestedPayload(raw: unknown): unknown {
 const ThreadIdSchema = z.object({ thread_id: z.string() });
 const TokenSchema = z.object({ token: z.string() });
 const StageSchema = z.object({ stage: z.string(), status: z.string() });
+const NodeLifecycleSchema = z.object({
+  node: z.string(),
+  label: z.string().optional(),
+});
 const MessageSchema = z.object({ content: z.string() });
 const AnnotationSchema = z.object({
   id: z.string(),
@@ -136,6 +140,7 @@ async function consumeStream(
   const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
   let endedCleanly = false;
   let pauseCleared = false;
+  let activeNode: string | null = null;
 
   try {
     while (true) {
@@ -176,7 +181,9 @@ async function consumeStream(
                     ? tokenResult.data.token
                     : "";
               if (!tokenContent) throw new Error("Invalid token event data");
-              useChatStore.getState().appendDraftToken(tokenContent);
+              if (activeNode === "writer") {
+                useChatStore.getState().appendDraftToken(tokenContent);
+              }
               break;
             }
             case "stage": {
@@ -203,6 +210,9 @@ async function consumeStream(
               const result = HitlPauseSchema.safeParse(payload);
               if (!result.success) throw new Error("Invalid hitl_pause event data");
               const store = useChatStore.getState();
+              if (typeof result.data.draft === "string") {
+                store.setDraft(result.data.draft);
+              }
               store.setHitlPause({
                 checkpoint_id: result.data.checkpoint_id,
                 type: result.data.type,
@@ -246,8 +256,8 @@ async function consumeStream(
                   : errorResult.success
                     ? errorResult.data.message ||
                       errorResult.data.data ||
-                      "Unknown error"
-                    : "Unknown error";
+                      "Nieznany błąd"
+                    : "Nieznany błąd";
               const store = useChatStore.getState();
               const currentStage =
                 store.stage !== "idle" && store.stage !== "done"
@@ -256,7 +266,7 @@ async function consumeStream(
               store.setStage(currentStage, "error");
               store.addMessage({
                 role: "assistant",
-                content: `Error: ${errorMessage}`,
+                content: `Błąd: ${errorMessage}`,
               });
               store.setStreaming(false);
               store.setRecoveringSession(false);
@@ -305,13 +315,31 @@ async function consumeStream(
               }
               break;
             }
-            case "node_start":
-            case "node_end":
+            case "node_start": {
               pauseCleared = clearResumePauseOnProgress(
                 options.clearPauseOnProgress === true,
                 pauseCleared
               );
+              const result = NodeLifecycleSchema.safeParse(payload);
+              if (result.success) {
+                activeNode = result.data.node;
+                if (result.data.node === "writer") {
+                  useChatStore.getState().setDraft("");
+                }
+              }
               break;
+            }
+            case "node_end": {
+              pauseCleared = clearResumePauseOnProgress(
+                options.clearPauseOnProgress === true,
+                pauseCleared
+              );
+              const result = NodeLifecycleSchema.safeParse(payload);
+              if (result.success && activeNode === result.data.node) {
+                activeNode = null;
+              }
+              break;
+            }
             case "heartbeat":
               if (process.env.NODE_ENV === "development") {
                 console.log("[SSE] Otrzymano heartbeat z serwera.");
@@ -581,7 +609,11 @@ export function useStream() {
       threadId: string,
       action: "approve" | "approve_save" | "reject",
       feedback: string | null,
-      onThreadId: (id: string) => void
+      onThreadId: (id: string) => void,
+      extras: {
+        editedStructure?: string | null;
+        note?: string | null;
+      } = {}
     ): Promise<void> => {
       const store = useChatStore.getState();
       if (store.isStreaming || store.isRecoveringSession) {
@@ -596,15 +628,31 @@ export function useStream() {
 
       const signal = createController();
       const normalizedAction = action === "approve_save" ? "approve" : action;
+      const payload: {
+        thread_id: string;
+        action: "approve" | "reject";
+        feedback?: string;
+        edited_structure?: string;
+        note?: string;
+      } = {
+        thread_id: threadId,
+        action: normalizedAction,
+      };
+
+      if (feedback) {
+        payload.feedback = feedback;
+      }
+      if (extras.editedStructure) {
+        payload.edited_structure = extras.editedStructure;
+      }
+      if (extras.note) {
+        payload.note = extras.note;
+      }
 
       try {
         await runCommandStream(
           `${API_URL}/api/chat/resume`,
-          JSON.stringify({
-            thread_id: threadId,
-            action: normalizedAction,
-            feedback,
-          }),
+          JSON.stringify(payload),
           signal,
           "resume",
           threadId,

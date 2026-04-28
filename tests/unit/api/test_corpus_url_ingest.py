@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from bond.api.routes.corpus import router
-from bond.corpus.sources import url_source
+from bond.corpus.sources import text_source, url_source
 
 
 @pytest.fixture(autouse=True)
@@ -53,7 +53,7 @@ def test_ingest_url_rejects_loopback_address(client, monkeypatch):
     )
 
     assert response.status_code == 422
-    assert "non-public address" in response.json()["detail"]
+    assert "niepublicznego adresu" in response.json()["detail"]
 
 
 def test_ingest_url_rejects_localhost(client, monkeypatch):
@@ -69,7 +69,7 @@ def test_ingest_url_rejects_localhost(client, monkeypatch):
     )
 
     assert response.status_code == 422
-    assert "non-public address" in response.json()["detail"]
+    assert "niepublicznego adresu" in response.json()["detail"]
 
 
 def test_ingest_url_rejects_private_metadata_address(client, monkeypatch):
@@ -84,7 +84,7 @@ def test_ingest_url_rejects_private_metadata_address(client, monkeypatch):
     )
 
     assert response.status_code == 422
-    assert "non-public address" in response.json()["detail"]
+    assert "niepublicznego adresu" in response.json()["detail"]
 
 
 def test_ingest_url_rejects_non_http_scheme(client, monkeypatch):
@@ -99,7 +99,7 @@ def test_ingest_url_rejects_non_http_scheme(client, monkeypatch):
     )
 
     assert response.status_code == 422
-    assert response.json()["detail"] == "url must use http or https"
+    assert response.json()["detail"] == "Adres URL musi używać schematu http lub https."
 
 
 def test_ingest_url_allows_public_https_url(client, monkeypatch):
@@ -132,6 +132,94 @@ def test_ingest_url_allows_public_https_url(client, monkeypatch):
     assert captured == {
         "url": "https://public.example/posts",
         "source_type": "external",
+    }
+
+
+def test_corpus_status_returns_polish_low_corpus_warning(client, monkeypatch):
+    monkeypatch.setattr("bond.api.routes.corpus.get_article_count", lambda: 2)
+    monkeypatch.setattr("bond.api.routes.corpus.get_chunk_count", lambda: 8)
+    monkeypatch.setattr("bond.api.routes.corpus.get_articles", lambda: [])
+    monkeypatch.setattr("bond.api.routes.corpus.settings.low_corpus_threshold", 4)
+
+    response = client.get("/api/corpus/status")
+
+    assert response.status_code == 200
+    assert response.json()["low_corpus_warning"] == (
+        "Korpus zawiera tylko 2 artykuły. "
+        "Zalecane minimum to 4 artykuły dla wiarygodnego dopasowania stylu."
+    )
+
+
+def test_ingest_blog_returns_polish_warning_when_no_articles(monkeypatch):
+    monkeypatch.setattr(url_source, "scrape_blog", lambda url: [])
+
+    result = url_source.ingest_blog("https://public.example", "external")
+
+    assert result == {
+        "articles_ingested": 0,
+        "total_chunks": 0,
+        "warnings": ["Nie znaleziono artykułów pod adresem https://public.example."],
+    }
+
+
+def test_ingest_blog_returns_polish_warning_for_short_article(monkeypatch):
+    monkeypatch.setattr(
+        url_source,
+        "scrape_blog",
+        lambda url: [
+            {
+                "url": "https://public.example/post-1",
+                "title": "Za krótki wpis",
+                "text": "Krótki tekst",
+            }
+        ],
+    )
+
+    class DummyIngestor:
+        def ingest(self, *, text: str, title: str, source_type: str, source_url: str) -> dict:
+            return {
+                "article_id": "article-1",
+                "chunks_added": 0,
+            }
+
+    monkeypatch.setattr(url_source, "CorpusIngestor", DummyIngestor)
+
+    result = url_source.ingest_blog("https://public.example", "external")
+
+    assert result == {
+        "articles_ingested": 0,
+        "total_chunks": 0,
+        "warnings": [
+            "Artykuł pod adresem https://public.example/post-1 jest zbyt krótki, aby utworzyć fragmenty."
+        ],
+    }
+
+
+def test_ingest_text_uses_polish_default_title(monkeypatch):
+    captured: dict[str, str] = {}
+
+    class DummyIngestor:
+        def ingest(self, *, text: str, title: str, source_type: str) -> dict:
+            captured["text"] = text
+            captured["title"] = title
+            captured["source_type"] = source_type
+            return {
+                "article_id": "article-1",
+                "chunks_added": 1,
+            }
+
+    monkeypatch.setattr(text_source, "CorpusIngestor", DummyIngestor)
+
+    result = text_source.ingest_text("Treść testowa", "own")
+
+    assert result == {
+        "article_id": "article-1",
+        "chunks_added": 1,
+    }
+    assert captured == {
+        "text": "Treść testowa",
+        "title": "Wklejony tekst",
+        "source_type": "own",
     }
 
 

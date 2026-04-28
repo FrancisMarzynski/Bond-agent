@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { AlertTriangle, CheckCircle2, Circle, Loader2, RefreshCw, XCircle } from "lucide-react";
 
 const AUTHOR_STEPS: { id: Stage; label: string }[] = [
-    { id: "research", label: "Research" },
+    { id: "research", label: "Badania" },
     { id: "structure", label: "Struktura" },
     { id: "writing", label: "Pisanie" },
 ];

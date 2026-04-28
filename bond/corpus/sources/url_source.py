@@ -88,7 +88,7 @@ def ingest_blog(url: str, source_type: str) -> dict:
         return {
             "articles_ingested": 0,
             "total_chunks": 0,
-            "warnings": [f"No articles found at {url}"],
+            "warnings": [f"Nie znaleziono artykułów pod adresem {url}."],
         }
 
     ingestor = CorpusIngestor()
@@ -107,7 +107,9 @@ def ingest_blog(url: str, source_type: str) -> dict:
             total_chunks += result["chunks_added"]
             ingested_count += 1
         else:
-            warnings.append(f"Article too short to chunk: {article['url']}")
+            warnings.append(
+                f"Artykuł pod adresem {article['url']} jest zbyt krótki, aby utworzyć fragmenty."
+            )
 
     return {
         "articles_ingested": ingested_count,

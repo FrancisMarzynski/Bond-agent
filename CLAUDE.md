@@ -78,7 +78,7 @@ interrupt({
 })
 ```
 
-**Resume request** sends `{"action": "approve"|"reject"|"abort", "feedback": "..."}` via `POST /api/chat/resume`. Handler builds `Command(resume=...)`.
+**Resume request** sends `{"action": "approve"|"reject"|"abort", ...optional fields...}` via `POST /api/chat/resume`. For CP2 / Shadow reject use `feedback`; for CP1 reject use `note` and optional `edited_structure`. Handler builds `Command(resume=...)`.
 
 **Graph routing is stable** — routing function bodies (`_route_after_cp1`, `_route_after_cp2`, `_route_after_shadow_checkpoint`, `route_mode`) and `add_conditional_edges` wiring must not change between plans. Replace node bodies via `_node_registry`, never touch edge declarations.
 
@@ -142,8 +142,9 @@ Access state outside React with `useChatStore.getState()` / `useShadowStore.getS
 
 **`resumeStream` signature**:
 ```ts
-resumeStream(threadId, action, feedback, onThreadId)
+resumeStream(threadId, action, feedback, onThreadId, extras?)
 // action: "approve" | "approve_save" | "reject"
+// extras?: { editedStructure?: string | null; note?: string | null }
 ```
 
 **Path alias** — `@/` resolves to `frontend/src/`.

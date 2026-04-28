@@ -54,7 +54,8 @@ export function ChatInterface() {
                 : "bg-muted text-foreground"
             )}>
               {msg.content}
-              {msg.role === "assistant" && msg.content.startsWith("Error:") && (
+              {msg.role === "assistant" &&
+                (msg.content.startsWith("Błąd:") || msg.content.startsWith("Error:")) && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -88,7 +89,7 @@ export function ChatInterface() {
               onClick={() => handleSend()}
               disabled={!input.trim() || isStreaming}
               size="icon"
-              aria-label="Send"
+              aria-label="Wyślij"
             >
               {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>

@@ -164,7 +164,7 @@ class ChatRequest(BaseModel):
         if len(v) > SHADOW_MAX_CHARS:
             raise ValueError(
                 f"Tekst wejściowy jest zbyt długi ({len(v)} znaków). "
-                f"Maksimum dla trybu Shadow Mode: {SHADOW_MAX_CHARS} znaków."
+                f"Maksimum w trybie Cień: {SHADOW_MAX_CHARS} znaków."
             )
         return v
 

@@ -110,7 +110,7 @@ def ingest_drive_folder(folder_id: str, source_type: str) -> dict:
         return {
             "articles_ingested": 0,
             "total_chunks": 0,
-            "warnings": [f"Drive auth failed: {e}"],
+            "warnings": [f"Autoryzacja Google Drive nie powiodła się: {e}"],
         }
 
     files = list_folder_files(service, folder_id)
@@ -118,9 +118,9 @@ def ingest_drive_folder(folder_id: str, source_type: str) -> dict:
     if not files:
         # Per RESEARCH.md pitfall 4: show service account email for troubleshooting
         warning_msg = (
-            f"No supported files found in folder {folder_id}. "
-            "If using service_account auth, ensure the folder is shared with the service account email. "
-            "Check GOOGLE_CREDENTIALS_PATH for the service account email address."
+            f"Nie znaleziono obsługiwanych plików w folderze {folder_id}. "
+            "Jeśli używasz autoryzacji service_account, upewnij się, że folder został udostępniony na adres e-mail konta serwisowego. "
+            "Sprawdź GOOGLE_CREDENTIALS_PATH, aby znaleźć adres e-mail konta serwisowego."
         )
         log.warning("%s", warning_msg)
         return {"articles_ingested": 0, "total_chunks": 0, "warnings": [warning_msg]}
@@ -135,7 +135,7 @@ def ingest_drive_folder(folder_id: str, source_type: str) -> dict:
     for f in files:
         content = download_file(service, f.id, f.mime_type)
         if content is None:
-            warnings.append(f"Could not download {f.name} — skipped")
+            warnings.append(f"Nie udało się pobrać pliku {f.name} — plik został pominięty.")
             continue
 
         # Determine effective extension for file_source dispatch
@@ -144,7 +144,7 @@ def ingest_drive_folder(folder_id: str, source_type: str) -> dict:
 
         text = extract_text(content, effective_name)
         if text is None:
-            warnings.append(f"Could not parse {f.name} — skipped")
+            warnings.append(f"Nie udało się odczytać pliku {f.name} — plik został pominięty.")
             continue
 
         result = ingestor.ingest(
@@ -157,7 +157,9 @@ def ingest_drive_folder(folder_id: str, source_type: str) -> dict:
             total_chunks += result["chunks_added"]
             ingested_count += 1
         else:
-            warnings.append(f"{f.name} too short to produce chunks — skipped")
+            warnings.append(
+                f"Plik {f.name} jest zbyt krótki, aby utworzyć fragmenty — plik został pominięty."
+            )
 
     return {
         "articles_ingested": ingested_count,

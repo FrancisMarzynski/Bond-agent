@@ -47,6 +47,14 @@ const SOURCE_LABEL: Record<string, string> = {
   external: "zewn.",
 };
 
+function getPolishCountForm(count: number, one: string, few: string, many: string): string {
+  if (count === 1) return one;
+  if (count % 10 >= 2 && count % 10 <= 4 && !(count % 100 >= 12 && count % 100 <= 14)) {
+    return few;
+  }
+  return many;
+}
+
 export function CorpusStatusPanel() {
   const [status, setStatus] = useState<CorpusStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -152,7 +160,7 @@ export function CorpusStatusPanel() {
                 <AlertTriangle className="h-3 w-3 text-amber-500 mt-0.5 shrink-0" />
                 <p className="text-xs text-amber-600 dark:text-amber-400 leading-snug">
                   Mało danych — {status.article_count}{" "}
-                  {status.article_count === 1 ? "artykuł" : "artykułów"}
+                  {getPolishCountForm(status.article_count, "artykuł", "artykuły", "artykułów")}
                 </p>
               </div>
             )}

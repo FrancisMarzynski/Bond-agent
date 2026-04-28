@@ -28,7 +28,7 @@ export function ModeToggle() {
             <Switch
                 checked={isShadow}
                 onCheckedChange={handleToggle}
-                aria-label="Toggle mode"
+                aria-label="Przełącz tryb"
             />
             <span className="text-xs text-muted-foreground">Cień</span>
             <Badge variant={isShadow ? "secondary" : "default"} className="text-xs ml-1">
