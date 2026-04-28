@@ -5,12 +5,12 @@
 See: .planning/PROJECT.md (updated 2026-04-28)
 
 **Core value:** Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksymalnie 4 godzin — przy zachowaniu stylu nieodróżnialnego od ludzkiego, z human-in-the-loop przed każdą publikacją.
-**Current focus:** v1 formalnie signed off 2026-04-28 po domknięciu Shadow HITL, detached runtime, recovery sesji, responsive remediation oraz potwierdzeniu istniejącej ochrony SSRF dla URL ingest. Domknięto też token-aware carry-through `research_report` do `structure_node` i `writer_node`; następny najwyższy-ROI temat post-v1 to formalna live walidacja Exa dla polskich zapytań researchowych.
+**Current focus:** v1 formalnie signed off 2026-04-28 po domknięciu Shadow HITL, detached runtime, recovery sesji, responsive remediation, potwierdzeniu istniejącej ochrony SSRF dla URL ingest oraz formalnej live walidacji Exa dla kuratorowanych polskich zapytań researchowych. Następny najwyższy-ROI temat post-v1 to kalibracja progów jakości korpusu i duplicate similarity na realnych danych.
 
 ## Current Position
 
 Phase: Post-Phase 4 — v1 SIGNED OFF
-Last activity: 2026-04-28 — domknięto token-aware budgeting research context dla `structure_node` i `writer_node`, dodano regresyjne testy helper/node oraz potwierdzono brak regresji w graph/API unit suite; wcześniej tego samego dnia zsynchronizowano planning docs i potwierdzono istniejącą walidację publicznych URL-i dla URL ingest
+Last activity: 2026-04-28 — dodano `scripts/validate_exa_polish.py` + `bond/validation/exa_polish.py`, uruchomiono live Exa baseline dla 4 polskich case'ów researchowych (wszystkie `pass`), zapisano artefakty w `.planning/artifacts/exa-polish-20260428-142434/`, zsynchronizowano docs z realnym setupem Exa MCP; wcześniej tego samego dnia domknięto token-aware budgeting research context dla `structure_node` i `writer_node` oraz potwierdzono brak regresji w graph/API unit suite
 Status: v1 formalnie signed off; brak otwartych blockerów dla Author, Shadow, recovery/HITL, layoutów mobile/tablet ani hardeningu `/api/corpus/ingest/url`
 
 Progress: [██████████] 100% dla v1 + transport hardening / REC-01/02/03 + responsive remediation
@@ -83,6 +83,21 @@ Artefakty lokalne:
 - `e2e-screenshots/responsive/05-shadow-mobile.png`
 - `e2e-screenshots/responsive/06-shadow-tablet.png`
 
+## Exa Validation Notes
+
+Walidacja live Exa wykonana 2026-04-28 na:
+
+- harness: `uv run python scripts/validate_exa_polish.py`
+- artifact JSON: `.planning/artifacts/exa-polish-20260428-142434/summary.json`
+- artifact Markdown: `.planning/artifacts/exa-polish-20260428-142434/summary.md`
+
+Potwierdzone zachowania:
+
+1. Exa MCP odpowiada bez osobnej zmiennej `EXA_API_KEY`; aplikacja łączy się bezpośrednio z `https://mcp.exa.ai/mcp`.
+2. Każdy z 4 kuratorowanych case'ów (AI marketing B2B, BIM, XR, cyfrowe bliźniaki) zwrócił status `pass`.
+3. Każde z 3 zapytań per case zwróciło 5 parsowalnych wyników (`overview`, `stats`, `case-study`), mimo że payload MCP pakuje je do pojedynczego bloku tekstowego.
+4. Deduplikowane wyniki na case: 12–15 unikalnych źródeł, 11–15 unikalnych domen, 8–11 domen `.pl`, 4–11 źródeł z datą publikacji od 2024 roku.
+
 ## Performance Metrics
 
 **Velocity:**
@@ -147,17 +162,16 @@ Artefakty lokalne:
 
 ### Post-v1 Candidates
 
-- Wykonać formalną live walidację Exa na polskich zapytaniach researchowych.
 - Skalibrować progi jakości korpusu i duplicate similarity na realnych danych.
 
 ### Blockers/Concerns
 
-- EXA_API_KEY live verification with Polish-language queries nadal nie ma osobnej formalnej walidacji
 - RAG corpus quality thresholds (10 articles, 0.85 similarity) są rekomendacjami, nie wynikami empirycznej kalibracji
+- Baseline Exa jest zwalidowany tylko na 4 kuratorowanych case'ach; brak jeszcze porównania A/B vs Tavily i brak telemetrycznego feedbacku z produkcyjnych tematów użytkowników
 
 ## Session Continuity
 
 Last session: 2026-04-28
-Stopped at: domknięto token-aware budgeting `research_report` w `structure_node` i `writer_node`, dodano testy regresyjne prompt-budget i poprawiono centralny setup `tests/conftest.py`, żeby pełne wskazane suite'y pytest kolekcjonowały się poprawnie
+Stopped at: domknięto live baseline Exa dla polskich zapytań (`scripts/validate_exa_polish.py` + artefakty w `.planning/artifacts/exa-polish-20260428-142434/`) oraz zsynchronizowano AGENTS/CLAUDE/README z faktem, że aplikacja nie czyta `EXA_API_KEY`
 Resume file: None
-Next task: wykonać formalną live walidację Exa dla polskich zapytań researchowych, a potem skalibrować progi jakości korpusu i duplicate similarity na realnych danych
+Next task: skalibrować progi jakości korpusu i duplicate similarity na realnych danych, wykorzystując rzeczywiste tematy i wyniki z metadata/search cache

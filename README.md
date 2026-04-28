@@ -51,6 +51,14 @@ uv run python -m bond.harness
 
 Uruchamia interaktywny pipeline Trybu Autora w terminalu: podaj temat i słowa kluczowe, a następnie zatwierdzaj lub odrzucaj kolejne etapy (struktura, szkic).
 
+**Live walidacja Exa dla polskich zapytań researchowych:**
+
+```bash
+uv run python scripts/validate_exa_polish.py
+```
+
+Skrypt zapisuje artefakty `summary.json` i `summary.md` w `.planning/artifacts/exa-polish-<timestamp>/`.
+
 ## API
 
 ### Stan serwera
@@ -93,12 +101,13 @@ Ustawienia są wczytywane z pliku `.env` (wszystkie opcjonalne — pokazano wart
 
 ### Tryb Autora
 
-Wymagane klucze API (muszą być ustawione w `.env`):
+Wymagany klucz API (musi być ustawiony w `.env`):
 
 | Zmienna | Opis |
 |---------|------|
 | `OPENAI_API_KEY` | Klucz OpenAI — używany przez węzły researcher i writer |
-| `EXA_API_KEY` | Klucz Exa — używany do badań webowych |
+
+Exa nie wymaga osobnej zmiennej środowiskowej aplikacji. `researcher_node` łączy się bezpośrednio z `https://mcp.exa.ai/mcp`, więc potrzebny jest tylko outbound HTTPS z hosta uruchomieniowego.
 
 Opcjonalne ustawienia (pokazano wartości domyślne):
 

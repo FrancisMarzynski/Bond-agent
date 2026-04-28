@@ -1,0 +1,702 @@
+{
+  "generated_at": "2026-04-28T12:24:45.444767+00:00",
+  "overall_status": "pass",
+  "cases": [
+    {
+      "slug": "ai-marketing-b2b",
+      "topic": "Agenci AI w marketingu B2B",
+      "status": "pass",
+      "duration_seconds": 6.41,
+      "total_raw_results": 3,
+      "unique_sources": 15,
+      "duplicate_sources": 0,
+      "unique_domains": 15,
+      "polish_domains": 11,
+      "recent_sources": 11,
+      "query_results": [
+        {
+          "label": "overview",
+          "query": "agenci AI w marketingu B2B trendy 2025 Polska",
+          "raw_result_count": 1,
+          "parsed_result_count": 5,
+          "error": null
+        },
+        {
+          "label": "stats",
+          "query": "agenci AI marketing B2B statystyki raport 2025 Polska",
+          "raw_result_count": 1,
+          "parsed_result_count": 5,
+          "error": null
+        },
+        {
+          "label": "case-study",
+          "query": "agenci AI marketing B2B studium przypadku Polska",
+          "raw_result_count": 1,
+          "parsed_result_count": 5,
+          "error": null
+        }
+      ],
+      "failures": [],
+      "warnings": [],
+      "sources": [
+        {
+          "query_label": "overview",
+          "title": "Konferencja AI-Driven Marketing 2025 – AI w B2B i E-commerce",
+          "url": "https://konferencja.harbingers.io/2025",
+          "normalized_url": "https://konferencja.harbingers.io/2025",
+          "domain": "konferencja.harbingers.io",
+          "published": null,
+          "author": null,
+          "highlights": "AI nie jest już przyszłością – to nasza codzienność. Konferencja AI-Driven Marketing jest dla tych, którzy nie tylko obserwują zmiany, ale też chcą je współtworzyć. Spotkajmy się w sercu Warszawy, aby wspólnie odkrywać, jak sztuczna inteligencja napędza sprzedaż, marketing i przewagę konkurencyjną w B2B i e-commerce.Zachowujemy prawo selekcji zgłoszeń i nie przewidujemy uczestnictwa agencji marketingowych, reklamowych, leadowych oraz firm oferujących podobne usługi.\n[...]\nJeśli prowadzisz firmę i chcesz wyprzedzić konkurencję, ta konferencja pokaże Ci konkretne rozwiązania, które przełożą się na wzrost. Nauczysz się, jak wykorzystać AI do budowania skalowalnych strategii sprzedaży i marketingu oraz jak przekuć je w realną przewagę rynkową.\n[...]\nJesteś\n[...]\norem, managerem lub ekspertem\n[...]\n| | 09:40–11:45 | Zmiana rynkowa – jak AI redefiniuje marketing i sprzedaż? 9:40–10:10 | Prelekcja: „ZERO CLICK FUTURE”, czy Agenci będą kupować za nas? — szanse i zagrożenia marketingu w erze AI | Filip Krasiński i Piotr Michalak (Harbingers) 10:10–11:20 | Panel dyskusyjny: Jak budować współczesne zespoły marketingu i sprzedaży? Nowe kompetencje i role — kogo zatrudniać, a kogo rozwijać w dobie AI? 11:20–11:45 | Przerwa na kawę\n[...]\n| | 11:45–14:05 | AI Search – czyli SEO i Content Marketing w dobie wzrostu ruchu i konwersji z Agentów AI 11:45–12:15 | Prelekcja: AI Overview i Agenci AI: Nowa era widoczności w sieci i wpływ na SEO | Piotr Michalak i Michał Sznurkowski (Harbingers) 12:15–12:45 | Case Study: Jak osiągnąć dominującą obecność w AI dzięki strategii SEO i CM, wzbogaconej o elementy GEO? | Marcin Nawrocki (LINK4) Joanna Szklarczyk (Harbingers) 12:45–13:05 | Inspiracja: Inteligencja sztuczna, relacje prawdziwe – jak budować trwałą lojalność z klientem w świecie automatyzacji? | Tomasz Kalko 13:05–14:05 | Przerwa obiadowa i networking |"
+        },
+        {
+          "query_label": "overview",
+          "title": "Agencja Marketingowa B2B i E-commerce | SEMIDEA",
+          "url": "https://semidea.pl/",
+          "normalized_url": "https://semidea.pl/",
+          "domain": "semidea.pl",
+          "published": "2025-04-18T13:23:16.000Z",
+          "author": null,
+          "highlights": "## Pierwsza agencja w Polsce z kompleksową produkcją video reklamowego AI!\n[...]\nWdrażamy najnowocześniejsze rozwiązania, które podbijają skuteczność marketingu. AI, automatyzacje i nowatorskie strategie pozwalają nam wyprzedzać konkurencję i zaskakiwać klientów.\n[...]\nTworzymy i optymalizujemy kampanie reklamowe na Google, Facebooku, TikToku, LinkedIn i Allegro. Nasze działania są nastawione na wyniki – więcej sprzedaży, większy zwrot z inwestycji i precyzyjne dotarcie do Twoich klientów.\n[...]\nWprowadzamy produkty na nowe r\n[...]\nów zarówno w kraju, jak i za granicą. Dzięki analizom pop\n[...]\ndo rozwoju i zwiększenia\n[...]\nPomagamy firmom sprzedającym usługi i produkty w modelu B2B skutecznie docierać do klientów, rozwijać sieć dystrybutorów i budować silną pozycję na rynku.\n[...]\nW SEMIDEA łączę strategię kampanii Meta Ads z tworzeniem reklam video AI, które trafiają w sedno – bo są dokładnie dopasowane do branży i momentu rozwoju firmy. Na co dzień analizuję dane, testuję komunikaty i dopinam budżety – ale zanim wszedłem w świat performance, tworzyłem grafiki, animacje i filmy. To nauczyło mnie, że dobra kreacja to nie tylko estetyka, ale narzędzie do osiągania celów.\n[...]\nW SEMIDEA łączę strategię kampanii Meta Ads z tworzeniem reklam video AI, które trafiają w sedno – bo są dokładnie dopasowane do branży i momentu rozwoju firmy. Na co dzień analizuję dane, testuję komunikaty i dopinam budżety – ale zanim ws\n[...]\nłem w świat performance, tworzyłem grafiki, animacje i filmy. To nauczyło mnie, że dobra kreacja to nie tylko estetyka, ale narzędzie do osiągania celów.\n[...]\nŚwiat marketingu zmienia się dynamicznie. Nie trać czasu na research - najważniejsze nowości i trendy wyślemy prosto na Twoją skrzynkę.\n[...]\nŚwiat marketingu zmienia się dynamicznie. Nie trać czasu na research - najważniejsze nowości i trendy wyślemy prosto na Twoją skrzynkę."
+        },
+        {
+          "query_label": "overview",
+          "title": "OptimumAI - Szkolenia i Wdrożenia Modeli AI",
+          "url": "https://optimumai.pl/marketing-ai-agent",
+          "normalized_url": "https://optimumai.pl/marketing-ai-agent",
+          "domain": "optimumai.pl",
+          "published": "2026-01-07T23:06:32.000Z",
+          "author": null,
+          "highlights": "## Marketing AI Agent: Marketing, który dowozi leady\n[...]\nWyspecjalizowany system AI do marketingu B2B, który planuje, tworzy i optymalizuje działania marketingowe. Automatyzuje produkcję treści i kampanii, pilnując spójności marki oraz wpływu na pipeline.\n[...]\nNajwiększa wartość: Więcej jakościowych leadów, szybsza produkcja contentu i niższy koszt pozyskania klienta (CAC) dzięki automatyzacji.\n[...]\n- ✓ Lead generation (LinkedIn, e-mail, ads)\n- ✓ Social media B2B (posty eksperckie)\n- ✓ PR i komunikacja (thought leadership)\n[...]\nWięcej leadów: Systematyczna produkcja treści bez przerw.\n[...]\n- • Wyżs\n[...]\nLanding Pages)\n[...]\nNiższy CAC: Tańsze pozyskanie klienta dzięki automatyzacji.\n[...]\n- • Mniej kosztów zewnętrznych (agencje, copywriterzy)\n- • Mniej “spalonego budżetu” na nietrafione kampanie\n- • Oszczędność 10-30h tygodniowo na pracy manualnej\n[...]\nSzybsza reakcja:\n[...]\norzenie kampanii w godzinach\n[...]\ndniach.\n[...]\n- • Skrócenie czasu produkcji treści\n- • Natychmiastowe aktualizacje ofert i stron\n- • Szybsza reakcja na trendy rynkowe\n[...]\nSpójność Marki: Jednolity Tone of Voice w całej firmie.\n[...]\nSkalowalność: Marketing działający w trybie ciągłym i systemowym.\n[...]\n- • Łatwiejsze wejście na nowe rynki (lokalizacja)\n- • Budowa biblioteki treści “evergreen”\n- • Mniejsza zależność od pojedynczych osób\n[...]\nUmów prezentację i pokaż, gdzie tracisz czas w marketingu. Pokażemy, jak Marketing AI Agent skraca produkcję contentu i zwiększa pipeline.\n[...]\nSkokowy wzrost kompetencji – szkolenia AI szyte na branżę i poziom zespołu\n[...]\nbarier –\n[...]\nNatychmiastowy ROI – mierzalne efekty biznesowe już po pierwszych sprintach\n[...]\nNasz zespół tworzą: architekci i inżynierowie sztucznej inteligencji, specjaliści low-code/no-code, konsultanci strategii danych, eksperci AI security & MLOps oraz analitycy biznesowi wspierający transformację cyfrową."
+        },
+        {
+          "query_label": "overview",
+          "title": "Agencja Marketingu AI - Ad Plus Polska - Home",
+          "url": "https://adplus.pl/",
+          "normalized_url": "https://adplus.pl/",
+          "domain": "adplus.pl",
+          "published": "2026-02-11T08:53:04.000Z",
+          "author": null,
+          "highlights": "Agencja Marketingu AI - Ad Plus Polska - Home\n[...]\n### Tworzymy AI, które zna Twój rynek i pomaga zarabiać więcej Twojej firmie.\n[...]\nBudujemy dla firm kontekstowe modele AI, które automatycznie generują i optymalizują reklamy oraz komunikację sprzedażową.\n[...]\nW przeciwieństwie do tradycyjnych agencji, budujemy dla Ciebie dedykowany model AI znający Twój biznes, który pomoże osiągać wyższą rentowność Twojej firmy.\n[...]\nTwój kontekstowy model AI analizuje rynek i tworzy komunikację, która przyciąga klientów.\n[...]\nTrenujemy AI na Twojej stronie, ofercie i firmach konkurencyjnych.\n[...]\n### B2B\n[...]\nWięcej leadów B2B\n[...]\nkontekstowej AI\n[...]\nMarketing AI dla firm doradczych, software house'ów i innych firm B2B. Leady od decydentów.Firmy doradcze, software house, agencje\n[...]\nykowany model\n[...]\nucznej inteligencji wytrenowany na Twojej stronie, ofercie, rynku i konkurencji. Analizuje, co\n[...]\nw Twojej branży, i na tej podstawie\n[...]\nTak. Pracujemy w 100% zdalnie i obsługujemy firmy z całej Polski. Komunikujemy się przez telefon, email i wideokonferencje. Nasze biuro mieści się w okolicach Góry Kalwarii koło Warszawy, ale klientów mamy w całym kraju.\n[...]\nAd Plus Polska sp. z o.o. to agencja marketingu internetowego specjalizująca się w marketingu AI, prowadzeniu kampanii Google Ads, Meta Ads oraz generowaniu leadów sprzedażowych dla firm.\n[...]\nFirma obsługuje klientów z całej Polski i oferuje kompleksowe usługi marketingu cyfrowego zwiększające sprzedaż i liczbę klientów.\n[...]\nAd Plus Polska oferuje kompleksowe usługi marketingu internetowego dla firm:\n[...]\n- Prowadzenie kampanii Google Ads\n- Prowadzenie kampanii Meta Ads\n- Marketing AI\n- Generowanie leadów sprzedażowych\n[...]\nPrzeanaliz\n[...]\nTwój biznes i pokażemy, jak kontekstowa AI może zwiększyć Twoje wyniki marketingowe.\n[...]\nTworzymy AI, które zna Twój rynek i pomaga sprzedawać więcej. Kontekstowe modele AI dla polskich firm."
+        },
+        {
+          "query_label": "overview",
+          "title": "RSpace - Agencja AI | Automatyzacja, Marketing AI, SaaS",
+          "url": "https://rspace.com.pl/",
+          "normalized_url": "https://rspace.com.pl/",
+          "domain": "rspace.com.pl",
+          "published": null,
+          "author": null,
+          "highlights": "RSpace - Agencja AI | Automatyzacja, Marketing AI, SaaS\n[...]\nBezpłatna konsultacja i szybka diagnoza, działający prototyp w 2–4 tygodnie, wdrożenie z mierzalnymi efektami. Dla mikrofirm i MŚP w Polsce.\n[...]\n## AI dla Twojej branży\n[...]\nDostarczamy rozwiązania dopasowane do specyfiki Twojego sektora\n[...]\n### Usługi B2B\n[...]\nKwalifikacja leadów, follow-up po spotkaniu, raportowanie — mniej admina, więcej sprzedaży.\n[...]\n- Raportowanie pipeline'u\n- Automatyczny follow-up po ofercie\n- Agent kwalifikujący zapytania\n[...]\n### Software & SaaS\n[...]\nWsparcie techniczne, onboarding nowych użytkowników, analiza ticketów — z człowiekiem w pętli.\n[...]\n- Analiza trendów w ticketach\n- Automatyczny onboarding\n- Support AI z eskalacją do człowieka\n[...]\n## Gotowe pakiety do wdrożenia\n[...]\n### AI Audit\n[...]\nBezpłatna konsultacja + szybka diagnoza, potem pełny audyt procesów. Wskazujemy, gdzie automatyzacja da najszybszy zwrot — zanim wydasz złotówkę na wdrożenie.\n[...]\n### Automatyczna Sekretarka AI\n[...]\n### Sales Agent AI\n[...]\nAgent, który kwalifikuje leady, odpowiada na pytania handlowe i umawia spotkania — bez czekania na wolnego handlowca.\n[...]\n### Document AI\n[...]\n### Support AI\n[...]\nniejsze eskaluje do człowieka.\n[...]\n### Reporting AI\n[...]\nAutomatyczne raporty z Twoich danych: sprzedaż, marketing, operacje. Zamiast zbierać dane ręcznie, dostajesz gotowy dashboard.\n[...]\n### POC — działający prototyp\n[...]\nWdrożenie produk\n[...]\n## Jak AI pracuje w praktyce\n[...]\n### Automatyczna Sekretarka AI\n[...]\n### Document AI\n[...]\n### Support AI (human-in-the-loop)\n[...]\n### Reporting AI\n[...]\nDane leżą w trzech różnych miejscach, a raport trzeba składać ręcznie co tydzień. System automatycznie zbiera dane z CRM, kalendarza i arkuszy, generuje gotowy raport i wysyła go na czas.\n[...]\nDla kogo: Firmy B2B, zespoły sprzedażowe, właściciele zarządzający operacyjnie\n[...]\n### Adres\n[...]\nŁódź, Polska"
+        },
+        {
+          "query_label": "stats",
+          "title": "AI w sprzedaży B2B – 7 kluczowych wniosków z raportu 2025",
+          "url": "https://pawelludwiczak.pl/ai-w-sprzedazy-b2b/",
+          "normalized_url": "https://pawelludwiczak.pl/ai-w-sprzedazy-b2b",
+          "domain": "pawelludwiczak.pl",
+          "published": "2025-11-19T15:35:28.000Z",
+          "author": "Paweł",
+          "highlights": "AI w sprzedaży B2B – 7 kluczowych wniosków z raportu 2025\n[...]\n# Jak AI zmienia sprzedaż B2B w Polsce? 7 wniosków z raportu Barometr 2025–2026\n[...]\nAI przestało być futurystycznym dodatkiem. Najnowszy raport „ Barometr cyfrowej transformacji 2025–2026” pokazuje, że sztuczna inteligencja realnie wpływa na to, jak polskie firmy sprzedają, forecastują i budują relacje z klientami. To nie tylko zmiana technologiczna – to zmiana sposobu pracy całych zespołów.\n[...]\n## AI w sprzedaży B2B – gdzie są dziś polskie firmy?\n[...]\n- 72% potwierdza, że synergia AI, automatyzacji i chmury zwiększa efektywność wdrożeń.\n- 67% wskazuje chmurę jako klucz dla skalowania rozwiązań opartych na AI,\n- 52% firm używa AI do automatyzacji działań operacyjnych,\n- 60% firm korzysta z AI w procesach biznesowych,\n[...]\n# 1. AI przyspiesza pracę handlowców\n[...]\n# 2. AI zmienia prospecting\n[...]\nZ raportu jasno wynika, że firmy widzą ogromny potencjał AI w obszarze komunikacji i kontaktu z klientem. W sprzedaży oznacza to przede wszystkim nowy sposób prowadzenia prospectingu.\n[...]\n# 3. AI skraca lejek sprzedaży\n[...]\nwidoczności,\n[...]\n# 4. AI poprawia jakość rozmów handlowych\n[...]\n# 5. Kompetencje handlowców zmieniają się szybciej niż kiedykolwiek\n[...]\n# 6. Rola lidera sprzedaży zmienia się najbardziej\n[...]\nRaport podkreśla, że największym wyzwaniem nie jest technologia, lecz kompetencje ludzi – zwłaszcza menedżerów.\n[...]\n# 7. Firmy, które zintegrują AI z procesem sprzedaży, będą wygrywać\n[...]\nZ raportu jasno wynika, że najbliższe dwa lata będą okresem przyspieszenia zmian. Firmy, które nauczą się łączyć:\n[...]\n# Podsumowanie\n[...]\nAI nie jest zagrożeniem dla sprzedaży. Jest narzędziem, które pozwala handlowcom pracować skuteczniej, szybciej i bardziej profesjonalnie. Działy sprzedaży, które potrafią wykorzystać technologię, budują przewagę, która będzie trudna do nadrobienia."
+        },
+        {
+          "query_label": "stats",
+          "title": "Wykorzystanie AI przez agencje marketingowe w Polsce [raport] - aboutmarketing.pl",
+          "url": "https://aboutmarketing.pl/wykorzystanie-ai-przez-agencje-marketingowe-w-polsce-raport/",
+          "normalized_url": "https://aboutmarketing.pl/wykorzystanie-ai-przez-agencje-marketingowe-w-polsce-raport",
+          "domain": "aboutmarketing.pl",
+          "published": "2026-01-26T15:50:18.000Z",
+          "author": "Mat. prasowy",
+          "highlights": "W II połowie 2025 roku przeprowadzono pierwsze w Polsce badanie dotyczące wykorzystania sztucznej inteligencji przez agencje marketingowe. Raport został opracowany na podstawie danych zebranych od 63 agencji z różnych segmentów rynku, w tym agencji kreatywnych, digitalowych, performance, social media oraz 360.\n[...]\nWyniki badań potwierdzają znaczący wzrost dojrzałości wdrożeń AI w branży marketingowej, przy jednoczesnym utrzymaniu stabilnego zatrudnienia oraz niewielkim wpływie technologii na dotychczasowe struktury organizacyjne.\n[...]\n• 66,66% agencji ocenia udział AI w swojej pracy jako wysoki• 60,31% wskazuje skrócenie czasu zadań kreatywnych jako największą korzyść• 66,67% agencji nie odnotowało zmian w zatrudnieniu po wdrożeniu AI• Największe efekty notowane są w efektywności operacyjnej, a nie zwiększeniu liczby projektów• 31,75% agencji w ogóle nie mierzy konwersji kampanii z udziałem AI• Największy niewykorzystany potencjał narzędzi AI pozostaje w obszarze mediowo-budżetowym\n[...]\nBadane agencje stosują narzędzia AI zarówno w obszarach kreatywnych, jak i operacyjnych. Najczęściej wskazywane zastosowania obejmują:\n[...]\n– Największą bolączką rynku nie jest technologia, tylko brak pomiaru. AI jest wykorzystywane, ale efektywność wdrożeń rzadko bywa analizowana, szczególnie w perspektywie konwersji i zwrotu z kampanii – dodaje Anna Ledwoń-Blacha, współautorka raportu.\n[...]\n• optymalizacja budżetów mediowych• modelowanie scenariuszowe kampanii• lepsza integracja workflow z systemami CRM i BI• standaryzacja pomiaru skuteczności kampanii• wykorzystanie AI do procesów strategicznych\n[...]\n• forma: kwestionariusz online + elementy desk research• próba: 63 agencje marketingowe działające w Polsce• okres realizacji: lipiec – grudzień 2025• segmenty: agencje kreatywne, digital, social media, performance, 360• analiza: ilościowa + jakościowa"
+        },
+        {
+          "query_label": "stats",
+          "title": "AI W Agencjach Marketingowych W Polsce: Fakty, Wnioski, Konsekwencje [Raport Do Pobrania] 🖤 Anna Ledwoń-Blacha",
+          "url": "https://ledwoledwo.pl/ai-w-agencjach-marketingowych-w-polsce/",
+          "normalized_url": "https://ledwoledwo.pl/ai-w-agencjach-marketingowych-w-polsce",
+          "domain": "ledwoledwo.pl",
+          "published": "2026-01-20T22:28:59.000Z",
+          "author": null,
+          "highlights": "AI W Agencjach Marketingowych W Polsce: Fakty, Wnioski, Konsekwencje [Raport Do Pobrania] 🖤 Anna Ledwoń-Blacha\n[...]\ną, ale fundamentalną zmianę:\n[...]\nprzestała być traktowana jako\n[...]\nymentów\n[...]\n, a zaczęła\n[...]\nacyjnego kręgosłupa. Czasem niezgrabnie, czasem chaotycznie,\n[...]\nWyniki badania przeprowadzonego w II połowie 2025 roku na próbie 63 agencji marketingowych w Polsce pokazują, że 66,66% firm ocenia udział AI w swoich działaniach jako wysoki . To moment, w którym mówienie o „trendzie” jest już nieprecyzyjne – mamy do czynienia z nową normą operacyjną.\n[...]\n65,08% agencji deklaruje formalne zasady korzystania z AI, ale aż 31,75% nadal ich nie posiada . To więcej, niż moglibyśmy zakładać, biorąc pod uwagę:\n[...]\nPełny kontekst tych danych znajduje się w raporcie (tekst + wykresy + metodologia).\n[...]\nJeśli spojrzymy na narzędzia, nie ma tu niespodzianki; ChatGPT jest hegemonem rynku, z którego korzysta 87% badanych agencji . Dalej mamy:\n[...]\n- Google Analytics z AI (78%)\n- Canva AI (49%)\n- Zapier (35%)\n- DALL·E (33%)\n- Surfer SEO (25%)\n[...]\n- 60,31% agencji widzi duże skrócenie czasu zadań kreatywnych\n- 52,38% wskazuje duże skrócenie zadań operacyjnych\n[...]\n- 46,03% mówi, że nie zmienia się nic\n- 47,62% mówi, że wzrost jest zauważalny, ale nie masowy\n[...]\n- 66,67% agencji deklaruje brak wpływu AI na zatrudnienie\n[...]\n- tylko 17,46% deklaruje spadek\n- a 6,35% wzrost\n[...]\ngłównie w produkcji\n[...]\n- treści tekstowe: 85,71%\n- analiza danych: 58,73%\n- grafika/wideo: 49,21%\n[...]\n- targetowanie: 33,33%\n- optymalizacja budżetów: 22,22%\n[...]\n- 31,75% agencji w ogóle nie mierzy różnic w konwersji między kampaniami z AI a bez AI\n[...]\nPełne dane (łącznie z metodologią, strukturą próby, wykresami oraz narzędziownikiem), dostępne są w raporciea utorstwa dr Iwony Lupy-Wójcik i Anny Ledwoń-Blacha.\n[...]\n🗂 „Wykorzystanie AI przez agencje marketingowe w Polsce”"
+        },
+        {
+          "query_label": "stats",
+          "title": "#NMInsights: „Wykorzystanie AI przez agencje marketingowe w ...",
+          "url": "https://nowymarketing.pl/nminsights-wykorzystanie-ai-przez-agencje-marketingowe-w-polsce-raport/",
+          "normalized_url": "https://nowymarketing.pl/nminsights-wykorzystanie-ai-przez-agencje-marketingowe-w-polsce-raport",
+          "domain": "nowymarketing.pl",
+          "published": "2026-01-22T08:51:03.000Z",
+          "author": "Dominika Mizerska",
+          "highlights": "Z raportu „Wykorzystanie AI przez agencje marketingowe w Polsce” wynika, że dla większości badanych agencji sztuczna inteligencja przestała być technologiczną nowinką, a stała się elementem codziennych procesów operacyjnych i kreatywnych. Ponad 66% respondentów ocenia udział AI w działalności swojej agencji jako wysoki, jednak niemal jedna trzecia nadal określa go jako niski.\n[...]\nNiekwestionowanym liderem wśród narzędzi AI wykorzystywanych przez agencje jest ChatGPT, z którego korzysta ponad 87% badanych podmiotów. Wysoką popularnością cieszą się także narzędzia wspierające analitykę, content i kreację wizualną, takie jak Google Analytics z funkcjami AI, Canva AI czy DALL·E.\n[...]\nagencji dominują narzędzia płatne, a model hybrydowy (darmowe + Pro) pozostaje jednym z najczęstszych scenariuszy.\n[...]\nNajwiększe korzyści z wdrożeń AI agencje dostrzegają w obszarze zadań kreatywnych. Ponad 60% respondentów wskazuje, że AI w dużym lub raczej dużym stopniu skraca czas realizacji standardowych zadań kreatywnych, takich jak tworzenie treści czy koncepcji.\n[...]\nAI stała się rynkowym standardem w\n[...]\nmarketingowych, choć najczęściej wykorzystywana jest selektywnie. Agencje sięgają po\n[...]\ngrafik i w\n[...]\nSkuteczność kampanii wspomaganych AI najczęściej oceniana jest jako porównywalna lub nieco wyższa względem kampanii tradycyjnych. Jednocześnie raport wskazuje na istotny problem – duża część agencji nie mierzy systematycznie wpływu AI na konwersję, co utrudnia realną ocenę efektywności technologii.\n[...]\nRaport „Wykorzystanie AI przez agencje marketingowe w Polsce” potwierdza, że sztuczna inteligencja stała się integralnym elementem funkcjonowania polskich agencji marketingowych. Jednocześnie pokazuje, że największy niewykorzystany potencjał AI leży dziś w obszarach strategicznych – takich jak optymalizacja budżetów, targetowanie czy predykcja wyników kampanii."
+        },
+        {
+          "query_label": "stats",
+          "title": "Raport EY: Jak polskie firmy wdrażają AI | EY - Polska",
+          "url": "https://www.ey.com/pl_pl/insights/ai/raport-ey-jak-polskie-firmy-wdrazaja-ai-gc-fy26",
+          "normalized_url": "https://www.ey.com/pl_pl/insights/ai/raport-ey-jak-polskie-firmy-wdrazaja-ai-gc-fy26",
+          "domain": "ey.com",
+          "published": "2026-04-16T13:01:07.000Z",
+          "author": "authorsalutation:|authorfirstname:EY|authorlastname:Polska|authorjobtitle:Firma doradcza. Audyt, doradztwo podatkowe, consulting, strategia i transakcje.|authorurl:https://www.ey.com/pl_pl/people/ey-polska",
+          "highlights": "Eksperymenty, wdrożenia czy realne efekty? To już trzecia ed\n[...]\n?, który przedstawia\n[...]\nStan wdrożeń AI w Polsce \\r\\n Raport, na podstawie przeprowadzonego badania 497 firm w Polsce, pokazuje, jak zmienia się stopień zaawansowania wdrożeń AI w polskich organizacjach, jakie są ich plany budżetowe oraz poziom dojrzałości technologicznej. Firmy wskazują najważniejsze efekty dotychczasowych wdrożeń. Są nimi: optymalizacja kosztów, poprawa jakości usług oraz wzrost przychodów. Wśród największych barier respondenci wskazali jakość danych, operacyjność strategii oraz deficyt kompetencji. \\r\\n Raport przedstawia perspektywy różnych sektorów gospodarki, wpływ AI na politykę zatrudnienia i kompetencje pracowników, a także wyzwania dotyczące  cyberbezpieczeństwa oraz wdrażania AI Act. Całość uzupełniają rekomendacje dla zarządów firm, które planują skuteczne skalowanie AI w nadchodzącym roku. \\r\\n\"}}\" id=\"rich-text-387a307c7a42\" data-up-is=\"rich-text\" data-up-translation-read-more=\"Przeczytaj więcej\" data-up-translation-read-less=\"Mniej\" data-up-translation-aria-label-read-more=\"Read more button, press enter to activate, or use Up arrow key to learn more about this content\" data-up-translation-aria-label-read-less=\"Read less button, press enter to activate, or use Up arrow key to learn more about this content\" data-up-analytics=\"rich-text\">\n[...]\nRaport, na podstawie przeprowadzonego badania 497 firm w Polsce, pokazuje, jak zmienia się stopień zaawansowania wdrożeń AI w polskich organizacjach, jakie są ich plany budżetowe oraz poziom dojrzałości technologicznej. Firmy wskazują najważniejsze efekty dotychczasowych wdrożeń. Są nimi: optymalizacja kosztów, poprawa jakości usług oraz wzrost przychodów. Wśród największych barier respondenci wskazali jakość danych, operacyjność strategii oraz deficyt kompetencji\n[...]\nNa pytania EY Polska odpowiedziało 497 średnich i dużych firm."
+        },
+        {
+          "query_label": "case-study",
+          "title": "Case study: automatyzacja marketingu z AI od zera - icomSEO",
+          "url": "https://icomseo.pl/blog/case-study-automatyzacja-marketingu-z-ai-od-zera/",
+          "normalized_url": "https://icomseo.pl/blog/case-study-automatyzacja-marketingu-z-ai-od-zera",
+          "domain": "icomseo.pl",
+          "published": "2026-03-26T08:32:18.000Z",
+          "author": "Tomek Bogucki",
+          "highlights": "Case study, który za chwilę poznasz, pokazuje krok po kroku, jak zbudować kompletny ekosystem automatyzacji marketingu z wykorzystaniem AI, startując od absolutnego zera: bez bazy mailingowej, bez procesów i bez zespołu technicznego. To historia małej firmy B2B, która w ciągu 6 miesięcy zamieniła chaotyczne działania reklamowe w skalowalny, mierzalny system pozyskiwania leadów, oparty na danych, personalizacji i modelach językowych. Zobacz, jak wyglądała ta droga – z wszystkimi decyzjami, narzędziami, błędami i liczbami.\n[...]\nBohaterem case study jest niewielka firma technologiczna sprzedająca oprogramowanie w modelu SaaS dla branży usług profesjonalnych. Zespół liczył 12 osób, w tym jedną osobę odpowiedzialną za marketing „po godzinach”, bez jasno zdefiniowanej strategii. Sprzedaż opierała się głównie na poleceniach i nieregularnych kampaniach na LinkedIn, prowadzonych z prywatnych profili założycieli.\n[...]\nWłaściciele wiedzieli, że chcą wejść na rynek zagraniczny i pozyskiwać leady systemowo, ale nie mieli ani budżetu na duże agencje, ani wewnętrznego specjalisty marketing automation. Z drugiej strony mieli to, co w kontekście AI jest kluczowe: otwartość na eksperymenty i zgodę na zmianę procesów.\n[...]\n300 nowych kontaktów w\n[...]\nklienta),\n[...]\nco najmniej 30 umówionych demo produktu,\n[...]\n- koszt pozys\n[...]\nleada (CPL) na poziomie maksymalnie 4\n[...]\nzenia treści marketingowych skrócony o 60% dzięki\n[...]\n- liczba nowych kontaktów spełniających kryteria ICP: 427 (vs cel 300),\n- liczba umówionych demo: 51 (vs cel 30),\n[...]\n- średni koszt pozyskania leada z kampanii płatnych: spadek o 38% względem stanu początkowego,\n[...]\n- stopa otwarć sekwencji powitalnej: 62% (vs 31% w kampaniach prowadzonych ręcznie),\n[...]\n- czas tworzenia pojedynczego artykułu: skrócony z 6–8 godzin do 2–3 godzin,\n[...]\n- czas przygotowania pełnej sekwencji 5 maili: z 10 godzin do ok. 4 godzin."
+        },
+        {
+          "query_label": "case-study",
+          "title": "Wyszukiwanie agentowe. Agenci AI w procesie znajdowania marek ...",
+          "url": "https://www.marketingonline.pl/blog-wyszukiwanie-agentowe-agenci-ai-w-procesie-znajdowania-marek-przez-klientow/",
+          "normalized_url": "https://www.marketingonline.pl/blog-wyszukiwanie-agentowe-agenci-ai-w-procesie-znajdowania-marek-przez-klientow",
+          "domain": "marketingonline.pl",
+          "published": "2026-04-22T11:22:57.000Z",
+          "author": "Jan Wojciechowski",
+          "highlights": "Krajobraz marketingu B2B dynamicznie się zmienia. Wkraczamy w erę wyszukiwania agentowego, gdzie agenci AI stają się kluczowymi decydentami w procesie zakupowym. Decyzje o wyborze dostawców i produktów coraz częściej podejmowane są nie przez ludzi, a przez inteligentne algorytmy. To rewolucja, która wymaga od firm gruntownego przemyślenia strategii marketingowej i dostosowania jej do nowych realiów.\n[...]\nWyszukiwanie agentowe to proces, w którym agenci AI, działając w imieniu użytkowników, wyszukują, analizują i porównują oferty różnych firm w celu znalezienia optymalnego rozwiązania. W kontekście B2B, agenci AI mogą być wykorzystywani do automatyzacji procesów zakupowych, takich jak poszukiwanie dostawców, negocjacje cenowe czy analiza umów. Różni się od tradycyjnego SEO tym, że celem nie jest zajęcie wysokiej pozycji w wynikach wyszukiwania Google, ale zaspokojenie kryteriów oceny agenta AI.\n[...]\nAgenci AI rewolucjonizują proces decyzyjny w B2B, wprowadzając obiektywizm i efektywność. Tradycyjnie, decyzje zakupowe w B2B opierały się na relacjach, rekomendacjach i subiektywnych ocenach. Agenci AI eliminują te czynniki, bazując na danych, algorytmach i predefiniowanych kryteriach. Oznacza to, że firmy, które nie potrafią zaprezentować swojej wartości w sposób jasny i mierzalny, mogą zostać pominięte przez agentów AI, nawet jeśli oferują lepsze produkty lub usługi.\n[...]\nWyszukiwanie agentowe to nowa era w marketingu B2B, gdzie agenci AI stają się kluczowymi decydentami w procesie zakupowym. Firmy muszą zrozumieć, jak działa wyszukiwanie agentowe, jakie czynniki wpływają na decyzje agentów AI i jak zoptymalizować swoje działania, aby zwiększyć sprzedaż i ROI. Ignorowanie tego trendu może prowadzić do utraty klientów i udziału w rynku. Kluczem do sukcesu jest budowanie autorytetu i wiarygodności marki, dostarczanie wysokiej jakości treści i personalizacja komunikatów marketingowych."
+        },
+        {
+          "query_label": "case-study",
+          "title": "Platforma marketingowa oparta na AI – studium przypadku – G-Group.dev",
+          "url": "https://www.g-group.dev/pl/case-studies/ai-based-marketing-platform.html",
+          "normalized_url": "https://www.g-group.dev/pl/case-studies/ai-based-marketing-platform.html",
+          "domain": "g-group.dev",
+          "published": null,
+          "author": null,
+          "highlights": "Właściciele startupu z Polski zgłosili się do nas z ekscytującym pomysłem. Chcieli stworzyć innowacyjną aplikację marketingową, która wspierałaby marketerów w ich codziennej pracy. Celem aplikacji była stworzenie biblioteki strategii marketingowych, które mogłyby być wykorzystywane przez przedsiębiorstwa, a także przez agencje marketingowe współpracujące z zewnętrznymi klientami. Każda strategia miała być zaproponowana przez profesjonalnego growth hackera i dostosowana do indywidualnych potrzeb użytkownika za pomocą sztucznej inteligencji. AI miała także wspierać klientów w przygotowywaniu lejków marketingowych na podstawie wybranych przez nich strategii, realizowaniu każdego etapu tych lejków oraz tworzeniu treści.\n[...]\nWspółpracowaliśmy z zespołem IT klienta jako rozszerzona drużyna w modelu Scrum z dwu tygodniowymi sprintami, zwracając dużą uwagę na retrospektywy, które prowadziły do znaczących usprawnień po każdej iteracji. Naszym celem było dostosowanie systemu pracy, aby uzyskać jak najlepsze wyniki. Chcieliśmy połączyć dwa zespoły, aby pracować jako jeden, co udało się osiągnąć. Ponieważ klient był bardzo zadowolony z naszego podejścia, w trakcie fazy produkcji frontendu przejęliśmy również przywództwo. Platforma jest teraz uruchomiona i dostępna, umożliwiając użytkownikom rejestrację i korzystanie z aplikacji wspomaganej przez AI, aby podnieść jakość działań marketingowych. Kilka miesięcy po wydaniu klient posiada społeczność liczącą kilka tysięcy użytkowników z całego świata, którzy chcą być częścią przyszłego rozwoju aplikacji. Aplikacja jest wysoko skalowalna i może połączyć się z dodatkowymi zewnętrznymi partnerami, jeśli zajdzie taka potrzeba. Dzięki przemyślanemu UX oraz analitycznemu podejściu do wprowadzania zmian i nowych funkcji, to rozwiązanie ma potencjał, by stać się wiodącym oprogramowaniem w branży marketingowej."
+        },
+        {
+          "query_label": "case-study",
+          "title": "Czy AI pomoże lepiej poznać klientów w B2B? - Fuse Collective - Agencja brandingowa B2B",
+          "url": "https://www.fusecollective.com/czy-ai-pomoze-lepiej-poznac-klientow-w-b2b/",
+          "normalized_url": "https://www.fusecollective.com/czy-ai-pomoze-lepiej-poznac-klientow-w-b2b",
+          "domain": "fusecollective.com",
+          "published": "2024-10-03T06:26:00.000Z",
+          "author": "Tomasz Maciąg",
+          "highlights": "Czy AI pomoże lepiej poznać klientów w B2B? - Fuse Collective - Agencja brandingowa B2B\n[...]\npomoże lepiej poznać klientów w B2B\n[...]\n### Poznaj obiecujące wyniki eksperymentu w naszej agencji.\n[...]\nPrzygotowałem eksplorację problemów i wyzwań inicjujących zakupy w 3 różnych branżach (marketingowej, IT i chemicznej)\n[...]\n1. Zakupu surowców chemicznych wśród producentów tworzyw sztucznych.Każdy PDF zawiera profil uczestnika wywiad, podsumowanie oraz pełny wywiad.\n2. Zakup systemu zarządzania flotą i procesami transportowymi w polskich firmach logistycznych.\n3. Zakup strategii marketingowej w firmach B2B.\n[...]\nSpecjalizujemy się w brandingu dla firm B2B.\n[...]\nPostanowiłem sprawdzić, czy AI pomoże nam w miarę szybko i tanio wypełnić lukę wiedzy między nami a nowym klientem.\n[...]\n### Jesteśmy agencją brandingową i właśnie w tym najczęściej wspieramy klientów. Poznaj inspirujące historie sukcesów naszych klientów.\n[...]\n## Czy da się szybko poznać klientów w nowym segmencie B2B?\n[...]\n1. Weryfikujemy z klientem i dostosowujemy do ich kontekstu.\n2. Generujemy i systematyzujemy potrzebną wiedzę za pomocą AI.\n[...]\n### Przez ~3 miesiące eksplorowałem różne podejścia.\n[...]\nOparte na generowaniu syntetycznych person przy pomocy AI, z którymi można przeprowadzać np. wywiady lub ankiety (robi to już kilka startupów).\n[...]\nPrzebiłem się przez wyniki licznych badań naukowych.\n[...]\nPorównałem wyniki kilku naszych prawdziwych badań dla klientów z tym, co otrzymałem od AI.\n[...]\n### Rezultaty eksperymentu przerosły moje oczekiwania.\n[...]\n- Niedopasowanie do specyfiki B2B\n[...]\n- Skalowalność i eksploracja nowych rynków\n- Zbieranie danych o trudno dostępnych person (np. prezesów)\n- Efektywność czasowa i kosztowa (ułamek normalnych badań)\n[...]\nJesteśmy agencją brandingową i właśnie w tych zadaniach najczęściej wspieramy klientów. Na stronie znajdziesz więcej poradników."
+        },
+        {
+          "query_label": "case-study",
+          "title": "Case Study",
+          "url": "https://magnuso.pl/case-study",
+          "normalized_url": "https://magnuso.pl/case-study",
+          "domain": "magnuso.pl",
+          "published": null,
+          "author": null,
+          "highlights": "# Polska Press - wdrożenie narzędzia marketing automation\n[...]\nPoznaj historię transformacji cyfrowej jednej z największych grup medialnych w Polsce. Dowiedz się, jak strategiczne wdrożenie rozwiązań AI i marketing automation pozwoliło zautomatyzować proces tworzenia powiadomień push dla serwisów internetowych, odciążając zespół kilkuset redaktorów z rutynowych zadań i zwiększając precyzję dotarcia do odbiorców.\n[...]\n# Budowanie sprzedaży od zera dla firmy w branży publish\n[...]\nFirma, specjalizująca się w organicznym generowaniu ruchu, stanęła przed wyzwaniem drastycznego spadku przychodów w 2023 r. z powodu zmian w polityce reklamowej głównego partnera (Google). Posiadając unikalne aktywa (wysoki ruch i bazę użytkowników), firma wymaga strategicznej transformacji i dywersyfikacji źródeł przychodów, aby uniknąć zamknięcia działalności.\n[...]\nśmy firmę technologiczną i jej\n[...]\nując ryzyko biznesowe przy\n[...]\nowaniu pełnej\n[...]\noprogramowania."
+        }
+      ]
+    },
+    {
+      "slug": "bim-instalacje-elektryczne",
+      "topic": "BIM w projektowaniu instalacji elektrycznych",
+      "status": "pass",
+      "duration_seconds": 1.63,
+      "total_raw_results": 3,
+      "unique_sources": 14,
+      "duplicate_sources": 1,
+      "unique_domains": 11,
+      "polish_domains": 10,
+      "recent_sources": 4,
+      "query_results": [
+        {
+          "label": "overview",
+          "query": "BIM projektowanie instalacji elektrycznych korzyści Polska",
+          "raw_result_count": 1,
+          "parsed_result_count": 5,
+          "error": null
+        },
+        {
+          "label": "stats",
+          "query": "BIM instalacje elektryczne statystyki raport Polska",
+          "raw_result_count": 1,
+          "parsed_result_count": 5,
+          "error": null
+        },
+        {
+          "label": "case-study",
+          "query": "BIM instalacje elektryczne case study Polska",
+          "raw_result_count": 1,
+          "parsed_result_count": 5,
+          "error": null
+        }
+      ],
+      "failures": [],
+      "warnings": [],
+      "sources": [
+        {
+          "query_label": "overview",
+          "title": "Jakie korzyści niesie za sobą wykorzystanie technologii BIM?",
+          "url": "https://www.deskaproject.com/blog/jakie-korzysci-niesie-za-soba-wykorzystanie-technologii-bim",
+          "normalized_url": "https://www.deskaproject.com/blog/jakie-korzysci-niesie-za-soba-wykorzystanie-technologii-bim",
+          "domain": "deskaproject.com",
+          "published": null,
+          "author": null,
+          "highlights": "Wykorzystanie technologii BIM (Building Information Modeling) w Polsce i na świecie jest coraz bardziej popularne, a to za sprawą licznych korzyści, które niesie ze sobą ta technologia. BIM to kompleksowy proces modelowania informacji o budynku, który pozwala na lepsze planowanie, projektowanie, budowę i zarządzanie obiektami. W tym artykule przyjrzymy się bliżej niektórym z tych korzyści.\n[...]\nJednym z najważniejszych aspektów wprowadzenia technologii BIM jest znacząca poprawa jakości projektów budowlanych. Dzięki BIM możliwe jest uzyskanie dokładniejszych i bardziej precyzyjnych danych o obiekcie, co pozwala na unikanie błędów i niedoprecyzowań. Wykorzystanie BIM wpływa również na poprawę komunikacji między uczestnikami projektu, co z kolei wpływa na lepsze zrozumienie potrzeb i wymagań klienta oraz ich terminowe uwzględnienie.\n[...]\nInnym istotnym elementem korzyści płynących z wdrożenia technologii BIM jest możliwość oszczędności czasu i kosztów w trakcie realizacji projektu. Współpraca między różnymi zespołami zaangażowanymi w procesy projektowe odbywa się sprawniej dzięki pełniejszym informacjom zawartym w modelach BIM, co pozwala na unikanie opóźnień i dodatkowych kosztów związanych z koniecznością wprowadzania poprawek przez biuro projektowe BIM. Ponadto, generalnie BIM pozwala na dużo lepsze zarządzanie budżetem inwestycji, co skutkuje ograniczeniem ryzyka przekroczenia kosztów.\n[...]\nZastosowanie technologii BIM pozwala na przeniesienie projektu do wirtualnej rzeczywistości, co umożliwia przedstawienie obiektu w sposób przystępny i łatwo zrozumiały dla każdego uczestnika procesu inwestycyjnego. W ten sposób osoby odpowiedzialne za różne etapy realizacji projektu mają możliwość precyzyjnego przyjrzenia się planowanemu obiektowi i lepszego zrozumienia jego funkcjonalności czy estetyki. Daje to również możliwość wcześniejszego wykrycia ewentualnych błędów czy problemów."
+        },
+        {
+          "query_label": "overview",
+          "title": "BIM w projektowaniu gospodarki kablowej - Enetecs",
+          "url": "https://enetecs.com/pl/baza-wiedzy/bim-w-projektowaniu-gospodarki-kablowej/",
+          "normalized_url": "https://enetecs.com/pl/baza-wiedzy/bim-w-projektowaniu-gospodarki-kablowej",
+          "domain": "enetecs.com",
+          "published": "2025-10-01T09:24:14.000Z",
+          "author": "enetecs",
+          "highlights": "W praktyce\n[...]\nte. Trasy kablowe rzad\n[...]\n, a jednak to one decydują o niezawodności zasilania. Dzięki\n[...]\nwidać je w kontekście całego obie\n[...]\nmontażu.\n[...]\nDobry start to wspólny język danych. Ustalamy nazwy tras, sposób numeracji odcinków i kabli, minimalne odległości oraz reguły separacji przewodów mocy i sterowania. Następnie wczytujemy modele pozostałych branż, bo to one wyznaczają realne korytarze. Na tej podstawie szkicujemy ciągi koryt i drabinek, ustawiamy wysokości, projektujemy łuki i przepusty. Gdy geometria jest gotowa, uzupełniamy ją o parametry: typy kabli, przekroje, długości, przypisanie do stref pożarowych i informacje o rezerwach.\n[...]\nBIM nie zastępuje kalkulatorów ani specjalistycznego oprogramowania, ale znakomicie przygotowuje do nich dane. Z modelu można pobrać rzeczywiste długości i układy ułożenia, a następnie policzyć spadki napięć, zwarcia i selektywność zabezpieczeń. Podobnie jest z termiką: geometryczne relacje między kablami, materiałami oraz kanałami czy rurami pozwalają precyzyjniej założyć warunki chłodzenia. Wyniki obliczeń wracają do modelu w postaci atrybutów – na przykład minimalnych odstępów albo korekt dopuszczalnej obciążalności. Dzięki temu projektant nie „gasi pożarów” po fakcie, tylko koryguje trasę w momencie podejmowania decyzji.\n[...]\nodcinki kab\n[...]\nmogą podejrzeć widok 3D w\n[...]\nW zakładzie przemysłowym planowano gęstą wiązkę kabli w rejonie instalacji rurowych. Model ujawnił kilka miejsc, gdzie po montażu zaworów zabrakłoby prześwitu dla koryt. Wystarczyło przesunąć część ciągu o kilkanaście centymetrów i rozdzielić wiązkę na dwa poziomy, aby zachować dostęp serwisowy i poprawić warunki chłodzenia. Zestawienia zaktualizowały się automatycznie, a zespół logistyczny mógł natychmiast skorygować zamówienia. Finalnie trasa skróciła się, montaż przyspieszył, a odbiory przebiegły bez uwag."
+        },
+        {
+          "query_label": "overview",
+          "title": "Polski Instalator - Dobre praktyki inwestycyjne = Projekt BIM",
+          "url": "https://www.polskiinstalator.com.pl/291-newsletter/2150-dobre-praktyki-inwestycyjne-projekt-bim",
+          "normalized_url": "https://www.polskiinstalator.com.pl/291-newsletter/2150-dobre-praktyki-inwestycyjne-projekt-bim",
+          "domain": "polskiinstalator.com.pl",
+          "published": "2017-04-21T07:00:00.000Z",
+          "author": null,
+          "highlights": "dzień później w Pozn\n[...]\nkonferencje Dobre praktyki inwestycyjne = Projekt BIM, zorganizowane przez firmę MAT. Współorganizatorami wydar\n[...]\ni Hewlett Packard\n[...]\nW trakcie spotkań Tomasz Musialik, prezes firmy MAT, wskazywał korzyści dla projektanta i inwestora, jakie przynosi tworzenie projektów w technologii BIM. Przedstawiciel firmy Autodesk, Andrzej Samsonowicz mówił zaś o tym, jak BIM zmienia rynek budowlany oraz jakie korzyści wynikają z tych zmian. Szczególnie interesująca była również prezentacja specjalisty firmy MAT ds. BIM/MEP, Pawła Jóźwika, dotycząca projektowania instalacji budowlanych w technologii BIM z wykorzystaniem różnych norm projektowych. Projektanci biorący udział w spotkaniu mogli dowiedzieć się, jak za pomocą prostych funkcji zawartych w oprogramowaniu Autodesk Revit oraz nakładkach branżowych MagiCAD stworzyć koncept instalacji na podstawie analizy energetycznej budynku, a następnie w sposób płynny przejść do uszczegółowienia projektu i wydania dokumentacji zgodnie ze standardami obowiązującymi na polskim rynku. Wspomniane oprogramowanie wiedzie prym w projektowaniu instalacji budowlanych w technologii BIM w całej Europie. Kalkulatory branżowe oraz biblioteki producenckie zawarte w nakładkach MagiCAD pozwalają na znaczne podniesienie jakości wydawanej dokumentacji projektowej. Wystąpieniem potwierdzającym w sposób praktyczny prezentację Pawła Jóźwika była prelekcja Filipa Pawlaka z firmy Termo Studio: „Praktyczne spojrzenie na możliwości wykorzystania BIM w krajowych realiach. BIM a praca projektantów instalacji – współpraca zespołu, koordynacja międzybranżowa i bieżąca obsługi budowy. Perspektywy rozwoju BIM dla instalatorów – teoria, a rzeczywistość”. Prelegent przedstawił sposoby wykorzystania nakładek Magi- -CAD na przestrzeni lat. Termo Studio jest jedną z pierwszych firm, która wykorzystywała wspomniane nakładki branżowe na rynku polskim."
+        },
+        {
+          "query_label": "overview",
+          "title": "Knowledge base: Warsaw University of Technology",
+          "url": "https://repo.pw.edu.pl/info/article/WUT1356267fa59e463dab9195af658c20f0",
+          "normalized_url": "https://repo.pw.edu.pl/info/article/WUT1356267fa59e463dab9195af658c20f0",
+          "domain": "repo.pw.edu.pl",
+          "published": "2025-01-01T00:00:00.000Z",
+          "author": "Daszczyński, Tadeusz",
+          "highlights": "Publication –Wprowadzenie do BIM w instalacjach elektrycznych –Warsaw University of Technology\n* Skip to main menu\n* Skip to main content\n# Knowledge base: Warsaw University of Technology\n## Settings and your account\n* default font sizeA\ndefault font size\n* bigger font sizeA\nbigger font size\n* big font sizeA\nbig font size\n* High contrast**tonality\nHigh contrastNormal contrast\n* Change language to: PolishZmień język na: Polski\nChange language to polish\n* Log in\nBaza Wiedzy Politechniki Warszawskiej\nYou are here:\n* Start\n* * Research Outputs\n* * Publications\n* Wprowadzenie do BIM w instalacjach elektrycznych\nBack\n## Journal article\nWprowadzenie do BIM w instalacjach elektrycznych\nCite\n# Cite\n[...]\nJournal seriesInformacje o Normach i Przepisach Elektrycznych, ISSN 1234-0081, MonthlyIssue year2018Vol222No222Pages20-26Publication size in sheets0.50URLhttp://www.redinpe.com/attachments/article/177/222\\_spis.pdfOpening in a new tabLanguage(pl) PolishScore (nominal)1Score sourcejournalListScoreMinisterial score= 1.0, 07-02-2023, ArticleFromJournal"
+        },
+        {
+          "query_label": "overview",
+          "title": "Jakie programy wykorzystuje projektant instalacji elektrycznych?",
+          "url": "https://omnibusik.pl/jakie-programy-wykorzystuje-projektant-instalacji-elektrycznych/",
+          "normalized_url": "https://omnibusik.pl/jakie-programy-wykorzystuje-projektant-instalacji-elektrycznych",
+          "domain": "omnibusik.pl",
+          "published": "2026-03-13T12:34:19.000Z",
+          "author": "Tomasz Woźniak",
+          "highlights": "Projektant instalacji elektrycznych wykorzystuje oprogramowanie nie tylko do rysowania schematów, ale także do wykonywania skomplikowanych obliczeń, analizowania parametrów instalacji oraz tworzenia dokumentacji technicznej. Programy te pozwalają na precyzyjne\n[...]\nlanowanie instalacji jeszcze przed rozpoczęciem budowy.\n[...]\nto nie tylko\n[...]\n## Oprogramowanie BIM i modelowanie instalacji w trójwymiarze\n[...]\nCoraz większą popularność w branży projektowej zdobywa technologia BIM (Building Information Modeling). W przeciwieństwie do klasycznych rysunków CAD pozwala ona tworzyć trójwymiarowe modele budynków wraz ze wszystkimi instalacjami.\n[...]\nW praktyce oznacza to, że projektant instalacji elektrycznych może zobaczyć, jak instalacja będzie wyglądała w rzeczywistym budynku. Dzięki temu łatwiej jest wykryć potencjalne kolizje z innymi instalacjami.\n[...]\nModel BIM pozwala między innymi:\n[...]\nanalizować przebieg przewodów w przestrzeni budynku\n[...]\nsprawdzać kolizje z instalacjami sanitarnymi\n[...]\nsymulować działanie instalacji\n[...]\ntworzyć dokładne zestawienia materiałowe\n[...]\nTechnologia ta staje się standardem w dużych inwestycjach budowlanych, zwłaszcza w przypadku biurowców, szpitali czy obiektów przemysłowych.\n[...]\nwchodzą\n[...]\niczne, zestawienia\n[...]\nprogramów projektowych posiada funkcje\n[...]\nOznacza\n[...]\nna podstawie przygotowanego projektu program\n[...]\nCzy projektant instalacji elektrycznych musi znać programy CAD?Tak. Programy CAD są podstawowym narzędziem pracy projektanta i służą do tworzenia dokumentacji technicznej.\n[...]\nCzym różni się CAD od BIM?CAD służy głównie do tworzenia rysunków technicznych, natomiast BIM pozwala tworzyć trójwymiarowe modele budynków wraz z instalacjami.\n[...]\nCzy programy projektowe wykonują obliczenia instalacji elektrycznych?Tak. Wiele programów umożliwia analizę parametrów instalacji, takich jak obciążenia czy spadki napięcia."
+        },
+        {
+          "query_label": "stats",
+          "title": "BIM w Polsce. Raport 2023. Krytyczna analiza.",
+          "url": "https://projektowaniebim.pl/bim-w-polsce-raport-2023-krytyczna-analiza/",
+          "normalized_url": "https://projektowaniebim.pl/bim-w-polsce-raport-2023-krytyczna-analiza",
+          "domain": "projektowaniebim.pl",
+          "published": "2023-11-17T12:31:45.000Z",
+          "author": "Szymon Janczura",
+          "highlights": "BIM w Polsce. Raport 2023. Krytyczna analiza.\n[...]\n# BIM w Polsce. Raport 2023. Krytyczna analiza.\n[...]\nArtykuł na podstawie badania przeprowadzonego przez Kantar Polska w 2023r. dla firmy Autodesk.\n[...]\nGdy pojawia się pytanie jak wygląda BIM w Polsce ciężko jest udzielić jakiejś sensownej odpowiedzi, która nie opiera się tylko na naszych intuicjach. Dobrą informacją jest więc pojawienie się raportu opracowanego w 2023 roku, który podchodzi do tego pytania analitycznie w formie ankiety. Ostatnio podobny raport był tworzony w 2015 i 2019 roku więc mamy tez materiał do analizy porównawczej i obserwacji procesu wdrożenia BIM w Polsce.\n[...]\n## Bariery wdrażania BIM w Polsce\n[...]\nTa sekcja raportu wydała mi się najciekawsza. Najczęściej podawane problemy związane z wdrożeniem BIM w Polsce wg. raportu to m.in:\n[...]\n- niskie ceny projektów\n- obawa przed zmianą (ryzyko wdrożenia).\n- mała liczba specjalistów w BIM\n- brak zamówień na projekty BIM\n- niechęć do zmiany\n- niska świadomość korzyści BIM wśród inwestorów.\n- niski poziom wiedzy o BIM\n[...]\nTrochę rozbawiło mnie że na drugim miejscu znalazł się problem pod tytułem „niska świadomość korzyści BIM wśród inwestorów”, co trochę idzie w kontrze z wcześniejszym wynikom w których rzekomo BIM obniża koszty, przypominam cytat: „Prawie 50% inwestorów uważa, że BIM obniża koszty realizacji budowy o przynajmniej 30%, a blisko 40% że obniża o przynajmniej 30% koszty projektowania branżowego.”\n[...]\nNa kolejnej stronie znajdziemy taki wykres w którym 86% inwestorów wskazało że problemem jest mała liczba specjalistów posiadających umiejętność projektowania / wykonawstwa w BIM.\n[...]\nOstatnia"
+        },
+        {
+          "query_label": "stats",
+          "title": "Statystyki pożarów budynków, których przyczyną była niesprawna instalacja elektryczna lub przyłączone do niej urządzenia elektryczne | elektro.info",
+          "url": "https://www.elektro.info.pl/artykul/ochrona-ppoz/128930,statystyki-pozarow-budynkow-ktorych-przyczyna-byla-niesprawna-instalacja-elektryczna-lub-przylaczone-do-niej-urzadzenia-elektryczne",
+          "normalized_url": "https://www.elektro.info.pl/artykul/ochrona-ppoz/128930,statystyki-pozarow-budynkow-ktorych-przyczyna-byla-niesprawna-instalacja-elektryczna-lub-przylaczone-do-niej-urzadzenia-elektryczne",
+          "domain": "elektro.info.pl",
+          "published": null,
+          "author": null,
+          "highlights": "Przyjęcie takiego kryterium może prowadzić do znacznych błędów w ogólnej ocenie przyczyn powstawania pożarów od niesprawnej instalacji elektrycznej lub niesprawnych urządzeń elektrycznych. W celu właściwej oceny pożarów powstałych od niesprawnej instalacji elektrycznej lub niesprawnych urządzeń elektrycznych rozpatrywane statystki należy zawęzić do pożarów budynków. Takie podejście ujawnia, że instalacje elektryczne oraz niesprawne urządzenia elektryczne stanowią niemal 19,66% przyczyn wszystkich pożarów w ocenianych okresie lat 2000–2018. Pomimo znacznego spadku w roku 2016, procentowa liczba pożarów powodowanych przez niesprawne instalacje elektryczne lub niesprawne urządzenia elektryczne utrzymuje się na wysokim poziomie, pomimo nieznacznego spadku odnotowywanego w ostatnich kilku latach.\n[...]\nPrezentowane cyfry (tabele 1, 2 i 3) stanowią wybrane statystyki ograniczone do potrzeb oceny pożarów, których przyczyną była instalacja elektryczna w budynkach. Zostały one przygotowane na podstawie statystyk prowadzonych przez Komendę Główną Państwowej Straży Pożarnej (www.kgpsp.gov.pl:19.03.2019).\n[...]\nliczba pożarów powodowanych przez\n[...]\nTab. 1 Względna liczba pożarów spowodowanych wadami instalacji elektrycznych lub wadami urządzeń grzejnych, nieprawidłową eksploatacją instalacji lub urządzeń grzejnych oraz elektrycznością statyczną na tle ogólnej liczby pożarów w latach 2000–2018\n[...]\nTab.\n[...]\nPożary spowodowane wadami instalacji elektrycznych lub wadami urządzeń grzejnych, nieprawidłową eksploatacją instalacji lub urządzeń grzejnych oraz elektrycznością stat\n[...]\nną w latach 2000–2\n[...]\nzględna liczba pożarów spowodowanych\n[...]\nami instalacji elektrycznych lub wadami urządzeń\n[...]\nnych, nieprawidłową eksploatacją instalacji lub urządzeń grzejnych oraz elektrycznością stat\n[...]\nną na tle ogólnej liczby pożarów budynków w latach 2000–2018"
+        },
+        {
+          "query_label": "stats",
+          "title": "Statystyki pożarów budynków, których przyczyną była niesprawna instalacja elektryczna lub przyłączone do niej urządzenia elektryczne | elektro.info",
+          "url": "https://www.elektro.info.pl/artykul/ochrona-ppoz/128930,statystyki-pozarow-budynkow-ktorych-przyczyna-byla-niesprawna-instalacja-elektryczna-lub-przylaczone-do-niej-urzadzenia-elektryczne-1",
+          "normalized_url": "https://www.elektro.info.pl/artykul/ochrona-ppoz/128930,statystyki-pozarow-budynkow-ktorych-przyczyna-byla-niesprawna-instalacja-elektryczna-lub-przylaczone-do-niej-urzadzenia-elektryczne-1",
+          "domain": "elektro.info.pl",
+          "published": null,
+          "author": null,
+          "highlights": "Przyjęcie takiego kryterium może prowadzić do znacznych błędów w ogólnej ocenie przyczyn powstawania pożarów od niesprawnej instalacji elektrycznej lub niesprawnych urządzeń elektrycznych. W celu właściwej oceny pożarów powstałych od niesprawnej instalacji elektrycznej lub niesprawnych urządzeń elektrycznych rozpatrywane statystki należy zawęzić do pożarów budynków. Takie podejście ujawnia, że instalacje elektryczne oraz niesprawne urządzenia elektryczne stanowią niemal 19,66% przyczyn wszystkich pożarów w ocenianych okresie lat 2000–2018. Pomimo znacznego spadku w roku 2016, procentowa liczba pożarów powodowanych przez niesprawne instalacje elektryczne lub niesprawne urządzenia elektryczne utrzymuje się na wysokim poziomie, pomimo nieznacznego spadku odnotowywanego w ostatnich kilku latach.\n[...]\nPrezentowane cyfry (tabele 1, 2 i 3) stanowią wybrane statystyki ograniczone do potrzeb oceny pożarów, których przyczyną była instalacja elektryczna w budynkach. Zostały one przygotowane na podstawie statystyk prowadzonych przez Komendę Główną Państwowej Straży Pożarnej (www.kgpsp.gov.pl:19.03.2019).\n[...]\nliczba pożarów powodowanych przez\n[...]\nłym, jednak\n[...]\nTab. 1 Względna liczba pożarów spowodowanych wadami instalacji elektrycznych lub wadami urządzeń grzejnych, nieprawidłową eksploatacją instalacji lub urządzeń grzejnych oraz elektrycznością statyczną na tle ogólnej liczby pożarów w latach 2000–2018\n[...]\nPożary spowodowane\n[...]\nami instalacji elektrycznych lub wadami urządzeń grzejnych, nieprawidłową eksploatacją instalacji lub urządzeń grzejnych oraz elektrycznością stat\n[...]\nną w latach 2000–2\n[...]\nliczba pożarów spowodowanych\n[...]\nami instalacji elektrycznych lub wadami\n[...]\nnych, nieprawidłową\n[...]\nploatacją instalacji lub urządzeń grzejnych oraz elektrycznością stat\n[...]\nną na tle ogólnej liczby pożarów budynków w latach 2000–2018"
+        },
+        {
+          "query_label": "stats",
+          "title": "Analiza statystyczna danych historycznych oraz prognozy do roku 2021 liczby pożarów budynków spowodowanych niesprawną instalacją elektryczną lub przyłączonymi do niej urządzeniami elektrycznymi | elektro.info",
+          "url": "https://www.elektro.info.pl/artykul/ochrona-ppoz/145999,analiza-statystyczna-danych-historycznych-oraz-prognozy-do-roku-2021-liczby-pozarow-budynkow-spowodowanych-niesprawna-instalacja-elektryczna-lub-przylaczonymi-do-niej-urzadzeniami-elektrycznymi",
+          "normalized_url": "https://www.elektro.info.pl/artykul/ochrona-ppoz/145999,analiza-statystyczna-danych-historycznych-oraz-prognozy-do-roku-2021-liczby-pozarow-budynkow-spowodowanych-niesprawna-instalacja-elektryczna-lub-przylaczonymi-do-niej-urzadzeniami-elektrycznymi",
+          "domain": "elektro.info.pl",
+          "published": null,
+          "author": null,
+          "highlights": "Pożary budynków to zjawisko w dużym stopniu losowe. Wzrost liczby budynków na terenie\n[...]\n, wzrost liczby niefachowo wykonanych\n[...]\n, wzrost niskiej jakości\n[...]\nzastosowanych do ich wykonania oraz maleją\n[...]\nmogą być potencjal\n[...]\nwzrostu liczby\n[...]\nynków. Nowym, potencjalnym\n[...]\nładowania pojazdów\n[...]\n. W artykule wykonano progno\n[...]\nliczby pożarów\n[...]\nynków (aspekty\n[...]\nczne) od roku 2019 do roku 2021 w kilku wariantach.\n[...]\nJak wynika ze statystyk z lat 2000 – 2018 przedstawionych w artykule [1], średnio prawie 20% pożarów budynków w Polsce jest spowodowane niesprawną instalacją elektryczną lub przyłączonymi do niej urządzeniami elektrycznymi. Jak można zaobserwować na rysunku 1., tendencja jest lekko malejąca (linia trendu), ale nadal jest to duży udział w całkowitej liczbie pożarów budynków. Przyczyny takich pożarów mogą być różne. Ilustruje to rysunek 2. – udział procentowy różnych przyczyn pożaru (aspekty elektryczne). Zdecydowanie dominują wady urządzeń elektrycznych (bez urządzeń grzewczych) w porównaniu z pozostałymi przyczynami pożarów (inne aspekty elektryczne).\n[...]\nRys. 1. Względna liczba pożarów spowodowanych wadami instalacji elektrycznych lub wadami urządzeń grzejnych, nieprawidłową eksploatacją instalacji lub urządzeń grzejnych oraz elektrycznością statyczną w stosunku do ogólnej liczby pożarów budynków w latach 2000–2018\n[...]\nW artykule przedstawiono analizy statystyczne danych historycznych oraz wielowariantowe prognozy do roku 2021 liczby pożarów budynków spowodowanych niesprawną instalacją elektryczną lub przyłączonymi do niej urządzeniami elektrycznymi. Wskazano również nowe źródła pożarów w budynkach (np. system fotowoltaiczny) i omówiono metody minimalizacji ryzyka pożaru. Sformułowano wnioski końcowe z wykonanych prognoz oraz analiz statystycznych.\n[...]\nStatystyka pożarów w Polsce w latach 2000–2013"
+        },
+        {
+          "query_label": "case-study",
+          "title": "The design of the BIM model for the newly constructed 2×400 kV ...",
+          "url": "https://alterga.com/en/projects/case-study/2022/the-design-of-the-bim-model-for-the-newly-constructed-2x400-kv-kozienice-milosna-double-circuit-power-line-poland/",
+          "normalized_url": "https://alterga.com/en/projects/case-study/2022/the-design-of-the-bim-model-for-the-newly-constructed-2x400-kv-kozienice-milosna-double-circuit-power-line-poland",
+          "domain": "alterga.com",
+          "published": "2022-03-01T15:36:00.000Z",
+          "author": null,
+          "highlights": "The design of the BIM model for the newly constructed 2×400 kV Kozienice-Miłosna double-circuit power line in connection with the conversion of the existing 400 kV single-circuit line into double-circuit line\n[...]\nEltel Networks Engineering SA participated in the design of the BIM model for the newly constructed 2×400 kV Kozienice-Miłosna double-circuit power line. The investment is a conversion of the existing 400 kV single-circuit line into a double-circuit line.\n[...]\nThe challenge was to model the newly constructed 2×400 kV Kozienice-Miłosna double-circuit line in the BIM methodology, as it was the first Polish pilot project that used the BIM to construct the power line model of strategic importance for Poland. With the involvement of Eltel Networks Engineering SA and the experience gained, the Building Information Modelling (BIM) used in the general construction industry has been successfully implemented in the electrical power engineering sector. The popular BIM is implemented by the contractors, designers, and also more and more often by informed private investors.The BIM is the process of flow, collection and processing of information, using the computer tools, which is necessary for the efficient use of resources in order to achieve the construction objectives from the concept through the construction and operation. BIM can also be defined as a parametric information model for the construction process, containing all the necessary data and properties to accurately reflect the actual facility in the digital space, along with the associated processes."
+        },
+        {
+          "query_label": "case-study",
+          "title": "Projekt wykonania modelu BIM nowo powstającej dwutorowej linii 2x400 kV Kozienice-Miłosna - Alterga",
+          "url": "https://alterga.com/realizacje/case-study/2022/projekt-wykonania-modelu-bim-nowo-powstajcej-dwutorowej-linii-2x400-kv-kozienice-milosna/",
+          "normalized_url": "https://alterga.com/realizacje/case-study/2022/projekt-wykonania-modelu-bim-nowo-powstajcej-dwutorowej-linii-2x400-kv-kozienice-milosna",
+          "domain": "alterga.com",
+          "published": "2022-03-01T15:36:00.000Z",
+          "author": null,
+          "highlights": "Projekt wykonania modelu BIM nowo powstającej dwutorowej linii 2×400 kV Kozienice-Miłosna w związku z przebudową istniejącej jednotorowej linii 400 kV na linię dwutorową.\n[...]\nInwestor: Polskie Sieci Elektroenergetyczne SA, Centralna Jednostka InwestycyjnaLokalizacja: woj. mazowieckie – powiat miński, otwocki, garwoliński, kozienickiTermin wykonania: 2022\n[...]\nEltel Networks Engineering SA brał udział w projekcie wykonania modelu BIM nowo powstającej dwutorowej linii 2×400 kV Kozienice-Miłosna. Inwestycja jest przebudową istniejącej jednotorowej linii 400 kV na linię dwutorową.\n[...]\nWyzwaniem było zamodelowanie w metodyce BIM nowo powstającej dwutorowej linii 2×400 kV Kozienice-Miłosna, ponieważ był to pierwszy polski pilotażowy projekt wykorzystujący BIM do stworzenia modelu linii energetycznej o znaczeniu strategicznym dla Polski. Dzięki zaangażowaniu zespołu Eltel Networks Engineering SA oraz zdobytemu doświadczeniu, Building Information Modelling (BIM) wdrażany w budownictwie ogólnym został z sukcesem zaimplementowany w branży elektroenergetycznej. Cieszący się popularnością BIM wdrażany jest przez wykonawców, projektantów, ale też coraz częściej przez świadomych inwestorów prywatnych.\n[...]\nStworzony model linii dwutorowej 400kV w programie Revit składał się z rodzin słupów, stóp fundamentowych, izolatorów oraz przewodów. Ponadto, zamodelowany został teren odzwierciedlający teren projektowany. Aby model przekazywał jak najwięcej szczegółów, przed eksportem do IFC, wszystkie elementy modelu zostały nasycone informacjami. Model wraz z terenem podzielono i wyeksportowano sekcjami, aby możliwa była nawigacja przy oglądaniu wizualizacji. Po wykonaniu kompletnego modelu stworzono rysunki stanowiące dokumentację projektową."
+        },
+        {
+          "query_label": "case-study",
+          "title": "Realizacje | Instalacje elektryczne | BIM | CAD",
+          "url": "https://fastenergy.pl/realizacje/",
+          "normalized_url": "https://fastenergy.pl/realizacje",
+          "domain": "fastenergy.pl",
+          "published": "2022-08-24T11:41:19.000Z",
+          "author": null,
+          "highlights": "Realizacje | Instalacje elektryczne | BIM | CAD Przejdź do zawartości\n[...]\n- Projekt instalacji elektrycznych i teletechniczny w przebudowywanym kamienicy zlokalizowanej w Łodzi przy ul. Kilińskiego 49.\n[...]\n- Projekt instalacji elektrycznych i teletechnicznych w przebudowywanym budynku zlokalizowanym w Łodzi przy ul. Kilińskiego 36.\n[...]\n- Projekt instalacji elektrycznyh i teletechnicznych dla rozbudowywanego istniejącego budynku administracji publicznej o szyb windowy wraz z przebudową wnętrz w Łodzi przy ul. Roosevelta 15.\n[...]\n- Projekt instalacji elektrycznych w modernizowanym budynku zlokalizowanym w Łodzi przy ul. Liściastej 22.\n[...]\n- Projekt instalacji elektrycznych i teletechnicznych w przebudowywanym zespole budynków pofabrycznych w Łodzi przy ul. Kopernika 15/17.\n[...]\n- Projekt instalacji elektrycznych i teletechnicznych w budynku mieszkalnym wielorodzinnym z garażem zlokalizowanym w Łodzi przy ul. Tuwima 64.\n[...]\n- Projekt instalacji elektrycznych w trzech budynkach mieszkalnych w Łodzi.\n[...]\n- Projekt instalacji elektrycznych w projektowanym budynku jednorodzinnym w miejscowości Rosanów.\n[...]\n- Projektu instalacji elektrycznych w projektowanym budynku jednorodzinnym i w budynku gospodarczym w miejscowości Rębiszów.\n[...]\n- Projektu instalacji elektrycznych w projektowanym budynku jednorodzinnym w miejscowości Sasino.\n[...]\n- Projekt instalacji elektrycznych i teletechnicznych w zespole w 6-ciu powtarzalnych budynków mieszkalnych jednorodzinnych.\n[...]\n- Projekt instalacji elektrycznych w zespole 12 budynków mieszkalnych jednorodzinnych.\n[...]\n- Projekt instalacji elektrycznych związanych z zasilaniem dwóch stacji ładowania w budynku A2 stanowiącego część kompleksu biurowo-usługowego „Monopolis” zlokalizowanego w Łodzi przy ul. Wydawniczej 4.\n[...]\ni teletechnicznych w projektowanym budynku magazynowym, rozbudowywanym budynku magazynowym z aneksem biurowo-socjalnym zlokalizowanym w Łodzi przy ul. Kolumny."
+        },
+        {
+          "query_label": "case-study",
+          "title": "Model BIM instalacji elektrycznych – Obiekty Wydziału Farmacji, Uniwersytet Medyczny, Poznań – Electric-Control",
+          "url": "http://www.electric-control.pl/sol-portfolio/model-bim-instalacji-elektrycznych-obiekty-wydzialu-farmacji-uniwersytet-medyczny-poznan/",
+          "normalized_url": "http://www.electric-control.pl/sol-portfolio/model-bim-instalacji-elektrycznych-obiekty-wydzialu-farmacji-uniwersytet-medyczny-poznan",
+          "domain": "electric-control.pl",
+          "published": null,
+          "author": null,
+          "highlights": "Model BIM instalacji elektrycznych – Obiekty Wydziału Farmacji, Uniwersytet Medyczny, Poznań – Electric-Control\n\nModel BIM instalacji elektrycznych – Obiekty Wydziału Farmacji, Uniwersytet Medyczny, Poznań – Electric-Control\nSkip to content\n\n\n\n\n# Model BIM instalacji elektrycznych – Obiekty Wydziału Farmacji, Uniwersytet Medyczny, Poznań"
+        },
+        {
+          "query_label": "case-study",
+          "title": "Warszawski The Form zyskał systemy elektryczne i niskoprądowe",
+          "url": "https://www.propertynews.pl/biura/warszawski-the-form-zyskal-systemy-elektryczne-i-niskopradowe,192086.html",
+          "normalized_url": "https://www.propertynews.pl/biura/warszawski-the-form-zyskal-systemy-elektryczne-i-niskopradowe,192086.html",
+          "domain": "propertynews.pl",
+          "published": "2025-09-01T13:58:00.000Z",
+          "author": "PTWP",
+          "highlights": "SPIE Stangl Technik sp. z o.o., polska spółka Grupy SPIE, niezależnego europejskiego dostawcy usług multitechnicznych w dziedzinie energetyki i przesyłu danych, zakończyła wykonanie instalacji elektrycznych i niskonapięciowych w The Form w Warszawie.\n[...]\nSPIE Stangl Technik opracowało szczegółowy projekt BIM LOD 300 (BIM - Building Information Modeling, LOD - Level of Development). Zakres prac obejmował pełną instalację elektryczną średniego i niskiego napięcia wraz z centralnym systemem sterowania oświetleniem, instalacje bezpieczeństwa ppoż. oraz systemy ochrony osób i mienia. Budynek został wyposażony w dwa niezależne źródła zasilania średniego napięcia z transformatorami o łącznej mocy 4 MVA. Wszystkie prace zostały zrealizowane z zachowaniem najwyższych standardów jakości w zaplanowanym terminie.\n[...]\n- Kluczowym wyzwaniem technicznym była konfiguracja dużej sieci stacji ładowania samochodów osobowych wraz z systemem zarządzania mocą ładowarek i poborem opłat. W The Form zainstalowaliśmy 77 stacji o mocy od 3,7kW do 22kW. Przy tak dużej mocy, sumarycznie rzędu 0,5MW, konieczny jest system zarządzania mocą na poziomie całego budynku. Poborem szczytowym mocy obiektu, w tym instalacji ładowania samochodów, zarządza system PMS (Power Management System), który zapobiega przekroczeniu mocy zamówionej – mówi Radosław Buczek, Dyrektor Działu Elektrycznego SPIE Stangl Technik.\n[...]\n- Ze strony SPIE Stangl Technik w realizację kontraktu był zaangażowany zespół inżynierów pod kierunkiem doświadczonego kierownika projektu. Najciekawszym, a jednocześnie najbardziej wymagającym wyzwaniem inżynierskim była integracja instalacji niskoprądowych - ze sobą i innymi systemami, takimi jak windowy czy recepcyjny. Wzbogaciło to nasze doświadczenie i wzmocni"
+        }
+      ]
+    },
+    {
+      "slug": "xr-szkolenia-przemyslowe",
+      "topic": "XR w szkoleniach przemysłowych",
+      "status": "pass",
+      "duration_seconds": 1.49,
+      "total_raw_results": 3,
+      "unique_sources": 13,
+      "duplicate_sources": 2,
+      "unique_domains": 12,
+      "polish_domains": 8,
+      "recent_sources": 9,
+      "query_results": [
+        {
+          "label": "overview",
+          "query": "XR szkolenia przemysłowe korzyści Polska",
+          "raw_result_count": 1,
+          "parsed_result_count": 5,
+          "error": null
+        },
+        {
+          "label": "stats",
+          "query": "XR szkolenia VR AR statystyki raport 2025 Polska",
+          "raw_result_count": 1,
+          "parsed_result_count": 5,
+          "error": null
+        },
+        {
+          "label": "case-study",
+          "query": "XR szkolenia przemysłowe case study Polska",
+          "raw_result_count": 1,
+          "parsed_result_count": 5,
+          "error": null
+        }
+      ],
+      "failures": [],
+      "warnings": [],
+      "sources": [
+        {
+          "query_label": "overview",
+          "title": "Szkolenia VR i Symulatory dla Przemysłu - Carbon Studio",
+          "url": "https://carbonstudio.pl/przemysl-xr/",
+          "normalized_url": "https://carbonstudio.pl/przemysl-xr",
+          "domain": "carbonstudio.pl",
+          "published": "2026-02-03T11:00:25.000Z",
+          "author": null,
+          "highlights": "Tworzymy rozwiązania VR/MR i symulatory procesów przemysłowych dla firm produkcyjnych i infrastrukturalnych. Pomagamy szkolić ludzi bezpieczniej, szybciej i w powtarzalny sposób – bez ryzyka i bez przestojów produkcji. Digital Twin wykorzystujemy jako fundament do szkoleń, planowania prac i lepszej komunikacji między zespołami.\n[...]\n5 roku realiz\n[...]\n## Szkolenia XR (VR/MR) dla Przemysłu\n[...]\nInteraktywne szkolenia stanowiskowe i BHP w wirtualnej rzeczywistości. Użytkownik ćwiczy zadania w bezpiecznym środowisku, dostaje instrukcje krok-po-kroku, a system może mierzyć czas, błędy i poprawność wykonania.\n[...]\n- Onboarding i szkolenia nowych pracowników – szybsze wdrożenie bez przestojów\n- Szkolenia BHP w VR i zachowania w strefach zagrożenia\n- Obsługa narzędzi/urządzeń i czynności serwisowe\n- Standardy pracy i kontrola jakości\n[...]\nSzkolenia dostępne na Meta Quest 3, PC VR oraz w trybie mieszanym.\n[...]\nDigital Twin to cyfrowy model obiektu\n[...]\ninstalacji,\n[...]\n„wspólny język”\n[...]\noperacji, szkoleń i planowania. W praktyce:\n[...]\ncje, statusy) +\n[...]\nariusze.\n[...]\nKorzyści z Digital Twin:\n[...]\n- Szybsze zrozumienie obiektu (dla nowych osób i podwykonawców)\n- Planowanie prac i zmian bez wchodzenia na obiekt\n- Lepsza komunikacja: jedna wizualizacja dla wielu zespołów\n- Baza pod szkolenia i symulatory (procedury „osadzone” w obiekcie)\n[...]\nKoszt zależy od skali i złożoności projektu. Prosty symulator stanowiskowy to ok. 50-100 tys. PLN, zaawansowany Digital Twin z interaktywnymi szkoleniami to 200-500 tys. PLN. Oferujemy bezpłatną konsultację i wycenę dostosowaną do Twoich potrzeb.\n[...]\n### Czy szkolenia VR są skuteczniejsze niż\n[...]\nycyjne?\n[...]\nBadania pokazują, że szkolenia VR mogą skrócić czas wdrożenia o 40-60% i zwiększyć retencję wiedzy do 80%. Dzięki praktyce w bezpiecznym środowisku, pracownicy lepiej zapamiętują procedury.\n[...]\n10+ lat doświadczenia w"
+        },
+        {
+          "query_label": "overview",
+          "title": "Wirtualna i rozszerzona rzeczywistość w szkoleniach dla przemysłu ciężkiego",
+          "url": "https://ponar-pressure.pl/wirtualna-i-rozszerzona-rzeczywistosc-w-szkoleniach-dla-przemyslu-ciezkiego",
+          "normalized_url": "https://ponar-pressure.pl/wirtualna-i-rozszerzona-rzeczywistosc-w-szkoleniach-dla-przemyslu-ciezkiego",
+          "domain": "ponar-pressure.pl",
+          "published": "2026-04-01T02:45:40.000Z",
+          "author": "MetalPulse",
+          "highlights": ") zysk\n[...]\njonizują\n[...]\nście do edukacji zawod\n[...]\n. Zamiast\n[...]\n, często czasochłonnych\n[...]\n, nowe technologie umożliwiają stworzenie wciągających i interaktywnych doświadczeń, które nie tylko przyspieszają proces nauki, ale także zwiększają bezpieczeństwo i efektywność w miejscu pracy. W artykule przyjrzymy się, jak wirtualne i rozszerzone otoczenia kształtują przyszłość szkoleń w przemy\n[...]\nciężkim, jakie korzyści oferują firmom oraz jakie wyzwania jeszcze przed nami stoją.Poznajcie świat, w którym nauka i zaawansowana technologia idą w parze, a kadra pracownicza może zdobywać umiejętności w sposób, o jakim dot\n[...]\nmożna było jedynie marzyć\n[...]\nW ostatnich latach inwestycje w technologie wirtualnej\n[...]\nzonej rzeczywistości\n[...]\n) stały się kluczowym elementem strategii wielu przedsiębiorstw,\n[...]\nsektorze przemysłowym. Oferując unikalne\n[...]\nedukacyjne i praktyczne\n[...]\nprzynoszą wym\n[...]\nkorzyści\n[...]\nszkoleń, jak i ogól\n[...]\nwydajności operacyjnej.\n[...]\nszkoleniowy.\n[...]\n. W efekcie zredukowano liczbę wypadków o 30% oraz skrócono czas szkolenia o\n[...]\n50%.\n[...]\n- Zwiększenie bezpieczeństwa w trakcie szkoleń poprzez symulacje w bezpiecznym środowisku.\n- Redukcja kosztów związanych z błędami i wypadkami.\n[...]\n- Poprawa efektywności szkoleń oraz redukcja czasu potrzebnego na przyswojenie umiejętności.\n[...]\nW obliczu rosnącej konkurencji oraz dynamicznych zmian w technologii, przyszłość szkoleń w przemyśle ciężkim z pewnością będzie kształtowana przez innowacyjne rozwiązania. W szczególności, wirtualna i rozszerzona rzeczywistość (VR i AR) stają się kluczowymi narzędziami w podnoszeniu efektywności szkoleń. Wykorzystanie tych technologii może przynieść wiele korzyści, takich jak:\n[...]\nko związane z rzeczyw\n[...]\nienie pracownik\n[...]\ni angażując"
+        },
+        {
+          "query_label": "overview",
+          "title": "Industrverse — Platforma szkoleń XR dla przemysłu i edukacji",
+          "url": "https://industrverse.com/",
+          "normalized_url": "https://industrverse.com/",
+          "domain": "industrverse.com",
+          "published": null,
+          "author": null,
+          "highlights": "Industrverse — Platforma szkoleń XR dla przemysłu i edukacji\n[...]\nIndustrverse łączy edukację zawodową z przemysłem przez technologię XR. Uczniowie i pracownicy budują mierzalny profil kompetencji, a firmy znajdują zweryfikowanych kandydatów.\n[...]\nWyobraź sobie, że możesz potwierdzić swoje praktyczne umiejętności dzięki XR — bez kosztownego sprzętu, w bezpiecznym środowisku symulacyjnym.\n[...]\nInteraktywne środowiska XR zastępują statyczne szkolenia. Realne symulacje stanowisk pracy — od spawania po procedury medyczne.\n[...]\nIndustrverse to nie tylko sprzęt VR — to kompleksowa platforma do zarządzania rozwojem zawodowym. Od treningu po certyfikat i ofertę pracy.\n[...]\nUkończone programy kończą się weryfikowanym certyfikatem. Pracodawca widzi realne wyniki, nie tylko dokument.\n[...]\nwiązanie dla edukacji\n[...]\n- ✓Bezpieczne kształtowanie umiejętności bez kosztownego sprzętu\n- ✓Program nauczania zgodny z wymaganiami pracodawców\n- ✓Budowanie ścieżek zatrudnienia dla absolwentów\n- ✓Redukcja kosztów materiałów i infrastruktury\n- ✓Wzmocnienie partnerstw z przemysłem\n[...]\nFirmy przemysłowe, agencje zatrudnienia, urzędy pracy\n[...]\n- ✓Szybsze wdrożenie nowych pracowników\n- ✓Standaryzacja poziomów kompetencji w organizacji\n- ✓Mierzalne efekty szkoleń z konkretnymi KPI\n- ✓Redukcja kosztów rekrutacji i onboardingu\n- ✓Dostęp do puli zweryfikowanych kandydatów\n[...]\nIntegrujemy certyfikowane rozwiązania XR w gotowe zestawy dydaktyczne. Wyposażenie, licencje, szkolenia — wszystko w jednym projekcie wdrożeniowym.\n[...]\nKorzyści dla placówki\n[...]\n### Firmy przemysłowe\n[...]\nSzkolenia wstępne z technologii XR dla pracowników. Zajęcia dla grup 5-osobowych, obsługa maszyn, procesy technologiczne, sytuacje awaryjne.\n[...]\nz firmami i praktyki oparte na\n[...]\n### Bezpłatna konsultacja\n[...]\nUmów 30-minutową rozmowę i sprawdź, jak Industrverse może wesprzeć Twoją szkołę lub firmę."
+        },
+        {
+          "query_label": "overview",
+          "title": "Szkolenia VR vs tradycyjne – co bardziej się opłaca w firmie produkcyjnej?",
+          "url": "https://epicvr.pl/pl/vr-vs-tradycyjne-szkolenia-produkcja/",
+          "normalized_url": "https://epicvr.pl/pl/vr-vs-tradycyjne-szkolenia-produkcja",
+          "domain": "epicvr.pl",
+          "published": "2025-08-22T15:28:55.000Z",
+          "author": "admin",
+          "highlights": "Technologia wirtualnej rzeczywistości została opracowana z myślą o precyzyjnym odwzorowywaniu złożonych procesów i sytuacji, co sprawia, że idealnie sprawdza się w sektorze przemysłowym. Dzięki VR możliwe jest skuteczne przygotowanie pracowników do realnych wyzwań operacyjnych bez ryzyka zakłócania bieżącej pracy zakładu.\n[...]\n- Brak kosztów logistycznych – VR eliminuje potrzebę organizowania sal, dojazdów, obecności trenera czy dostosowywania harmonogramu produkcji do terminów szkoleń.\n[...]\n- Stały, nieograniczony dostęp do treści szkoleniowej – użytkownicy mogą powtarzać ćwiczenia w dowolnym czasie, we własnym tempie, co znacząco podnosi jakość przys\n[...]\nania wiedzy.\n[...]\nW zakładach produkcyjnych, gdzie liczy się zarówno bezpieczeństwo, jak i operacyjna efektywność, szkolenia VR stanowią praktyczną odpowiedź na rosnące potrzeby kadrowe i technologiczne. Tradycyjne metody nauczania, choć wciąż stosowane, coraz częściej ustępują miejsca rozwiązaniom immersyjnym, które oferują szybsze przyswajanie wiedzy, większe zaangażowanie uczestników oraz wymierne oszczędności.\n[...]\nWirtualna rzeczywistość umożliwia przeprowadzanie szkoleń w dowolnym czasie i miejscu, niezależnie od dostępności sal czy trenerów. Pozwala firmom wdrażać pracowników bez zakłóceń w produkcji, standaryzować procesy szkoleniowe i skutecznie przygotowywać kadrę do pracy w środowisku o wysokich wymaganiach bezpieczeństwa.\n[...]\nEPICVR projektuje i wdraża dedykowane szkolenia VR, tworzone z myślą o specyfice pracy w przemyśle. Nasze rozwiązania są stosowane w zakładach produkcyjnych, centrach logistycznych i firmach przemysłowych na terenie całej Polski i za granicą.\n[...]\n- szkolenia z zakresu BHP i ochrony przeciwpożarowej,\n[...]\n- moduły ergonomii pracy i obsługi maszyn,\n- symulacje zdarzeń niebezpiecznych i sytuacji awaryjnych,\n- pełne wsparcie we wdrożeniu sprzętu i przeszkoleniu zespołu."
+        },
+        {
+          "query_label": "overview",
+          "title": "Jak rozszerzona i wirtualna rzeczywistość może zmniejszyć braki w umiejętnościach produkcyjnych - Control Engineering Polska",
+          "url": "https://controlengineering.pl/jak-rozszerzona-i-wirtualna-rzeczywistosc-moze-zmniejszyc-braki-w-umiejetnosciach-produkcyjnych/",
+          "normalized_url": "https://controlengineering.pl/jak-rozszerzona-i-wirtualna-rzeczywistosc-moze-zmniejszyc-braki-w-umiejetnosciach-produkcyjnych",
+          "domain": "controlengineering.pl",
+          "published": "2021-11-08T07:00:16.000Z",
+          "author": "Control Engineering Polska",
+          "highlights": "## Zespół naukowców z Uniwersytetu Purdue rozpoczął współpracę z agencją NSF w celu stworzenia prototypowej technologii o nazwie Skill-XR, wykorzystującej do szkoleń pracowników doznania rzeczywistości rozszerzonej i mającej na celu wypełnienie luki po odchodzących na emeryturę fachowcach ze starszego pokolenia.\n[...]\nTradycyjne szkolenie siły roboczej w przemyśle obejmowało bardzo mało techniki: osobiste sesje szkoleniowe, praktyki zawodowe w postaci nadzorowania pracy nowego pracownika przez doświadczonego, instrukcje pisemne i czasami filmy wideo. Aby jednak rozwiązać problem coraz większego braku doświadczonych fachowców, niektóre firmy produkcyjne zwracają się ku technologii rozszerzonej i wirtualnej rzeczywistości, które pomagają w zdobywaniu przez swoich pracowników nowych umiejętności. Zespół z Uniwersytetu Purdue (z siedzibą w West Lafayette w stanie Indiana, USA) podpisał warty 5 mln USD kontrakt z agencją NSF (National Science Foundation, amerykańska agencja rządowa finansująca badania podstawowe z zakresu nauk o życiu) w celu stworzenia prototypu technologii o nazwie Skill-XR, wykorzystującej doznania rzeczywistości rozszerzonej i wirtualnej, mającego na celu wypełnienie w przemyśle luki po odchodzących na emeryturę fachowcach ze starszego pokolenia.\n[...]\nTworzenie Skill-XR rozpoczęło się w\n[...]\n2018 roku, gdy zespół prof. Ramaniego otrzymał od NSF grant w wysokości 2,5 mln USD na badania nad tematem ?Przyszłość pracy na granicy pomiędzy człowiekiem a technologią?. Jednym z pomysłów, które wówczas powstały, był Skill-LeARn, koncepcja wykorzystania technologii rozszerzonej rzeczywistości (AR) do szkolenia pracowników. To uzyskało fundusz Fazy I z Akceleratora Konwergencji NSF, nowego programu agencji NSF, przeznaczonego do rozwiązywania problemów społecznych w skali całego kraju poprzez wykorzystanie inspirowanych badań nad konwergencją."
+        },
+        {
+          "query_label": "stats",
+          "title": "XR ASSOCIATION RELEASES “STATE OF THE INDUSTRY ...",
+          "url": "https://xra.org/xr-association-releases-state-of-the-industry-report-with-highlights-from-2025-and-a-look-ahead-to-2026/",
+          "normalized_url": "https://xra.org/xr-association-releases-state-of-the-industry-report-with-highlights-from-2025-and-a-look-ahead-to-2026",
+          "domain": "xra.org",
+          "published": "2026-01-20T19:27:09.000Z",
+          "author": "Joudi Assaf",
+          "highlights": "XR ASSOCIATION RELEASES “STATE OF THE INDUSTRY REPORT,” WITH HIGHLIGHTS FROM 2025 AND A LOOK AHEAD TO 2026 - XR Association \n\n# XR ASSOCIATION RELEASES “STATE OF THE INDUSTRY REPORT,” WITH HIGHLIGHTS FROM 2025 AND A LOOK AHEAD TO 2026\n\nWashington DC – Today, the XR Association (XRA) published its annual State of the Industry Report 2025, providing an in-depth analysis of the immersive technology sector, including virtual reality (VR), augmented reality (AR), and mixed reality (MR). The report highlights key trends in XR, including accelerated growth in enterprise applications, significant advancements in hardware and increasing adoption across industries like healthcare, education, and entertainment.\n\nThroughout 2025, XRA continued its mission of advocating for the immersive technology industry. Through events, demonstrations, and discussions, and more, XRA worked to deepen the public and policymakers’ understanding and awareness of XR technologies at more than 30 activations this year.\n\nWith insights from XRA’s experts, research, and policy initiatives, the State of the Industry report highlights the increasing interest in immersive technologies across policy and business sectors. It also emphasizes the exciting progress being made in XR technologies, featuring industry highlights from more than 20 member companies, including Meta, Google, Qualcomm, and others.\n\nACCESS THE FULL REPORT\n\nShare\n\n \n\n- \n- \n- \n- \n\nXR ASSOCIATION COMMENDS WHITE HOUSE AI POLICY FRAMEWORK\n\nXRA CEO TO SPEAK AT 4TH ANNUAL VRARA CENTRAL FLORIDA IMMERSIVE TECHNOLOGY SUMMIT\n\nXR ASSOCIATION HOSTS 2026 TECHSUMMIT, BRINGING XR DEMONSTRATIONS TO CAPITOL HILL"
+        },
+        {
+          "query_label": "stats",
+          "title": "XR4Europe released the European XR Industry Report 2025",
+          "url": "https://aidarsolutions.com/xr4europe-released-the-european-xr-industry-report-2025/",
+          "normalized_url": "https://aidarsolutions.com/xr4europe-released-the-european-xr-industry-report-2025",
+          "domain": "aidarsolutions.com",
+          "published": "2025-05-30T08:10:00.000Z",
+          "author": "Przemyslaw Maliszewski",
+          "highlights": "XR4Europe released the European XR Industry Report 2025 \n\nKnowledge Base News\n[...]\nIn 2025, XR4Europe released the European XR Industry Report 2025 — a landmark publication that maps the landscape of Extended Reality (XR) across the continent. Drawing on responses from over 230 organizations, including startups, SMEs, research institutions, and associations, the report offers rare and valuable insight into the evolving ecosystem of immersive technologies in Europe.\n[...]\nThe report dispels\n[...]\nmyth of a “metaverse winter.” While XR is not experiencing exponential consumer growth, the technology is steadily embedding itself into real-world workflows — particularly in industry, training, education, and healthcare. This steady growth, as opposed to hype-driven surges, reinforces our long-term product strategy:\n[...]\nA surprising insight from the\n[...]\nis that the majority of\n[...]\nstill struggle to access public and innovation funding\n[...]\neven when such resources are available.\n[...]\nlow awareness of\n[...]\nThe report finds that 83% of European XR companies serve international markets, with the U.S., Germany, and the UK among the top destinations. This mirrors our experience at Aidar, where multinational deployments are already part of our DNA.\n[...]\nWe are one of the few European XR providers offering a scalable, no-code platform that empowers industrial clients to create and evolve their own VR/AR training modules. With Aidar.Skills, clients don’t just buy content from us — they gain the tools to build, adapt, and optimize content themselves, while we support them with onboarding, best practices, and advanced modules for diagnostics, remote support, and knowledge base integration.\n[...]\nThe European XR Industry Report 2025 makes several recommendations: more funding for R&D, better export support, stronger collaboration between SMEs and universities, and regional XR hubs for demonstration and testing. Aidar is already acting on all of them."
+        },
+        {
+          "query_label": "stats",
+          "title": "Virtual Reality in Education 2025 - kognita",
+          "url": "https://kognita.eu/reports/virtual-reality-in-education-2025/",
+          "normalized_url": "https://kognita.eu/reports/virtual-reality-in-education-2025",
+          "domain": "kognita.eu",
+          "published": "2025-05-29T09:02:51.000Z",
+          "author": null,
+          "highlights": "90% of surveyed schools want to invest in VR in the next 2-3 years – do you know?Our latest report, Virtual Reality in Education 2025, explores how immersive technologies are already transforming schools and universities in Poland and why now is the time to take VR in education seriously.\n[...]\nPrepared by Kognita in collaboration with Meta, the report is based on the first large-scale study of VR adoption in Polish education. It includes insights from teachers, school leaders, and university staff across primary, secondary, and higher education. The findings highlight both the immense potential of immersive learning and the practical challenges schools face when adopting this technology.\n[...]\n- A clear look at how VR improves engagement, comprehension, and long-term knowledge retention – especially in science, technology, and vocational subjects.\n- An overview of how Polish schools are using VR today, and which areas show the most promise for further development.\n- Concrete evidence that immersive experiences help students understand abstract concepts, build practical skills, and even develop soft skills like collaboration and critical thinking.\n[...]\nrehabilitation and physical trainings\n[...]\n- ATENA Primary School\n[...]\nprinting, language learning, and\n[...]\nfor early education.\n[...]\n- AWF Katowice\n[...]\nReducing sedentary behavior and\n[...]\nLearn what’s holding schools back – costs, content gaps, infrastructure – and how new\n[...]\nlike Kognita Edu and perpetual licensing models make scalable VR education realistic today.\n[...]\nOur report includes a step-by-step implementation guide: choosing the right headsets, managing multiple devices, training teachers, and selecting platforms aligned with national curricula.\n[...]\nDownload our latest report on the VR/AR market to gain valuable insights, understand emerging trends, and explore new opportunities. Stay ahead in this rapidly evolving industry with our comprehensive analysis."
+        },
+        {
+          "query_label": "stats",
+          "title": "Technologie VR i AR w edukacji – rewolucja w nauczaniu?",
+          "url": "https://excelraport.pl/index.php/2025/12/03/technologie-vr-i-ar-w-edukacji-rewolucja-w-nauczaniu/",
+          "normalized_url": "https://excelraport.pl/index.php/2025/12/03/technologie-vr-i-ar-w-edukacji-rewolucja-w-nauczaniu",
+          "domain": "excelraport.pl",
+          "published": "2025-12-03T21:22:16.000Z",
+          "author": "Edyta Zielińska",
+          "highlights": "W dobie ​\n[...]\n‍trud\n[...]\n‍ wyobrazić ⁢so\n[...]\nną ⁣\n[...]\nktóre wkraczają ⁣do⁢\n[...]\nszkolnych. Wirtualna\n[...]\nistość (VR) i\n[...]\nzona rzeczywistość ⁣(\n[...]\n) ​to ⁣jedne z najciekawszych osiągnięć technologicznych‍ ostatnich ⁣lat, które⁢ mają⁢ potencjał, aby zrewolucjonizować sposób, w jaki uczymy się i nauczamy. Co sprawia, że te nowoczesne technologie zdobywają coraz⁣ większą⁤ popularność w instytucjach edukacyjnych na całym‍ świecie? ‌Jakie korzyści pł\n[...]\ną ‍z ich zastosowania⁤ w codziennym ‍procesie nauczania, a także​ jakie ‍wyzwania\n[...]\n⁢ się z​ tym​ wiązać? ‍W ​artykule tym ⁤przyjrzymy się trendom w wykorzystywaniu VR i ⁤AR⁣ w edukacji, analizując ich wpływ na​ sposób przyswajania ‌wiedzy i zaangażowanie uczniów. Zapraszamy do ​lektury, która może ⁤okazać się ⁣inspirującą podróżą w świat technologii przyszłości!\n[...]\nW ⁢ostatnich ⁢latach technologia VR (wirtualna rzeczywistość) i ⁤AR (rozszerzona rzeczywistość) zyskała na​ popularności w różnych dziedzinach życia, w tym ⁣edukacji. W Polsce zaczyna‌ się dostrzegać potencjał tych ​technologii w tworzeniu nowoczesnych metod nauczania, które angażują uczniów na ​niespotykaną ‌dotąd skalę. Dzięki immersyjnym doświadczeniom, uczniowie​ mogą​ odkrywać skomplikowane​ koncepcje w⁢ sposób ⁢interaktywny, co może znacząco poprawić przyswajanie⁤ wiedzy.\n[...]\nIntegracja technologii VR i AR w‌ polskich szkołach otwiera nowe możliwości, ale⁢ także ​stawia przed nauczycielami wyzwania.⁣ Wdrażanie ⁣tych ⁤innowacji wymaga odpowiedniego szkolenia kadry ⁢pedagogicznej oraz dostosowania programów nauczania. Kluczowe aspekty ‍to:\n[...]\nzmian ‌w eduk\n[...]\nVR i AR\n[...]\nSzkolenia\n[...]\nnauczycieli:"
+        },
+        {
+          "query_label": "stats",
+          "title": "Trendbook 2025 – praktyczny przewodnik po technologiach. – Sektorowa Rada ds. Kompetencji Usługi Rozwojowe",
+          "url": "https://www.rada.pifs.org.pl/trendbook-2025-praktyczny-przewodnik-po-technologiach/",
+          "normalized_url": "https://www.rada.pifs.org.pl/trendbook-2025-praktyczny-przewodnik-po-technologiach",
+          "domain": "rada.pifs.org.pl",
+          "published": null,
+          "author": null,
+          "highlights": "Trendbook 2025 – praktyczny przewodnik po technologiach. – Sektorowa Rada ds. Kompetencji Usługi Rozwojowe\n[...]\n# Trendbook 2025 – technologie immersyjne.\n[...]\nTrendbook 2025 to publikacja przygotowana przez Sektorową Radę ds. kompetencji Usługi Rozwojowe, w całości poświęcona technologiom immersyjnym i ich realnemu wpływowi na rynek usług rozwojowych. Raport pokazuje, w jaki sposób rozwiązania VR i AR zmieniają podejście do uczenia się, szkoleń i rozwoju kompetencji – nie w teorii, lecz w praktyce. Trendbook 2025 to praktyczna diagnoza rynku technologii immersyjnych w rozwoju kompetencji, oparta na badaniach, danych i doświadczeniu ekspertów branży. Publikacja jest skierowana do firm szkoleniowych, instytucji edukacyjnych, decydentów oraz wszystkich, którzy chcą świadomie wykorzystywać VR i AR w działaniach rozwojowych. Pobierz Trendbook 2025"
+        },
+        {
+          "query_label": "case-study",
+          "title": "Zastosowanie technologii AR w szkoleniu serwisantów urządzeń rolniczych",
+          "url": "https://e-learning.pl/e-wiedza/case-study-zastosowanie-technologii-ar-w-szkoleniu-serwisantow-urzadzen-rolniczych",
+          "normalized_url": "https://e-learning.pl/e-wiedza/case-study-zastosowanie-technologii-ar-w-szkoleniu-serwisantow-urzadzen-rolniczych",
+          "domain": "e-learning.pl",
+          "published": "2024-11-05T08:31:09.000Z",
+          "author": null,
+          "highlights": "05 listopada 2024# Zastosowanie technologii AR w szkoleniu serwisantów urządzeń rolniczych\n[...]\nSkrócenie czasu wdrożenia serwisantów w fabryce ciągników przemysłowychAutor:Iwona Wieczorek\n[...]\nKlient –norweska fabryka produkująca super zaawansowane urządzenia rolnicze, w tym przemysłowe ciągniki o wartości 2-3 milionów złotych każdy. Fabryka zatrudnia nowych serwisantów, których zadaniem jest serwisowanie skomplikowanych silników napędzających te maszyny. Mimo solidnego przygotowania teoretycznego, praktyczna obsługa tak zaawansowanych urządzeń to zupełnie inne wyzwanie.\n[...]\nTradycyjne szkolenia zakładały, że nowi pracownicy uczyliby się bezpośrednio na maszynach, co wiązałoby się z dużym ryzykiem popełnienia kosztownych błędów i potencjalnymi uszkodzeniami sprzętu. Firma chciała uniknąć takich sytuacji, jednocześnie skracając czas potrzebny na pełne wdrożenie nowych serwisantów. Potrzebna była metoda szkolenia, która pozwoliłaby pracownikom na naukę w 100% w bezpiecznych, wirtualnych warunkach.\n[...]\nAby rozwiązać ten problem, wdrożono zaawansowany program szkoleniowy oparty o technologię AR (rozszerzoną rzeczywistość), który składał się z kilku kluczowych elementów:\n[...]\n* **skrócony czas nauki**: czas potrzebny na pełne wdrożenie nowych serwisantów został skrócony o 30%. Pracownicy mogli szybciej opanować procedury serwisowe dzięki możliwości wielokrotnego powtarzania zadań w wirtualnym środowisku.\n[...]\nZastosowanie zaawansowanej technologii AR w szkoleniu serwisantów pozwoliło na stworzenie nowoczesnego ekosystemu rozwojowego, który nie tylko skrócił czas wdrożenia nowych pracowników, ale także całkowicie wyeliminował ryzyko popełnienia kosztownych błędów. Technologia AR okazała się idealnym narzędziem dla fabryki, która potrzebowała bezpiecznego i efektywnego sposobu na przeszkolenie swoich pracowników w obsłudze zaawansowanych urządzeń."
+        },
+        {
+          "query_label": "case-study",
+          "title": "AR i VR w serwisie turbin – skrócenie szkoleń o 40% i mniej błędów serwisowych",
+          "url": "https://oakfusion.com/case-studies/nie-zabawka-tylko-maszyna-vr-i-ar-w-przemysle/",
+          "normalized_url": "https://oakfusion.com/case-studies/nie-zabawka-tylko-maszyna-vr-i-ar-w-przemysle",
+          "domain": "oakfusion.com",
+          "published": "2025-05-02T13:24:56.000Z",
+          "author": "Łukasz",
+          "highlights": "Międzynarodowa firma serwisująca turbiny wiatrowe zmagała się z wysokimi kosztami szkoleń i długim czasem wdrażania nowych pracowników. Istniejący proces nie zapewniał skutecznego przekazywania wiedzy technicznej, co wpływało negatywnie na jakość napraw i czas reakcji.\n[...]\nOptymalizacja procesu szkoleń oraz wsparcia serwisowego przy wykorzystaniu technologii AR/VR w celu zwiększenia efektywności i redukcji kosztów operacyjnych.\n[...]\nPo wspólnej analizie wyzwań zdecydowano o wdrożeniu technologii rozszerzonej rzeczywistości (AR) oraz wirtualnej rzeczywistości (VR) do procesów szkoleniowych i serwisowych.\n[...]\nTechnicy serwisowi zyskali dostęp do interaktywnych instrukcji w czasie rzeczywistym poprzez gogle AR, co usprawniło bieżące naprawy. Nowi pracownicy, zamiast uczestniczyć w kosztownych szkoleniach praktycznych, mogli ćwiczyć procedury w wirtualnym środowisku za pomocą VR. Dzięki symulatorom VR mogli bezpiecznie zdobywać doświadczenie, zanim rozpoczęli pracę przy rzeczywistych turbinach.\n[...]\nRozwiązanie skróciło czas szkoleń o 40% i zmniejszyło koszty wynikające z błędów serwisowych o 25%. Zaoszczędzony budżet został przeznaczony na rozwój narzędzi wspierających dokładniejsze naprawy.\n[...]\n✅ Skróciła czas szkoleń o 40%✅ Zmniejszyła koszty błędów serwisowych o 25%✅ Zwiększyła efektywność procesów serwisowych✅ Zwiększyła satysfakcję pracowników dzięki szybszemu i skuteczniejszemu szkoleniu\n[...]\n- Analiza problemu – wysokie koszty i czasochłonność wdrażania nowych pracowników\n[...]\n- Wdrożenie AR: interaktywne instrukcje serwisowe w czasie rzeczywistym\n[...]\n- Wdrożenie VR: szkolenia w bezpiecznym środowisku wirtualnym\n[...]\n- Zwiększenie efektywności szkoleń i poprawa jakości serwisu\n[...]\n- Redukcja kosztów i wzrost satysfakcji zespołu\n[...]\n⚙️ Rozszerzona rzeczywistość (AR): Interak\n[...]\n️ Wirtual\n[...]\nrzeczywistość (VR\n[...]\nierający techników w"
+        },
+        {
+          "query_label": "case-study",
+          "title": "Praktyczne zastosowania VR w Przemyśle 4.0 - case studies od EPIC VR",
+          "url": "https://epicvr.pl/pl/zastosowania-vr-w-przemysl40/",
+          "normalized_url": "https://epicvr.pl/pl/zastosowania-vr-w-przemysl40",
+          "domain": "epicvr.pl",
+          "published": "2021-09-09T22:08:53.000Z",
+          "author": "admin",
+          "highlights": "do każdego wyzwania\n[...]\nchodzimy\n[...]\n. Tak było w przypadku\n[...]\nmateriałów higienicznych –\n[...]\nJak wirtualna rzeczywistość pomogła rozwiązać to wyzwanie? Stworzyliśmy wirtualną linię produkcyjną, przy której szkolono pracowników z zakresu przezbrojenia. Dzięki takiej edukacji, udało się znacząco skrócić czas przezbrojenia. I znacząco ograniczyć generowane podczas niego straty. To z kolei przyniosło realne zyski dla firmy poprzez zwiększenie miesięcznego wolumenu produkcji.\n[...]\nJak można to osiągnąć dzięki wirtualnej rzeczywistości? Poprzez zawodowe i specjalistyczne szkolenia VR. Dla operatorów wielkich maszyn, jakimi są suwnice, stworzyliśmy zaawansowany, wiernie odwzorowujący zjawiska fizyczne symulator VR. Dzięki szkoleniu można było do woli ćwiczyć najbardziej nawet zaawansowane manewry na hali produkcyjnej. Możliwe było opracowanie dla pracowników obowiązkowego programu ćwiczeń. Bez kłopotu dało się przygotować scenariusza nieoczekiwanych czy niebezpiecznych zdarzeń, które jednak mogą się przydarzyć w codziennej pracy.\n[...]\nAle zastosowania\n[...]\n4.0 o\n[...]\nTo także szkolenia\n[...]\npodnoszące\n[...]\nj i skuteczniej wprowadzające w zakres obowiązków nowych pracowników. To też\n[...]\nzia VR, dzięki którym rośnie poziom konkurencyjności firmy i powiększa się dystans nad pozostałymi konkurentami\n[...]\nTakie właśnie są szkolenia VR dla Przemysłu 4.0, które przygotowaliśmy między innymi na zlecenie Jastrzębskiej Spółki Węglowej. Jak wiadomo, branża górnicza wymaga bardzo specyficznych umiejętności i perfekcyjnego zgrania między górnikami, aby wszystkie procesy czy czynności podejmowane pod ziemią przebiegły jak najsprawniej. W naszych szkoleniach VR można swobodnie dodawać nowe moduły, które stale rozbudowywałyby aplikację. Łatwo jest śledzić postępy górników. Jest to możliwe dzięki szczegółowej analizie wyników poszczególnych osób."
+        }
+      ]
+    },
+    {
+      "slug": "cyfrowe-blizniaki-budynki",
+      "topic": "Cyfrowe bliźniaki w utrzymaniu budynków",
+      "status": "pass",
+      "duration_seconds": 1.61,
+      "total_raw_results": 3,
+      "unique_sources": 12,
+      "duplicate_sources": 3,
+      "unique_domains": 12,
+      "polish_domains": 9,
+      "recent_sources": 10,
+      "query_results": [
+        {
+          "label": "overview",
+          "query": "cyfrowe bliźniaki utrzymanie budynków korzyści Polska",
+          "raw_result_count": 1,
+          "parsed_result_count": 5,
+          "error": null
+        },
+        {
+          "label": "stats",
+          "query": "cyfrowe bliźniaki facility management statystyki raport 2025 Polska",
+          "raw_result_count": 1,
+          "parsed_result_count": 5,
+          "error": null
+        },
+        {
+          "label": "case-study",
+          "query": "cyfrowe bliźniaki zarządzanie budynkami case study Polska",
+          "raw_result_count": 1,
+          "parsed_result_count": 5,
+          "error": null
+        }
+      ],
+      "failures": [],
+      "warnings": [],
+      "sources": [
+        {
+          "query_label": "overview",
+          "title": "Cyfrowy bliźniak w budownictwie | Korzyści i przykłady - Innowise",
+          "url": "https://innowise.com/pl/blog/digital-twin-in-construction/",
+          "normalized_url": "https://innowise.com/pl/blog/digital-twin-in-construction",
+          "domain": "innowise.com",
+          "published": "2025-04-25T05:23:51.000Z",
+          "author": null,
+          "highlights": "## Korzyści z cyfrowego bliźniaka w budownict\n[...]\nw postępy, wykorzystanie zasobów i potencjalne problemy. Monitorowanie w czasie rzeczyw\n[...]\nzgodnie z harmon\n[...]\nCyfrowe bliźniaki ułatwiają konserwację predykcyjną poprzez ciągłe monitorowanie stanu sprzętu budowlanego i infrastruktury. Analizując dane w czasie rzeczywistym, cyfrowy bliźniak może przewidzieć, kiedy sprzęt może wymagać konserwacji, pomagając zapobiegać awariom i minimalizować przestoje. Takie proaktywne podejście wydłuża żywotność maszyn, zmniejsza koszty konserwacji i zapewnia płynny postęp prac budowlanych.\n[...]\nCyfrowe bliźniaki ułatwiają konserwację predykcyjną poprzez ciągłe monitorowanie stanu sprzętu budowlanego i infrastruktury. Analizując dane w czasie rzeczywistym, cyfrowy bliźniak może przewidzieć, kiedy sprzęt może wymagać konserwacji, pomagając zapobiegać awariom i minimalizować przestoje. Takie proaktywne podejście wydłuża żywotność maszyn, zmniejsza koszty konserwacji i zapewnia płynny postęp prac budowlanych.\n[...]\nWykorzystanie cyfrowych bliźniaków w projektach budowlanych ułatwia firmom budowlanym zwiększenie wydajności. Dzięki płynnej integracji modeli cyfrowych i fizycznych, odpowiedniki te symulują autentyczne środowisko budowlane, co skutkuje znacznym skróceniem zarówno czasu, jak i kosztów związanych z inżynierią projektu.\n[...]\nego bliźniaka\n[...]\ncymi systemami stanowi poważne wyzwanie, wymagające znacz\n[...]\nwysiłku\n[...]\nod programistów, jak i użytkowników. Chociaż proces ten może być czasochłonny i kosztowny, jest niezbędny do pomyślnego wdrożenia. Co więcej, sprzyjające środowisko wspierające praktyki oparte na danych, takie jak analityka i uczenie maszynowe, ma kluczowe znaczenie dla czerpania pełnych korzyści z cyfrowych bliźniaków w budownictwie, takich jak zwiększona wydajność operacyjna, oszczędności kosztów i leps\n[...]\nmożliwości podejmowania decyzji."
+        },
+        {
+          "query_label": "overview",
+          "title": "Cyfrowy Bliźniak",
+          "url": "https://cyfrowyblizniak.eu/",
+          "normalized_url": "https://cyfrowyblizniak.eu/",
+          "domain": "cyfrowyblizniak.eu",
+          "published": "2026-02-17T00:00:00.000Z",
+          "author": "Exa",
+          "highlights": "# Cyfrowy Bliźniak\n[...]\nCyfrowy Bliźniak is a IT Services and IT Consulting company. Hafif Yük Taksi is a transportation company that provides small and large cargo transportation services.\n[...]\n- Industry: IT Services and IT Consulting\n- Type: Self-Employed\n- Homepage: cyfrowyblizniak.eu\n- Aliases: cyfrowy bliźniak\n- LinkedIn: linkedin.com/company/cyfrowyblizniak\n[...]\n- Monthly Visits: 463\n  - Traffic Growth: Monthly: +0.0%, Yearly: +3.3%\n- Bounce Rate: 0.5%\n- Pages per Visit: 2.6\n- Top Countries: Poland: 100%\n[...]\ntransportation, small, large, fast, cargo\n[...]\n- [2026-02-02] Ciężarówki i Logistyka: Nowe obowiązki, większe zestawy, te same drogi. Jak cyfrowy bliźniak (AI) transportu drogowego porządkuje koszty i efektywność?\n[...]\n.com: Cyfrowy bliźniak\n[...]\nawia na nowe technologie\n[...]\nonline.pl\n[...]\n- DIGITAL TW\n[...]\nReseller:"
+        },
+        {
+          "query_label": "overview",
+          "title": "Cyfrowe bliźniaki – przyszłość zarządzania budynkami i fabrykami",
+          "url": "https://cyberhub.pl/cyfrowe-blizniaki-przyszlosc-zarzadzania-budynkami-i-fabrykami",
+          "normalized_url": "https://cyberhub.pl/cyfrowe-blizniaki-przyszlosc-zarzadzania-budynkami-i-fabrykami",
+          "domain": "cyberhub.pl",
+          "published": "2025-10-07T00:43:15.000Z",
+          "author": "PixelDebugger",
+          "highlights": "‌świe\n[...]\nfabrykami\n[...]\n⁤ funkcjonowania\n[...]\nrosną\n[...]\nefektywności energetycznej i‍\n[...]\nkluczowym\n[...]\nziem w\n[...]\nierów, ‍któr\n[...]\npragną\n[...]\ntakże dostosować\n[...]\ndo ‍zmieniających się warunków rynkowych\n[...]\nW ⁢niniejszym\n[...]\nprzyjrzymy\n[...]\n, jakie korzyści niesie ze sobą wdrożenie cyfrowych bliźniaków ‍w zarządzaniu budynkami i zakład\n[...]\n‍towarzyszą\n[...]\n.Zobaczmy, jak⁤ przyszłość już teraz‍\n[...]\nze zarządzania\n[...]\nWprowadzając cyfrowe ‌bliźni\n[...]\n⁣ do zarządzania bud\n[...]\nosiągnąć szereg\n[...]\n- Optymalizacja kosztów: Analiza danych pozwala na identyfikację obszarów,⁢ gdzie można zaoszczędzić, na przykład poprzez redukcję ‍zużycia energii.\n[...]\n- Usprawnienie procesu konserwacji: Dzięki real-time monitoringowi, możliwe jest szybsze reagowanie na awarie i planowanie prac konserwacyjnych.\n[...]\n- Lepsze zarządzanie przestrzenią: ⁤Dzięki wizualizacjom​ 3D⁣ i analityce, zarządcy mogą efektywniej ‍planować wykorzystanie przestrzeni.\n[...]\n⁤cyfrowe bliźniaki zaczynają ​zdobywać popularność, zwłaszcza w ​sektorze przemysłowym i budow\n[...]\nW miarę⁣ jak technologia staje\n[...]\nna, widać\n[...]\ni jakości zarządzania\n[...]\nwprowadzenie cyfrowych bliźniaków‌ do ⁣zarządzania budynkami przynosi⁢ szereg istotnych korzyści, które‍ mogą znacząco usprawnić funkcjonowanie obiektów. Technologie te umożliwiają tworzenie wirtualnych odpowiedników budynków, co otwiera ⁣nowe⁢ możliwości w zakresie ⁤monitorowania i zarządzania zasobami.\n[...]\n- Usprawnienie ⁤procesów konserwacji: Monitorując⁣ stan ⁣techniczny budynków w sposób ciągły, cyfrowe bliźniaki mogą pomóc w przewidywaniu potrzeb​ konserwacyjnych.Dzięki temu możliwe jest zlecanie napraw⁤ zanim wystąpią poważniejsze usterki,‌ co‍ zmniejsza⁤ koszty i przestoje."
+        },
+        {
+          "query_label": "overview",
+          "title": "Cyfrowe bliźniaki – monitoring budynku w czasie rzeczywistym - Blog Budowlano-Remontowy!",
+          "url": "https://www.promesa-farby.pl/cyfrowe-blizniaki-monitoring-budynku-w-czasie-rzeczywistym",
+          "normalized_url": "https://www.promesa-farby.pl/cyfrowe-blizniaki-monitoring-budynku-w-czasie-rzeczywistym",
+          "domain": "promesa-farby.pl",
+          "published": "2025-12-30T07:38:14.000Z",
+          "author": "DomNaNowo",
+          "highlights": "w monitorowaniu bud\n[...]\nym.Te cy\n[...]\nułatwiają zarządzanie infrastrukturą,\n[...]\ntakże pozwalają na zbieranie cennych danych i ich analizę, co w efekcie prowadzi do zwięks\n[...]\nefektywności i bezpieczeństwa budynków. W artykule przyjrzymy się, jak działa ta innowacyjna technologia, jakie korzyści niesie dla zarządców nieruchomości\n[...]\njakie wyzwania stawia przed branżą budow\n[...]\ną oraz inżynieryjną\n[...]\nzapraszamy do odkry\n[...]\nich roli w\n[...]\nCyfrowe bliźniaki stają się kluczowym narzędziem w zarządzaniu budynkami, pozwalając na efektywne i zautomatyzowane monitorowanie ich stanu w czasie rzeczywistym. Dzięki zaawansowanej technologii, właściciele budynków oraz zarządcy mają dostęp do danych, które umożliwiają lepsze podejmowanie decyzji dotyczących utrzymania i optymalizacji zasobów.\n[...]\n- Wczesne wykrywanie usterek: Dzięki ciągłemu monitorowaniu, systemy mogą identyfikować nieprawidłowości w działaniu urządzeń, co pozwala na szybsze interwencje.\n[...]\n- Optymalizacja kosztów: Zbieranie danych związanych z zużyciem energii i materiałów pozwala na identyfikację obszarów, w których można wprowadzić oszczędności.\n[...]\n- Lepsze planowanie działań serwisowych: Informacje na temat cyklu życia urządzeń umożliwiają elastyczne i skuteczne planowanie konserwacji.\n[...]\nW miarę jak Polska staje się coraz bardziej zaawansowana technologicznie, cyfrowe bliźniaki dostają nowy wymiar, zwłaszcza w obszarze zarządzania budynkami. Oparte na rzeczywistości rozszerzonej i analizach danych w czasie rzeczywistym, cyfrowe modele pozwalają na precyzyjne monitorowanie i optymalizację procesów budowlanych oraz operacyjnych. Dzięki nim, inwestorzy oraz zarządcy budynków mogą zyskać nową perspektywę, która nie tylko wpłynie na bezpieczeństwo, ale również na efektywność energetyczną obiektów.\n[...]\nWsparcie dla efek\n[...]\n: Cyf\n[...]\nbliźniaki mogą analizować zuży"
+        },
+        {
+          "query_label": "overview",
+          "title": "Cyfrowe bliźniaki miast - jak je wykorzystywać?",
+          "url": "https://pfr.pl/artykul/cyfrowe-blizniaki-miast-jak-je-wykorzystywac",
+          "normalized_url": "https://pfr.pl/artykul/cyfrowe-blizniaki-miast-jak-je-wykorzystywac",
+          "domain": "pfr.pl",
+          "published": "2024-04-30T00:00:00.000Z",
+          "author": null,
+          "highlights": "Dzięki digital twin miasta\n[...]\nśledzić i analizować różnor\n[...]\ndane dotyczące środowiska,\n[...]\nemisja zanieczyszczeń\n[...]\nczy jakość wody.\n[...]\npozwala na podejm\n[...]\nna celu ochronę środowiska natural\n[...]\ni poprawę jakości życia mieszkańców.\n[...]\nKolejną, po opisanej w poprzednim akapicie warstwie terenu, jest warstwa informacji o budynkach (ang. Building Information Modelling, BIM) i to ona stanowi szkielet gdańskiego bliźniaka. W porównaniu do przywołanych przykładów zagranicznych, polski bliźniak jest skromny zarówno pod względem zasięgu terytorialnego i objętości jak również różnorodności wykorzystywanych danych. Co charakterystyczne dla nowych technologii, ich absorbcja często następuje poprzez pilotaże, w tym przypadku firma PRE FASADA zaprosiła miasto do udziału w europejskim projekcie badawczym ASHVIN, finansowanego w ramach „Horyzont 2020” [6]. Model digital twin został wykonany dla pojedynczego budynku, będącego w zasobie komunalnym miasta. Model BIM pozwolił na dokonanie precyzyjnej inwentaryzacji materiałów z jakich wykonany jest budynek. Pozyskane informacje zostaną wykorzystane jako diagnostyka przed rozpoczęciem procesu termomodernizacji. Na koniec w obiekcie zamontowano czujniki jakości powietrza, które pozwolą ocenić skuteczność przeprowadzonych działań.\n[...]\nZ kolei miasto Wrocław pracuje w tej chwili nad cyfrowym bliźniakiem, który wspierałby funkcjonowanie dystryktów dodatnych energetycznie (ang. positive energy districts). Cyfrowy bliźniak miasta, czyli projekt DigiTwins4PEDs, pełnić będzie szereg istotnych funkcji, które mają zasadniczy wpływ na transformację energetyczną. Jedną z kluczowych zadań projektu będzie symulacja zużycia energii przez różne typy budynków, grupy budynków, instytucje oraz fabryki. Dzięki tej symulacji możliwe będzie zidentyfikowanie obszarów, gdzie zużycie energii jest szczególnie wysokie i wymaga optymalizacji."
+        },
+        {
+          "query_label": "stats",
+          "title": "Cyfrowe bliźniaki: aktualne dane i prognozy branżowe - Przemysł 4.0",
+          "url": "https://przemysl-40.pl/index.php/2025/03/02/cyfrowe-blizniaki-aktualne-dane-i-prognozy-branzowe/",
+          "normalized_url": "https://przemysl-40.pl/index.php/2025/03/02/cyfrowe-blizniaki-aktualne-dane-i-prognozy-branzowe",
+          "domain": "przemysl-40.pl",
+          "published": "2025-03-02T19:17:22.000Z",
+          "author": "Redaktor Portalu",
+          "highlights": "## Cyfrowe bliźniaki (Digital Twins) pozwalają poprawiać efektywność operacyjną, przyspieszać podejmowanie decyzji i redukować koszty. Stanowią one ważne narzędzia w obszarze projektowania i testowania produktów, pozwalają też na lepsze monitorowanie pracy maszyn oraz systemów. Dzisiaj dodatkowo technologie z nimi związane rozwijają się się o obszary związane z IoT, chmurą obliczeniową i algorytmami AI. Jaki jest rynek cyfrowych bliźniaków w 2025 roku i jakie prognozy jego rozwoju? Gdzie Digital Twins stosowane są najczęściej? O tym w artykule.\n[...]\n### Statystyki globalne\n[...]\nWedług Fortune Business Insights globalny rynek cyfrowych bliźniaków wzrośnie z 16,55 miliarda euro w 2024 roku do 242,11 miliarda euro w 2032 roku, przy średniorocznym tempie wzrostu (CAGR) na poziomie 40%. Z kolei zdaniem autorów raportu opublikowanego przez Hexagon w zeszłym roku globalny rynek cyfrowych bliźniaków osiągnął wartość 30 miliardów dolarów, z prognozowanym rocznym tempem wzrostu (CAGR) na poziomie 30% do 2025 roku.\n[...]\nDane te wskazują na rosnące znaczenie tej technologii w różnych sektorach gospodarki.​ Z kolei Capgemini szacuje, że wdrożenie cyfrowych bliźniaków wzrośnie o 36% w ciągu pięciu lat, a 70% liderów technologicznych w dużych firmach już aktywnie inwestuje w tę technologię. Warto dodać, że 42% menadżerów w różnych sektorach przemysłu widzi korzyści ze stosowania cyfrowych bliźniaków, a 59% planuje zintegrować je w organizacjach i ich działalności do 2028 roku (dane za ResearchAndMarkets)\n[...]\naje cyfrowe bliźniaki za niezbędny\n[...]\noperacji.\n- Firmy stosujące tę technologię zmniejszyły liczbę nieoczekiwanych przestojów o 20%, oszczędzając około 3,03 mln euro miesięcznie na jednym odwiertach;\n- Wartość rynku cyfrowych bliźniaków w tej branży wzrośnie z 102,33 miliona euro w 2023 roku do 851,58 miliona euro w 2032 roku (CAGR 26,54%);"
+        },
+        {
+          "query_label": "stats",
+          "title": "Poland Facility Management Market Growth Report 2031",
+          "url": "https://www.mordorintelligence.com/industry-reports/poland-facility-management-market",
+          "normalized_url": "https://www.mordorintelligence.com/industry-reports/poland-facility-management-market",
+          "domain": "mordorintelligence.com",
+          "published": "2022-06-02T22:05:00.000Z",
+          "author": null,
+          "highlights": "| Study Period | 2020 - 2031 |\n| --- | --- |\n| Forecast Data Period | 2026 - 2031 |\n| Base Year Market Size (2025) | USD 8.59 Billion |\n| Market Size (2026) | USD 8.87 Billion |\n| Market Size (2031) | USD 10.44 Billion |\n| Growth Rate (2026 - 2031) | 3.31% CAGR |\n| Market Concentration | Medium |\n[...]\nPoland facility management market size in 2026 is estimated at USD 8.87 billion, growing from 2025 value of USD 8.59 billion with 2031 projections showing USD 10.44 billion, growing at 3.31% CAGR over 2026-2031. This expansion has been anchored by a PLN 700 billion national investment pipeline, a decisive corporate pivot toward outsourcing, and persistent infrastructure modernization. Outsourced services commanded 63.7% of the Poland facility management market in 2024, indicating a structurally entrenched client preference for professional operators that can navigate tightening labor and safety rules. Hard services led with a 56.9% revenue share, yet soft services expanded more vigorously at 4.9% CAGR, aided by hybrid-office adoption and workplace-experience upgrades. Commercial real-estate demand, particularly Grade-A offices in Warsaw, Kraków, and Wrocław, bolstered service volume, while the institutional and public-infrastructure segment emerged as the fastest-growing end user on the back of EU-funded energy retrofit programs. Provider margins, however, continued to compress as wage inflation outpaced contract indexation, prompting accelerated technology investment in IoT-enabled monitoring and digital-twin solutions.\n[...]\n- By service type, hard services held 56.18% of the Poland facility management market share in 2025, whereas soft services are projected to grow at a 4.72% CAGR through 2031\n[...]\n- By offering type, outsourced models accounted for 63.02% of the Poland facility management market size in 202\n[...]\nand are forecast to expand at a 4.32% CAGR to 2031\n[...]\nwith 3"
+        },
+        {
+          "query_label": "stats",
+          "title": "Cyfrowy bliźniak — digital twin w polskim przemyśle - stylenews.pl",
+          "url": "https://stylenews.pl/cyfrowy-blizniak-digital-twin-w-polskim-przemysle/",
+          "normalized_url": "https://stylenews.pl/cyfrowy-blizniak-digital-twin-w-polskim-przemysle",
+          "domain": "stylenews.pl",
+          "published": "2026-04-25T08:09:23.000Z",
+          "author": "Redakcja stylenews.pl",
+          "highlights": "ycja w digital twin zwraca się najszybciej i najbardziej mierzalnie. Zakłady, które wdrożyły pełną symulację linii przed jej fizyczną przebudową, skracają czas rozruchu nowej konfiguracji średnio o 35-45% w porównaniu do podejść opartych wyłącznie na doświadczeniu inżynierów.\n[...]\nProblem był konkretny: awaryjna wymiana elementów hydraulicznych generowała przestoje o łącznym czasie 380 godzin rocznie. Każda godzina przestoju, biorąc pod uwagę kontrakty z odbiorcami i kary umowne, kosztowała zakład około 18 000 zł. Roczny koszt nieplanowanych przestojów wynosił zatem blisko 6,8 miliona złotych.\n[...]\n- Bariery i realia wdrożeń digital twin w Polsce na rok 2024\n- Czas nieplanowanych przestojów spadł z 380 do 41 godzin rocznie — redukcja o 89%\n[...]\n- Koszty części zamiennych obniżyły się o 23% dzięki eliminacji wymian prewencyjnych „na wszelki wypadek”\n[...]\n- Zużycie oleju hydraulicznego zmniejszyło się o 17% wskutek optymalizacji ciśnień roboczych\n[...]\n- Czas reakcji służb utrzymania ruchu skrócił się z 4,2 godziny do 38 minut dzięki precyzyjnej lokalizacji usterki przez model\n[...]\nŁączna oszczędność w pierwszym pełnym roku operacyjnym przekroczyła 5,4 miliona złotych. Inwestycja w infrastrukturę czujnikową, platformę IoT i budowę modelu zamknęła się w kwocie 1,2 miliona złotych. Zwrot z inwestycji nastąpił w ciągu 81 dni od pełnego uruchomienia systemu.\n[...]\nRealistyczna perspektywa na kolejne trzy lata wskazuje, że cyfrowy bliźniak przestanie być przewagą konkurencyjną, a stanie się wymaganiem rynkowym — przynajmniej w automotive, elektronice i przemyśle spożywczym. Zakłady, które zaczną wdrożenia dziś, będą miały 18-24 miesiące przewagi operacyjnej nad tymi, które poczekają na „dojrzałość rynku”. Historia wdrożeń ERP z lat 2000. i MES z lat 2010. pokazuje, że kto wchodził jako early adopter z dobrym integratorem, rzadko tego żałował."
+        },
+        {
+          "query_label": "stats",
+          "title": "Cyfrowy Bliźniak (Digital Twin) w praktyce – przegląd platform i ...",
+          "url": "https://nowoczesny-przemysl.pl/cyfrowy-blizniak-digital-twin-w-praktyce/",
+          "normalized_url": "https://nowoczesny-przemysl.pl/cyfrowy-blizniak-digital-twin-w-praktyce",
+          "domain": "nowoczesny-przemysl.pl",
+          "published": "2025-01-24T18:28:54.000Z",
+          "author": "Nowoczesny Przemysł",
+          "highlights": "#### Cyfrowy\n[...]\n. Digital Twin) to jedno z najważniejszych rozwiąza\n[...]\nPrzemysłu 4\n[...]\nW tym artykule prezentujemy przekrojowy raport na temat rozwiązań i platform oferujących technologię Digital Twin w Polsce i na świecie. Dowiesz się, jakie kryteria brać pod uwagę przy wyborze konkretnego oprogramowania, jakie korzyści może przynieść cyfrowy bliźniak w różnych branżach (np. przemysł, logistyka, energetyka), a także jakie wyzwania należy uwzględnić podczas wdrożenia tego innowacyjnego podejścia do zarządzania danymi.\n[...]\nza tabela przedstawia zestawienie\n[...]\noferowanych przez\n[...]\n. Zawiera\n[...]\nWybór\n[...]\nCyfrowy bliźniak stanowi fundament transformacji cyfrowej przedsiębiorstw – niezależnie od ich wielkości czy sektora działalności. Dostępne na rynku rozwiązania, takie jak platformy Siemens (NX, MindSphere), Dassault Systèmes (3DEXPERIENCE), PTC (ThingWorx, Vuforia), a także usługi chmurowe od Microsoftu (Azure Digital Twins), AWS (IoT TwinMaker), Ansys czy Bentley Systems, oferują rozmaite funkcjonalności dostosowane do specyficznych potrzeb branżowych.\n[...]\nsystemu do w\n[...]\nowe pozostaje też\n[...]\nprocesowej i kompetency\n[...]\nKierunki rozwoju rynku cyfrowych bliźniaków wskazują, że w najbliższych latach możemy spodziewać się dalszego wzrostu popularności tych rozwiązań, łączenia ich z zaawansowaną analizą danych (AI, machine learning), a także coraz śmielszej ekspansji w obszarze zarządzania infrastrukturą miejską, logistyki i branży energetycznej. Dla wielu firm wdrożenie cyfrowego bliźniaka może być kluczem do budowania konkurencyjnej przewagi, opartej na przejrzystych danych, efektywnym zarządzaniu zasobami i szybkiej reakcji na zmiany w otoczeniu biznesowym.\n[...]\n- Nowoczesny Przemysł nr 5#2025\n- Newsletter\n[...]\nObserwuj nas\n[...]\nserwuj\n[...]\n- Obser"
+        },
+        {
+          "query_label": "case-study",
+          "title": "Cyfrowy bliźniak dla zarządzania kryzysowego – case study",
+          "url": "https://www.arcanagis.pl/cyfrowy-blizniak-dla-zarzadzania-kryzysowego-case-study/",
+          "normalized_url": "https://www.arcanagis.pl/cyfrowy-blizniak-dla-zarzadzania-kryzysowego-case-study",
+          "domain": "arcanagis.pl",
+          "published": "2025-01-10T10:00:59.000Z",
+          "author": "Opracowanie Esri Polska Sp. z o.o. na podstawie materiałów Esri Inc.",
+          "highlights": "są specjalist\n[...]\nTakie rozwiąz\n[...]\nte są ści\n[...]\nordynowane\n[...]\nGeobasis\n[...]\nzarządzanie i ud\n[...]\nNadrenii Pół\n[...]\nWestfalii\n[...]\nGeobasis NRW dostarcza szeroką gamę aktualnych i historycznych map, ortofotomap, DTM (Cyfrowy Model Terenu – Digital Terrain Model) i DSM (Cyfrowy Model Powierzchni – Digital Surface Model), a teraz także model mesh. Wspólnie z firmą Con Terra, liderem w integracji technologii geoprzestrzennych i platynowym partnerem Esri, tworzona jest fotorealistyczna warstwa meshu dla całego landu Nadrenia Północna-Westfalia. Powstaje ona z zestawu zdefiniowanych podobszarów landu, które są następnie łączone w jedną usługę. Warstwa meshu stanowi element budulcowy cyfrowych bliźniaków dla różnych aplikacji. W ciągu najbliższych kilku lat warstwa meshu będzie stale aktualizowana.\n[...]\nczywiście dane\n[...]\n. Agencje rząd\n[...]\nutrzymują wszelkiego\n[...]\ndane i warst\n[...]\nniezbędne dla\n[...]\nrukturą. Na przykład\n[...]\n, budynki czy informacje o drzewach są dostępne jako warstwy 2D i muszą być połączone z\n[...]\nymi warstwami 3D. Często dane\n[...]\nD muszą być\n[...]\nowane w określonym\n[...]\nędnych; na przykład w\n[...]\nużywanie układu\n[...]\nProjekt cyfrowego bliźniaka dla Nadrenii Północnej-Westfalii pokazuje, jak istotne jest wykorzystanie nowoczesnych narzędzi GIS i standardów geoprzestrzennych w zarządzaniu danymi przestrzennymi na dużą skalę. Współpraca między agencjami rządowymi, takimi jak Geobasis NRW i IT.NRW, oraz partnerami technologicznymi, takimi jak Con Terra, pozwoliła stworzyć solidne podstawy dla przyszłych zastosowań cyfrowych bliźniaków. Dzięki tym działaniom Nadrenia Północna-Westfalia staje się liderem w wykorzystaniu technologii 3D GIS do zarządzania przestrzenią i reagowania kryzysowego. Ten przykład może być inspiracją dla innych regionów i krajów, które chcą wdrażać podobne rozwiązania."
+        },
+        {
+          "query_label": "case-study",
+          "title": "Cyfrowy bliźniak budynku: integracja IoT i analizy predykcyjnej w zarządzaniu eksploatacją obiektów – JARPAL",
+          "url": "https://jarpal.pl/cyfrowy-blizniak-budynku-integracja-iot-i-analizy-predykcyjnej-w-zarzadzaniu-eksploatacja-obiektow/",
+          "normalized_url": "https://jarpal.pl/cyfrowy-blizniak-budynku-integracja-iot-i-analizy-predykcyjnej-w-zarzadzaniu-eksploatacja-obiektow",
+          "domain": "jarpal.pl",
+          "published": null,
+          "author": null,
+          "highlights": "Cyfrowy bliźniak budynku: integracja IoT i analizy predykcyjnej w zarządzaniu eksploatacją obiektów – JARPAL\n[...]\nCyfrowy bliźniak (Digital Twin) to wirtualna kopia rzeczywistego obiektu, w której gromadzone są dane w czasie rzeczywistym, pozwalające na monitorowanie, symulację i optymalizację jego funkcjonowania. W kontekście budownictwa oznacza to integrację rozproszonych czujników IoT, sieci transmisji danych oraz chmury obliczeniowej, tworząc spójną platformę do efektywnego zarządzania eksploatacją. Rozwój technologii Big Data, sztucznej inteligencji oraz szybkich łączy (5G, LoRaWAN) sprawił, że cyfrowy bliźniak staje się kluczowym narzędziem podnoszącym energooszczędność i niezawodność obiektów.\n[...]\ndanych historycznych i bieżących stos\n[...]\norytmy uczenia maszynowego do wykrywania anomalii oraz prognozowania awarii:\n[...]\ndni roboc\n[...]\nBiurowiec AECOM w DubajuDzięki pełnej integracji czujników oraz platformy Digital Twin udało się ograniczyć zużycie energii o 18 % i skrócić czas reakcji serwisu o 30 %.\n[...]\nZabytek: Pałac w WilanowieMonitoring drgań i naprężeń w oparciu o cyfrowego bliźniaka pozwala wykrywać mikropęknięcia jeszcze przed ich rozwinięciem, co znacząco przedłuża żywotność oryginalnych elementów konstrukcyjnych.\n[...]\nRedukcja kosztów eksploatacji i emisji CO₂ dzięki optymalnej pracy instalacji.\n[...]\nWydłużenie cyklu życia elementów budynku poprzez predykcyjną konserwację.\n[...]\nCyfrowy bliźniak budynku to przełomowe narzędzie, które łączy realny obiekt z zaawansowanymi modelami symulacyjnymi i analizą predykcyjną. Umożliwia nie tylko znaczne oszczędności energetyczne i operacyjne, ale także podnosi jakość zarządzania majątkiem oraz bezpieczeństwo konstrukcji. Aby w pełni wykorzystać jego potencjał, niezbędna jest dalsza praca nad standardami interoperacyjności, zabezpieczeniami cyber-fizycznymi oraz integracją z technologiami AR i robotyką."
+        },
+        {
+          "query_label": "case-study",
+          "title": "CYFROWY BLIŹNIAK W BUDOWNICTWIE PRZEMYSŁOWYM – OD PROJEKTU PO EKSPLOATACJĘ - BUILDER POLSKA",
+          "url": "https://builderpolska.pl/2025/11/25/cyfrowy-blizniak-w-budownictwie-przemyslowym-od-projektu-po-eksploatacje/",
+          "normalized_url": "https://builderpolska.pl/2025/11/25/cyfrowy-blizniak-w-budownictwie-przemyslowym-od-projektu-po-eksploatacje",
+          "domain": "builderpolska.pl",
+          "published": "2025-11-25T11:17:38.000Z",
+          "author": "Piotr Q",
+          "highlights": "CYFROWY BLIŹNIAK W BUDOWNICTWIE PRZEMYSŁOWYM – OD PROJEKTU PO EKSPLOATACJĘ - BUILDER POLSKA\n[...]\nCyfryzacja zmienia sposób, w jaki projektujemy i realizujemy obiekty przemysłowe. Hale produkcyjne, magazyny i zakłady przestają być jedynie budynkami, stają się natomiast częścią inteligentnych ekosystemów, w których dane, modele 3D i symulacje pozwalają optymalizować każdy etap inwestycji. Kluczową rolę odgrywa koncepcja cyfrowego bliźniaka, czyli wirtualnego odwzorowania obiektu, które towarzyszy mu od koncepcji aż po eksploatację.\n[...]\nTakie połączenie modelowania, koordynacji i zarządzania danymi w jednym ekosystemie znacząco ogranicza błędy projektowe, skraca czas uzgodnień i pozwala szybciej reagować na zmiany w trakcie realizacji. W efekcie cyfrowe planowanie staje się fundamentem nie tylko lepszej organizacji pracy projektowej, ale też efektywnej komunikacji i przewidywalności całego procesu inwestycyjnego.\n[...]\nZarządzanie danymi i eksploatacjąCyfrowy bliźniak łączy dane z całego cyklu życia obiektu. Systemy klasy PDM (takie jak np. Autodesk Vault) umożliwiają centralne zarządzanie dokumentacją projektową, wersjami i procesami akceptacji, natomiast aplikacje chmurowe zapewniają współdzielony dostęp do modeli i raportów w czasie rzeczywistym.\n[...]\nPo zakończeniu inwestycji rolę centralnego repozytorium przejmuje narzędzie Autodesk Tandem, które przenosi dane projektowe do świata eksploatacji. Tandem umożliwia integrację z rozwiązaniami wykorzystującymi sztuczną inteligencję – analizując dane z czujników i systemów BMS, może prognozować usterki, planować działania serwisowe i automatyzować harmonogramy przeglądów. W ten sposób cyfrowy bliźniak staje się aktywnym narzędziem zarządzania obiektem, wspierając nie tylko projektantów, ale również działy utrzymania ruchu.\n[...]\nbudowy do świata\n[...]\nysłowe stają się bardziej przew\n[...]\nzwaniaPrzem\n[...]\n4.0 i 5.0."
+        }
+      ]
+    }
+  ]
+}

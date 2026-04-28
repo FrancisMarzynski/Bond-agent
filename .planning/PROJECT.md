@@ -13,6 +13,7 @@ Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksym
 ### Validated
 
 - [x] **v1 signed off — 2026-04-28.** Author i Shadow przeszły end-to-end walidację po domknięciu detached runtime, recovery sesji oraz responsive remediation.
+- [x] **Post-v1 Exa baseline — 2026-04-28.** Formalna live walidacja Exa dla 4 kuratorowanych polskich case'ów researchowych zakończona powodzeniem; artefakty: `.planning/artifacts/exa-polish-20260428-142434/summary.{md,json}`.
 - [x] **Corpus onboarding**: text, file, Google Drive i blog URL działają; corpus pokazuje status i low-corpus warning.
 - [x] **Author mode**: topic → research → checkpoint 1 → draft → checkpoint 2 → save metadata działa w UI z pełnym HITL.
 - [x] **Shadow mode**: użytkownik widzi anotacje i wersję poprawioną oraz może approve/reject z pętlą regeneracji.
@@ -21,8 +22,6 @@ Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksym
 
 ### Active
 
-- [ ] **Post-v1 quality**: ograniczyć obcinanie `research_report` przed `structure_node` i `writer_node`, żeby poprawić jakość outline'u i final draftu.
-- [ ] **Post-v1 validation**: wykonać formalną live walidację Exa dla polskich zapytań researchowych.
 - [ ] **Post-v1 calibration**: skalibrować progi `low_corpus_threshold` i duplicate similarity na realnych danych.
 - [ ] **V2 — Repurposing**: blog → Facebook / LinkedIn / Instagram / X.
 - [ ] **V2 — YouTube → Artykuł**: generowanie artykułu lub streszczenia z napisów.
@@ -48,7 +47,7 @@ Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksym
 
 - **Tech Stack**: LangGraph (Python 3.11+), Pydantic, architektura modułowa (nodes)
 - **LLM**: Kaskadowe — modele "Mini" do research/analizy, modele "Frontier" do final draft; konfiguracja przez zmienne środowiskowe
-- **Web Search**: Exa MCP jako kandydat (darmowy, wymaga walidacji jakości vs Tavily) — warstwa abstrakcji wymienna bez zmian w kodzie
+- **Web Search**: Exa MCP zwalidowany baseline'owo dla polskich zapytań researchowych; warstwa abstrakcji pozostaje wymienna bez zmian w kodzie
 - **Czas odpowiedzi**: pełny cykl Research + Write < 5 minut; progress indicator przy przekroczeniu
 - **Frontend**: Custom React/Next.js (dedykowany czat w przeglądarce)
 - **Bezpieczeństwo**: wyłącznie wskazane źródła (Google Drive) + publiczny internet; brak treningu modeli na danych użytkownika
@@ -63,8 +62,8 @@ Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksym
 | SEO przez prompt-engineering (nie API) | Brak zewnętrznych zależności w MVP; znana luka (brak danych o wolumenie fraz) | ✓ Implemented in v1 |
 | Brak autopostu w MVP | Human-in-the-loop jako zasada; ryzyko niesprawdzonej treści | ✓ Maintained in v1 |
 | Custom React/Next.js frontend | Pełna kontrola UX; możliwość precyzyjnego odwzorowania wymagań PRD | ✓ Validated in v1 |
-| Exa MCP dla web search (kandydat) | Darmowy; wymaga walidacji jakości vs Tavily przed decyzją finalną | — Pending |
+| Exa MCP dla web search | Darmowy; baseline live dla polskich zapytań zamknięty 2026-04-28, ewentualne porównanie vs Tavily pozostaje opcjonalne | ✓ Baseline validated |
 | Kaskadowy dobór modelu LLM | Mini dla research (koszt), Frontier dla draft (jakość); konfiguracja przez env vars | ✓ Good |
 
 ---
-*Last updated: 2026-04-28 after v1 sign-off sync*
+*Last updated: 2026-04-28 after Exa baseline validation and docs sync*

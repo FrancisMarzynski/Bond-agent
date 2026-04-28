@@ -163,10 +163,10 @@ Two separate SQLite files for checkpoints vs metadata to avoid schema conflicts.
 
 ## Environment Variables
 
-Copy `.env.example` to `.env`. Required keys:
+Copy `.env.example` to `.env`. Required configuration:
 - `OPENAI_API_KEY` — gpt-4o-mini (research) + gpt-4o (draft/structure)
-- `EXA_API_KEY` — web search via Exa MCP
 - `GOOGLE_CREDENTIALS_PATH` / `GOOGLE_AUTH_METHOD` — for Google Drive corpus source
+- No separate `EXA_API_KEY` is read by the app; researcher connects directly to `https://mcp.exa.ai/mcp`
 
 Model selection: `RESEARCH_MODEL=gpt-4o-mini`, `DRAFT_MODEL=gpt-4o` (overrides config defaults).
 
