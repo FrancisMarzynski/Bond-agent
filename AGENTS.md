@@ -180,12 +180,38 @@ uv run pytest -k test_metadata         # filter by name
 
 Tests use `pytest-asyncio` with `asyncio_mode = "auto"`. Fixtures in `tests/conftest.py`.
 
+## Planning Docs Discipline
+
+Use the root `.planning/` files as the live source of truth and keep them in sync with the repo state:
+
+- `.planning/STATE.md` — current status, last activity, blockers, next task
+- `.planning/REQUIREMENTS.md` — requirement completion status and sign-off coverage
+- `.planning/ROADMAP.md` — phase / milestone status
+- `.planning/PROJECT.md` — high-level validated scope and active post-v1 work
+
+Historical snapshots are **not** source-of-truth status files:
+
+- `.planning/E2E_REPORT_*.md`
+- `.planning/IMPROVEMENTS.md`
+- `.planning/phases/**`
+- `.planning/research/**`
+
+Rules:
+
+1. If a code change, test run, or manual validation closes a blocker or changes project status, update the relevant root `.planning/` files in the **same patch/commit**.
+2. Before writing a new "Current State" summary in `AGENTS.md` / `CLAUDE.md`, cross-check it against `.planning/STATE.md`, `.planning/REQUIREMENTS.md`, and the actual repo/test state.
+3. Do not treat historical reports as current status if they conflict with root planning docs; either add an explicit note that they are snapshots or update the root docs first.
+4. `AGENTS.md` and `CLAUDE.md` are mirrored operator instructions. If one changes, update the other in the same edit unless there is a deliberate reason not to.
+5. When a previous "next task" is already done in code, remove or rewrite it immediately instead of leaving it as a stale TODO.
+
 ## Current State
 
-Phase 4 (Shadow Mode) is ~90% complete. **One gap remains** (SHAD-05/06):
+v1 is signed off as of **2026-04-28**.
 
-`HitlPauseSchema` in `chatStore.ts` is missing `annotations`, `shadow_corrected_text`, `iteration_count` fields → Zod strips them → `shadowStore` is never populated when `shadow_checkpoint` fires. Additionally, `ShadowPanel` has no approve/reject buttons for the shadow checkpoint case.
+Current repo status:
 
-Fix: extend `HitlPauseSchema`, wire `setAnnotations`/`setShadowCorrectedText` in the `hitl_pause` handler in `useStream.ts`, add approve/reject UI to `ShadowPanel`.
+- Phase 4 (Shadow Mode) is complete, including frontend HITL wiring and responsive layout validation.
+- REC-01/02/03 are complete: detached runtime, committed-disconnect recovery, and Shadow checkpoint hydration were validated end-to-end.
+- `/api/corpus/ingest/url` already has SSRF protection for non-public hosts; do not reopen this as a pending task unless code/tests show a real gap.
 
-See `.planning/STATE.md` for full details.
+Current post-v1 focus is maintained in `.planning/STATE.md`. Before starting new work, read that file rather than relying on historical notes in reports or phase summaries.
