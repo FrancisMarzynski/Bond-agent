@@ -8,6 +8,7 @@ from trafilatura.sitemaps import sitemap_search
 
 from bond.config import settings
 from bond.corpus.ingestor import CorpusIngestor
+from bond.security import UnsafeUrlError, validate_public_url
 
 log = logging.getLogger(__name__)
 
@@ -20,40 +21,59 @@ def scrape_blog(url: str) -> list[dict]:
     """
     articles = []
 
+    validated_url = validate_public_url(
+        url,
+        allow_private=settings.allow_private_url_ingest,
+    )
+
     # Discover post URLs via sitemap; fallback to single URL
-    urls = sitemap_search(url) or [url]
+    urls = sitemap_search(validated_url) or [validated_url]
     max_posts = settings.max_blog_posts
 
     if len(urls) > max_posts:
-        log.warning("Found %d posts at %s; limiting to %d (MAX_BLOG_POSTS)", len(urls), url, max_posts)
+        log.warning(
+            "Found %d posts at %s; limiting to %d (MAX_BLOG_POSTS)",
+            len(urls),
+            validated_url,
+            max_posts,
+        )
         urls = list(urls)[:max_posts]
 
-    log.info("Scraping %d posts from %s", len(urls), url)
+    log.info("Scraping %d posts from %s", len(urls), validated_url)
 
     for post_url in urls:
         try:
-            downloaded = trafilatura.fetch_url(post_url)
+            safe_post_url = validate_public_url(
+                post_url,
+                allow_private=settings.allow_private_url_ingest,
+            )
+        except UnsafeUrlError as e:
+            log.warning("%s rejected as unsafe URL (%s) — skipping", post_url, e)
+            continue
+
+        try:
+            downloaded = trafilatura.fetch_url(safe_post_url)
             if downloaded is None:
-                log.warning("Could not fetch %s — skipping", post_url)
+                log.warning("Could not fetch %s — skipping", safe_post_url)
                 continue
             raw = trafilatura.extract(downloaded, output_format="json")
             if raw is None:
-                log.warning("No article content found at %s — skipping", post_url)
+                log.warning("No article content found at %s — skipping", safe_post_url)
                 continue
             data = json.loads(raw)
             text = data.get("text", "")
             if not text.strip():
-                log.warning("Empty text extracted from %s — skipping", post_url)
+                log.warning("Empty text extracted from %s — skipping", safe_post_url)
                 continue
             articles.append(
                 {
-                    "url": post_url,
-                    "title": data.get("title") or post_url,
+                    "url": safe_post_url,
+                    "title": data.get("title") or safe_post_url,
                     "text": text,
                 }
             )
         except Exception as e:
-            log.warning("%s failed (%s: %s) — skipping", post_url, type(e).__name__, e)
+            log.warning("%s failed (%s: %s) — skipping", safe_post_url, type(e).__name__, e)
 
     return articles
 

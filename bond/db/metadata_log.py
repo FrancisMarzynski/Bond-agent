@@ -48,7 +48,10 @@ async def save_article_metadata(
     """Wstawia rekord metadanych artykułu. Zwraca id nowego wiersza."""
     os.makedirs(os.path.dirname(os.path.abspath(settings.metadata_db_path)), exist_ok=True)
     now = datetime.now(timezone.utc).isoformat()
-    async with aiosqlite.connect(settings.metadata_db_path) as conn:
+    async with aiosqlite.connect(
+        settings.metadata_db_path,
+        check_same_thread=False,
+    ) as conn:
         await _ensure_schema(conn)
         cursor = await conn.execute(
             "INSERT INTO metadata_log "
@@ -62,10 +65,25 @@ async def save_article_metadata(
         return cursor.lastrowid
 
 
+async def delete_article_metadata(row_id: int) -> None:
+    """Usuwa rekord metadanych po row_id. Operacja jest idempotentna."""
+    os.makedirs(os.path.dirname(os.path.abspath(settings.metadata_db_path)), exist_ok=True)
+    async with aiosqlite.connect(
+        settings.metadata_db_path,
+        check_same_thread=False,
+    ) as conn:
+        await _ensure_schema(conn)
+        await conn.execute("DELETE FROM metadata_log WHERE id = ?", (row_id,))
+        await conn.commit()
+
+
 async def get_recent_articles(limit: int = 50) -> list[dict]:
     """Zwraca ostatnie wpisy z metadata_log jako listę słowników."""
     os.makedirs(os.path.dirname(os.path.abspath(settings.metadata_db_path)), exist_ok=True)
-    async with aiosqlite.connect(settings.metadata_db_path) as conn:
+    async with aiosqlite.connect(
+        settings.metadata_db_path,
+        check_same_thread=False,
+    ) as conn:
         conn.row_factory = aiosqlite.Row
         await _ensure_schema(conn)
         cursor = await conn.execute(

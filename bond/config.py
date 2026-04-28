@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     low_corpus_threshold: int = 10
     rag_top_k: int = 5
     max_blog_posts: int = 50
+    allow_private_url_ingest: bool = False
     google_auth_method: str = "oauth"
     google_credentials_path: str = "./credentials.json"
 

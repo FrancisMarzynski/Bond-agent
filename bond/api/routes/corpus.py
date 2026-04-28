@@ -18,6 +18,7 @@ from bond.corpus.sources.drive_source import (
     ingest_drive_folder,
     list_folder_files,
 )
+from bond.security import UnsafeUrlError, validate_public_url
 from bond.store.article_log import get_article_count, get_chunk_count, get_articles
 from bond.corpus.smoke_test import run_smoke_test, DEFAULT_QUERY
 from bond.config import settings
@@ -116,7 +117,15 @@ async def ingest_file_endpoint(
 async def ingest_url_endpoint(request: IngestUrlRequest):
     if not request.url.strip():
         raise HTTPException(status_code=422, detail="url must not be empty")
-    result = ingest_blog(url=request.url, source_type=request.source_type.value)
+    try:
+        validated_url = validate_public_url(
+            request.url,
+            allow_private=settings.allow_private_url_ingest,
+        )
+    except UnsafeUrlError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    result = ingest_blog(url=validated_url, source_type=request.source_type.value)
     return BatchIngestResult(
         articles_ingested=result["articles_ingested"],
         total_chunks=result["total_chunks"],

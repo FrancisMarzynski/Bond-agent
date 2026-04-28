@@ -104,3 +104,21 @@ async def test_get_recent_articles_returns_dicts(in_memory_db):
         assert expected_keys.issubset(article.keys()), (
             f"Brakujące klucze: {expected_keys - article.keys()}"
         )
+
+
+@pytest.mark.asyncio
+async def test_delete_article_metadata_is_idempotent(in_memory_db):
+    """
+    Weryfikuje, że helper rollbacku usuwa rekord i może zostać wywołany wielokrotnie.
+    """
+    row_id = await metadata_log.save_article_metadata(
+        thread_id="thread-delete",
+        topic="Temat do usuniecia",
+        mode="author",
+    )
+
+    await metadata_log.delete_article_metadata(row_id)
+    await metadata_log.delete_article_metadata(row_id)
+
+    articles = await metadata_log.get_recent_articles(limit=10)
+    assert articles == []

@@ -74,3 +74,9 @@ def add_topic_to_metadata_collection(thread_id: str, topic: str, published_date:
         documents=[topic],
         metadatas=[{"title": topic, "published_date": published_date}],
     )
+
+
+def delete_topic_from_metadata_collection(thread_id: str) -> None:
+    """Delete a published topic embedding from the metadata_log collection."""
+    collection = get_or_create_metadata_collection()
+    collection.delete(ids=[thread_id])

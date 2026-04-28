@@ -72,6 +72,8 @@ Uruchamia interaktywny pipeline Trybu Autora w terminalu: podaj temat i słowa k
 
 Wszystkie endpointy importu przyjmują pole `source_type`: `"own"` dla własnych treści, `"external"` dla materiałów referencyjnych zewnętrznych.
 
+`POST /api/corpus/ingest/url` akceptuje tylko adresy `http` / `https`, ktore rozwiazuja sie do publicznych adresow sieciowych. Adresy loopback, prywatne, link-local, multicast, reserved oraz URL-e z osadzonymi credentials sa odrzucane z bledem `422`.
+
 ## Konfiguracja
 
 Ustawienia są wczytywane z pliku `.env` (wszystkie opcjonalne — pokazano wartości domyślne):
@@ -85,6 +87,7 @@ Ustawienia są wczytywane z pliku `.env` (wszystkie opcjonalne — pokazano wart
 | `LOW_CORPUS_THRESHOLD` | `10` | Ostrzeżenie gdy korpus ma mniej artykułów niż ta wartość |
 | `RAG_TOP_K` | `5` | Liczba fragmentów zwracanych przy każdym wyszukiwaniu |
 | `MAX_BLOG_POSTS` | `50` | Maksymalna liczba postów pobieranych przy imporcie z URL |
+| `ALLOW_PRIVATE_URL_INGEST` | `false` | Dopuszcza ingest URL-i do adresow niepublicznych; domyslnie wylaczone i zalecane tylko do lokalnego debugowania |
 | `GOOGLE_AUTH_METHOD` | `oauth` | `oauth` lub `service_account` |
 | `GOOGLE_CREDENTIALS_PATH` | `./credentials.json` | Ścieżka do pliku poświadczeń Google |
 
@@ -107,6 +110,10 @@ Opcjonalne ustawienia (pokazano wartości domyślne):
 | `DRAFT_MODEL` | `gpt-4o` | Model LLM używany przez węzeł pisania |
 | `MIN_WORD_COUNT` | `800` | Minimalna liczba słów w wygenerowanym szkicu |
 | `DUPLICATE_THRESHOLD` | `0.85` | Próg podobieństwa cosinusowego przy wykrywaniu duplikatów |
+
+### Trwalosc metadanych
+
+Po zatwierdzeniu artykulu Bond zapisuje metadane najpierw do SQLite, a potem indeksuje temat w kolekcji metadanych ChromaDB. To nie jest rozproszony commit 2PC: jezeli zapis do Chroma nie powiedzie sie, aplikacja wykonuje kompensacje i usuwa wlasnie dodany rekord SQLite, po czym zwraca blad zamiast zostawiac niespójny stan.
 
 ## Szybki start dla nowych deweloperów
 
