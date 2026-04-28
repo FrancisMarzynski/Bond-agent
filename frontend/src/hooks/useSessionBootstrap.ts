@@ -7,8 +7,8 @@ import { loadSessionHistory, SessionHistoryNotFoundError } from "@/hooks/useSess
 const STORAGE_KEY = "bond_thread_id";
 const MODE_KEY = "bond_mode";
 
-const MAX_RECOVERY_POLLS = 20;
 const RECOVERY_POLL_DELAY_MS = 1_500;
+const MAX_RECOVERY_DURATION_MS = 10 * 60 * 1_000;
 
 function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -87,7 +87,9 @@ async function pollUntilSettled(threadId: string, cancelled: boolean): Promise<v
     store.setRecoveringSession(true);
 
     try {
-        for (let i = 0; i < MAX_RECOVERY_POLLS; i++) {
+        const deadline = Date.now() + MAX_RECOVERY_DURATION_MS;
+
+        while (Date.now() < deadline) {
             if (cancelled) return;
             await sleep(RECOVERY_POLL_DELAY_MS);
             if (cancelled) return;

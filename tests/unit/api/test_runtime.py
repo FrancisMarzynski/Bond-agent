@@ -157,7 +157,7 @@ async def test_runtime_lock_held_until_producer_finishes():
 
     # Simulate the pattern used by /resume: acquire lock before starting task
     await lock.acquire()
-    run = await runtime.start_run("t1", "resume", producer)
+    await runtime.start_run("t1", "resume", producer)
 
     # While producer is running, lock must be held
     await lock_during_run.wait()

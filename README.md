@@ -180,6 +180,8 @@ Niektóre proxy (nginx, Cloudflare) zamykają idle connections. Backend wysyła 
 
 Frontend normalizuje też browserowe separatory `CRLF` w strumieniu SSE i nie próbuje już traktować tokenów-numerycznych jako obiektów JSON, więc eventy z prawdziwego `ReadableStream` są konsumowane poprawnie również w Playwright/Chromium.
 
+Po committed disconnect polling `/api/chat/history/{thread_id}` trwa do osiągnięcia trwałego stanu `paused`, `completed` albo `error`, więc dłuższy reload-recovery w Trybie Autora nie urywa się już po ~30 sekundach.
+
 Jeśli mimo to połączenie pada, zwiększ timeout proxy:
 
 ```nginx
@@ -250,6 +252,14 @@ Jeśli chcesz odtworzyć poprawne zachowanie lokalnie, najpewniejszy przebieg te
 4. kliknij `Zatwierdź`
 5. zerwij połączenie po wysłaniu `resume`
 6. potwierdź przez `GET /api/chat/history/{thread_id}`, że sesja jest `completed` albo wróciła do poprawnego stanu recovery bez replayu `POST /api/chat/resume`
+
+Repo zawiera też gotowy harness przeglądarkowy dla pełnego rerunu Shadow + Author po detached runtime:
+
+```bash
+python3 scripts/playwright_detached_runtime_journey.py --frontend-url http://localhost:3000 --api-url http://localhost:8000
+```
+
+Wymaga lokalnie zainstalowanego Python Playwright.
 
 ---
 

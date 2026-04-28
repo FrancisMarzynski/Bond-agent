@@ -20,8 +20,8 @@ import { useShadowStore } from "@/store/shadowStore";
 const MAX_RETRIES = 5;
 const BASE_DELAY_MS = 1_000;
 const MAX_DELAY_MS = 30_000;
-const MAX_RECOVERY_POLLS = 20;
 const RECOVERY_POLL_DELAY_MS = 1_500;
+const MAX_RECOVERY_DURATION_MS = 10 * 60 * 1_000;
 
 function backoffDelay(attempt: number): number {
   const exponential = Math.min(BASE_DELAY_MS * 2 ** attempt, MAX_DELAY_MS);
@@ -399,7 +399,10 @@ async function recoverCommittedSession(
   store.setRecoveringSession(true);
   store.setPendingAction(pendingAction);
 
-  for (let attempt = 0; attempt < MAX_RECOVERY_POLLS; attempt += 1) {
+  const deadline = Date.now() + MAX_RECOVERY_DURATION_MS;
+  let errorAttempts = 0;
+
+  while (Date.now() < deadline) {
     if (signal.aborted) {
       return;
     }
@@ -430,8 +433,10 @@ async function recoverCommittedSession(
         return;
       }
 
-      if (attempt < MAX_RECOVERY_POLLS - 1) {
-        await sleep(backoffDelay(attempt));
+      errorAttempts += 1;
+
+      if (Date.now() < deadline) {
+        await sleep(backoffDelay(errorAttempts - 1));
         continue;
       }
 

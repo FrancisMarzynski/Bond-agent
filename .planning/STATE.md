@@ -5,15 +5,15 @@
 See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksymalnie 4 godzin — przy zachowaniu stylu nieodróżnialnego od ludzkiego, z human-in-the-loop przed każdą publikacją.
-**Current focus:** Transport hardening kontynuowany — detached runtime zaimplementowany, bootstrap sesji scentralizowany, Shadow stages wyrównane; pełna walidacja browser-journey Author/Shadow do wykonania
+**Current focus:** v1 sign-off po transport hardening — detached runtime zwalidowany end-to-end dla Shadow i Author; kolejne prace to layout mobile/tablet oraz SSRF hardening
 
 ## Current Position
 
-Phase: 4 of 4 (Shadow Mode) — COMPLETE + transport hardening (in progress)
-Last activity: 2026-04-28 — Zaimplementowano detached command runtime; graph nie jest już przerywany przez disconnect klienta SSE; bootstrap sesji scentralizowany w SessionProvider; Shadow stages wyrównane w historii i UI; `X-Bond-Thread-Id` header dodany jako fallback recovery
-Status: Warstwa transportu ulepszona architekturalnie; pełne browser-journey dla Author i Shadow do wykonania po wdrożeniu
+Phase: 4 of 4 (Shadow Mode) — COMPLETE + transport hardening (complete)
+Last activity: 2026-04-28 — Wykonano pełny browser journey Shadow + Author na detached runtime przez `scripts/playwright_detached_runtime_journey.py`; poprawiono limit recovery pollingu w `useSessionBootstrap` i `useStream`, który ucinał dłuższy reload-recovery w Author po ~30 s
+Status: REC-01/02/03 zwalidowane end-to-end na detached runtime; transport/HITL recovery nie blokuje już formalnego v1 sign-off
 
-Progress: [█████████▓] ~97% dla aktualnego zakresu v1 — transport hardening kompletny, walidacja E2E jeszcze nie przebiegnięta
+Progress: [██████████] 100% dla aktualnego zakresu transport hardening / REC-01/02/03
 
 **Niedawno domknięte:**
 
@@ -29,30 +29,35 @@ Progress: [█████████▓] ~97% dla aktualnego zakresu v1 — tr
 10. **Bootstrap sesji scentralizowany** — `useSession()` nie wywołuje już `/history` przy każdym mount; jeden bootstrap przez `useSessionBootstrap` w `SessionProvider`.
 11. **Shadow stages wyrównane** — `/history` zwraca `shadow_analysis`/`shadow_annotation` zamiast `idle`; `Stage` type i `StageProgress` obsługują nowe wartości.
 12. **`X-Bond-Thread-Id` header** — thread ID dostępny z headera response natychmiast po `fetch()`, zanim body zostanie sparsowane.
+13. **Recovery polling do trwałego stanu** — reload recovery dla dłuższych sesji nie kończy się już po ~30 s; zarówno bootstrap, jak i same-tab recovery czekają na `paused` / `completed` / `error`.
 
 ## Browser Validation Notes
 
 Walidacja wykonana 2026-04-28 na:
 
-- frontend: `http://localhost:3000/shadow`
-- backend: `http://127.0.0.1:8000`
+- frontend: `http://localhost:3000`
+- backend: `http://localhost:8000`
+- harness: `python3 scripts/playwright_detached_runtime_journey.py`
 - narzędzie: Python Playwright (headless Chromium)
 
 Potwierdzone zachowania:
 
-1. Shadow wysyła dokładnie jeden `POST /api/chat/stream`.
-2. Po commitcie `thread_id` i sztucznym rozłączeniu checkpoint wraca bez replayu `POST /api/chat/stream`.
-3. Reload strony na `shadow_checkpoint` odtwarza panel z `sessionStorage` i `/api/chat/history/{thread_id}`.
-4. `resume=approve` wysyła dokładnie jeden `POST /api/chat/resume`.
-5. Po rozłączeniu po `resume` sesja kończy się poprawnie bez replayu `POST /api/chat/resume`.
-6. Finalna historia sesji zwraca `session_status="completed"`, `stage="done"`, `can_resume=false`.
+1. Shadow: dokładnie jeden `POST /api/chat/stream`, dokładnie jeden `POST /api/chat/resume`, reload na `shadow_checkpoint` odtwarza adnotacje/poprawioną wersję/akcje HITL i kończy sesję bez replayu `POST /api/chat/resume`.
+2. Shadow final history: `session_status="completed"`, `stage="done"`, `can_resume=false`.
+3. Author: dokładnie jeden `POST /api/chat/stream`, dokładnie dwa `POST /api/chat/resume` (cp1 approve + cp2 save) i zero dodatkowych replayów po reloadzie w trakcie committed stream/resume.
+4. Author reload recovery przez `/history` dochodzi do `checkpoint_1`, potem do `checkpoint_2`, a finalnie do `completed`.
+5. Odpowiedzi `/api/chat/stream` i `/api/chat/resume` wystawiają `X-Bond-Thread-Id`, więc recovery działa także wtedy, gdy body urwie się przed pierwszym eventem `thread_id`.
+6. Dłuższe sesje Author po reloadzie nie gubią checkpointu przez zbyt krótki polling — recovery trwa do trwałego stanu `paused` / `completed` / `error`.
 
 Artefakty lokalne:
 
-- `/tmp/bond-playwright/03-checkpoint.png`
-- `/tmp/bond-playwright/04-reloaded-checkpoint.png`
-- `/tmp/bond-playwright/05-after-resume-disconnect.png`
-- `/tmp/bond-playwright/06-final.png`
+- `/tmp/bond-playwright-detached-runtime-20260428-122040/summary.json`
+- `/tmp/bond-playwright-detached-runtime-20260428-122040/shadow-01-checkpoint.png`
+- `/tmp/bond-playwright-detached-runtime-20260428-122040/shadow-02-restored.png`
+- `/tmp/bond-playwright-detached-runtime-20260428-122040/shadow-03-final.png`
+- `/tmp/bond-playwright-detached-runtime-20260428-122040/author-01-checkpoint-1.png`
+- `/tmp/bond-playwright-detached-runtime-20260428-122040/author-02-checkpoint-2.png`
+- `/tmp/bond-playwright-detached-runtime-20260428-122040/author-03-final.png`
 
 ## Performance Metrics
 
@@ -114,19 +119,17 @@ Artefakty lokalne:
 
 ### Pending Todos
 
-- [ ] Wykonać pełny browser journey Shadow i Author po implementacji detached runtime (weryfikacja end-to-end)
 - [ ] Naprawić layout mobile/tablet z raportu E2E
 - [ ] Dodać ochronę SSRF dla `/api/corpus/ingest/url`
 
 ### Blockers/Concerns
 
-- Browser E2E journey po detached runtime nie został jeszcze przeprowadzony — wymagany przed finalną walidacją REC-01/02/03
 - EXA_API_KEY live verification with Polish-language queries nadal nie ma osobnej formalnej walidacji
 - RAG corpus quality thresholds (10 articles, 0.85 similarity) są rekomendacjami, nie wynikami empirycznej kalibracji
 
 ## Session Continuity
 
 Last session: 2026-04-28
-Stopped at: Streaming/HITL remediation complete; root cause potwierdzony w Playwright; docs i handoff dla niezależnej walidacji zaktualizowane
+Stopped at: REC-01/02/03 domknięte; pełny Shadow + Author journey na detached runtime przeszedł; dokumentacja zsynchronizowana do stanu po rerunie
 Resume file: None
-Next task: Niezależna walidacja drugiego agenta + osobny Playwright pass dla Author, potem mobile/tablet layout remediation lub SSRF hardening dla URL ingest
+Next task: Mobile/tablet layout remediation lub SSRF hardening dla URL ingest

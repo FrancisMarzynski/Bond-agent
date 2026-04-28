@@ -142,9 +142,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SHAD-04 | Phase 4 | Complete |
 | SHAD-05 | Phase 4 | Complete |
 | SHAD-06 | Phase 4 | Complete |
-| REC-01 | Post-Phase 4 hardening | Implementation complete — E2E rerun pending (post detached runtime) |
-| REC-02 | Post-Phase 4 hardening | Implementation complete — E2E rerun pending (post detached runtime) |
-| REC-03 | Post-Phase 4 hardening | Implementation complete — E2E rerun pending (post detached runtime) |
+| REC-01 | Post-Phase 4 hardening | Complete — validated 2026-04-28 on detached runtime (`scripts/playwright_detached_runtime_journey.py`) |
+| REC-02 | Post-Phase 4 hardening | Complete — validated 2026-04-28 on detached runtime (`scripts/playwright_detached_runtime_journey.py`) |
+| REC-03 | Post-Phase 4 hardening | Complete — validated 2026-04-28 on detached runtime (`scripts/playwright_detached_runtime_journey.py`) |
 
 **Coverage:**
 - v1 requirements: 39 total
@@ -154,4 +154,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 ---
 
 *Requirements defined: 2026-02-20*
-*Last updated: 2026-04-28 — SHAD-05 i SHAD-06 domknięte; REC-01/02/03 zaimplementowane i zwalidowane w Playwright dla Shadow przed wdrożeniem detached runtime; pełny browser journey po `bond/api/runtime.py` jeszcze nie wykonany — wymagany do zamknięcia REC-01/02/03 jako "Complete"*
+*Last updated: 2026-04-28 — REC-01/02/03 domknięte po pełnym browser journey Shadow + Author na detached runtime; dodatkowo poprawiono limit recovery pollingu dla dłuższych reload-recovery w Author*
