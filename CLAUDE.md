@@ -214,5 +214,7 @@ Current repo status:
 - Phase 4 (Shadow Mode) is complete, including frontend HITL wiring and responsive layout validation.
 - REC-01/02/03 are complete: detached runtime, committed-disconnect recovery, and Shadow checkpoint hydration were validated end-to-end.
 - `/api/corpus/ingest/url` already has SSRF protection for non-public hosts; do not reopen this as a pending task unless code/tests show a real gap.
+- Plan 01 of internal deployment hardening is complete: backend env contract, trusted proxy header validation (`X-Bond-Internal-Proxy-Token`), `X-Request-Id` middleware, and `/health`, `/health/live`, `/health/ready` are implemented and unit-tested.
+- Active post-v1 workstream remains internal deployment hardening under `.agents/plans/`, with Plan 02 (frontend gateway/auth) now the immediate next task; threshold/telemetry sampling stays deferred.
 
 Current post-v1 focus is maintained in `.planning/STATE.md`. Before starting new work, read that file rather than relying on historical notes in reports or phase summaries.

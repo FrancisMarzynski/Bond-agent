@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
@@ -32,5 +33,11 @@ class Settings(BaseSettings):
     # Docker / ChromaDB HTTP client
     chroma_host: str = ""
     chroma_port: int = 8000
+
+    # Post-v1: internal deployment hardening
+    internal_auth_enabled: bool = False
+    internal_proxy_token: str = ""
+    internal_basic_auth_username: str = ""
+    internal_basic_auth_password: str = ""
 
 settings = Settings()
