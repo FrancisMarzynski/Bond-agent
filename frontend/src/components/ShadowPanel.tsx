@@ -53,14 +53,16 @@ function buildSegments(text: string, annotations: Annotation[]): Segment[] {
 export function ShadowPanel() {
   const [inputText, setInputText] = useState("");
   const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(null);
+  const [feedbackText, setFeedbackText] = useState("");
 
   // Refs to annotation <mark> elements in the original text pane
   const spanRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const { originalText, setOriginalText, resetShadow, annotations, shadowCorrectedText } =
     useShadowStore();
-  const { draft, setDraft, isStreaming, threadId, setThreadId, resetSession } = useChatStore();
-  const { startStream } = useStream();
+  const { draft, setDraft, isStreaming, threadId, setThreadId, resetSession, hitlPause } =
+    useChatStore();
+  const { startStream, resumeStream } = useStream();
 
   const handleSubmit = useCallback(async () => {
     const trimmed = inputText.trim();
@@ -69,6 +71,7 @@ export function ShadowPanel() {
     setOriginalText(trimmed);
     spanRefs.current = {};
     setActiveAnnotationId(null);
+    setFeedbackText("");
     await startStream(trimmed, threadId, "shadow", (id) => setThreadId(id));
   }, [inputText, isStreaming, resetSession, setOriginalText, startStream, threadId, setThreadId]);
 
@@ -77,6 +80,7 @@ export function ShadowPanel() {
     resetShadow();
     setInputText("");
     setActiveAnnotationId(null);
+    setFeedbackText("");
     spanRefs.current = {};
   }, [resetSession, resetShadow]);
 
@@ -95,6 +99,19 @@ export function ShadowPanel() {
     if (target) setDraft(target);
   }, [shadowCorrectedText, draft, setDraft]);
 
+  const handleApprove = useCallback(async () => {
+    if (!threadId) return;
+    setFeedbackText("");
+    await resumeStream(threadId, "approve", null, (id) => setThreadId(id));
+  }, [resumeStream, setThreadId, threadId]);
+
+  const handleReject = useCallback(async () => {
+    const feedback = feedbackText.trim();
+    if (!threadId || !feedback) return;
+    await resumeStream(threadId, "reject", feedback, (id) => setThreadId(id));
+    setFeedbackText("");
+  }, [feedbackText, resumeStream, setThreadId, threadId]);
+
   // Memoize segments — recalculate only when originalText or annotations change,
   // not on every streaming draft update.
   const segments = useMemo(
@@ -104,32 +121,64 @@ export function ShadowPanel() {
 
   // ── Comparison view ──────────────────────────────────────────────────────
   if (originalText) {
+    const showHitlPanel = hitlPause?.checkpoint_id === "shadow_checkpoint" && !isStreaming && threadId;
 
     return (
       <div className="flex flex-col h-full bg-background overflow-hidden">
         {/* Status bar */}
-        <div className="h-10 border-b flex items-center px-4 gap-2 shrink-0 bg-muted/20">
-          {isStreaming ? (
-            <>
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Analizuję tekst...</span>
-            </>
-          ) : (
-            <span className="text-xs text-muted-foreground">
-              Analiza zakończona
-              {annotations.length > 0 && ` · ${annotations.length} adnotacji`}
-            </span>
+        <div className="border-b shrink-0 bg-muted/20">
+          <div className="h-10 flex items-center px-4 gap-2">
+            {isStreaming ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Analizuję tekst...</span>
+              </>
+            ) : (
+              <span className="text-xs text-muted-foreground">
+                Analiza zakończona
+                {annotations.length > 0 && ` · ${annotations.length} adnotacji`}
+              </span>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleReset}
+              disabled={isStreaming}
+              className="ml-auto h-7 text-xs gap-1.5"
+            >
+              <RotateCcw className="h-3 w-3" />
+              Nowy tekst
+            </Button>
+          </div>
+
+          {showHitlPanel && (
+            <div className="border-t px-4 py-3 space-y-2 bg-background">
+              <p className="text-xs font-medium text-foreground">
+                Zatwierdzasz adnotacje?
+                {hitlPause?.iteration_count !== undefined &&
+                  ` Iteracja ${hitlPause.iteration_count + 1}/3`}
+              </p>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={handleApprove}>
+                  Zatwierdź
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReject}
+                  disabled={!feedbackText.trim()}
+                >
+                  Odrzuć
+                </Button>
+              </div>
+              <Textarea
+                value={feedbackText}
+                onChange={(e) => setFeedbackText(e.target.value)}
+                placeholder="Napisz co poprawić (wymagane do odrzucenia)..."
+                className="text-xs min-h-[60px] resize-none"
+              />
+            </div>
           )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleReset}
-            disabled={isStreaming}
-            className="ml-auto h-7 text-xs gap-1.5"
-          >
-            <RotateCcw className="h-3 w-3" />
-            Nowy tekst
-          </Button>
         </div>
 
         {/* Three-column layout */}

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useCallback } from "react";
-import { useChatStore } from "@/store/chatStore";
+import { useChatStore, type Stage, type StageStatus } from "@/store/chatStore";
 import { useShadowStore } from "@/store/shadowStore";
 import { SSEParser } from "@/lib/sse";
 import { z } from "zod";
@@ -21,6 +21,14 @@ const ThreadIdSchema = z.object({ thread_id: z.string() });
 const TokenSchema = z.object({ token: z.string() });
 const StageSchema = z.object({ stage: z.string(), status: z.string() });
 const MessageSchema = z.object({ content: z.string() });
+const AnnotationSchema = z.object({
+    id: z.string(),
+    original_span: z.string(),
+    replacement: z.string(),
+    reason: z.string(),
+    start_index: z.number(),
+    end_index: z.number(),
+});
 const HitlPauseSchema = z.object({
     checkpoint_id: z.string(),
     type: z.string(),
@@ -33,8 +41,19 @@ const HitlPauseSchema = z.object({
     existing_title: z.string().optional(),
     existing_date: z.string().optional(),
     similarity_score: z.number().optional(),
+    annotations: z.array(AnnotationSchema).optional(),
+    shadow_corrected_text: z.string().optional(),
+    iteration_count: z.number().optional(),
 });
-const ErrorSchema = z.object({ message: z.string() });
+const ErrorSchema = z.object({
+    message: z.string().optional(),
+    data: z.string().optional(),
+});
+const TextPayloadSchema = z.object({
+    text: z.string().optional(),
+    message: z.string().optional(),
+    data: z.string().optional(),
+});
 
 // ---------------------------------------------------------------------------
 // Internal stream consumer
@@ -70,7 +89,10 @@ async function consumeStream(
                     store.setLastEventId(id);
                 }
                 try {
-                    const parsed = JSON.parse(data);
+                    const parsed = JSON.parse(data) as {
+                        type?: string;
+                        data?: unknown;
+                    };
 
                     // The backend emits events in the format: data: {"type": "<event_type>", "data": "<payload_string>"}
                     // Therefore, the SSE `event` header is missing, defaulting to "message".
@@ -78,11 +100,11 @@ async function consumeStream(
                     const eventType = parsed.type || event;
 
                     // Extract payload. If parsed.data is a string that looks like JSON, parse it.
-                    let payload: any;
+                    let payload: unknown;
                     if (typeof parsed.data === "string") {
                         try {
-                            payload = JSON.parse(parsed.data);
-                        } catch (e) {
+                            payload = JSON.parse(parsed.data) as unknown;
+                        } catch {
                             payload = parsed.data; // e.g. plain text for 'token', 'done', 'heartbeat'
                         }
                     } else {
@@ -97,8 +119,13 @@ async function consumeStream(
                             break;
                         }
                         case "token": {
-                            // Backend may send plain string for token data
-                            const tokenContent = typeof payload === "string" ? payload : (payload.token || "");
+                            const tokenResult = TokenSchema.safeParse(payload);
+                            const tokenContent =
+                                typeof payload === "string"
+                                    ? payload
+                                    : tokenResult.success
+                                      ? tokenResult.data.token
+                                      : "";
                             if (!tokenContent) throw new Error("Invalid token event data");
                             store.appendDraftToken(tokenContent);
                             break;
@@ -106,7 +133,10 @@ async function consumeStream(
                         case "stage": {
                             const result = StageSchema.safeParse(payload);
                             if (!result.success) throw new Error("Invalid stage event data");
-                            store.setStage(result.data.stage as any, result.data.status as any);
+                            store.setStage(
+                                result.data.stage as Stage,
+                                result.data.status as StageStatus
+                            );
                             break;
                         }
                         case "message": { // Keeping this just in case backend ever sends direct message
@@ -128,14 +158,32 @@ async function consumeStream(
                                 existing_title: result.data.existing_title,
                                 existing_date: result.data.existing_date,
                                 similarity_score: result.data.similarity_score,
+                                annotations: result.data.annotations,
+                                shadow_corrected_text: result.data.shadow_corrected_text,
+                                iteration_count: result.data.iteration_count,
                             });
+                            if (result.data.checkpoint_id === "shadow_checkpoint") {
+                                const shadowState = useShadowStore.getState();
+                                shadowState.setAnnotations(result.data.annotations ?? []);
+                                shadowState.setShadowCorrectedText(
+                                    result.data.shadow_corrected_text ?? ""
+                                );
+                                store.setDraft(result.data.shadow_corrected_text ?? "");
+                            }
                             store.setStreaming(false);
                             endedCleanly = true;
                             return endedCleanly; // Stream ends at HITL pause
                         }
                         case "error": {
-                            // Payload could be a string or JSON depending on backend formatting
-                            const errorMessage = typeof payload === "string" ? payload : (payload.message || payload.data || "Unknown error");
+                            const errorResult = ErrorSchema.safeParse(payload);
+                            const errorMessage =
+                                typeof payload === "string"
+                                    ? payload
+                                    : errorResult.success
+                                      ? errorResult.data.message ||
+                                        errorResult.data.data ||
+                                        "Unknown error"
+                                      : "Unknown error";
                             const currentStage =
                                 store.stage !== "idle" && store.stage !== "done"
                                     ? store.stage
@@ -150,7 +198,13 @@ async function consumeStream(
                             return endedCleanly;
                         }
                         case "shadow_corrected_text": {
-                            const text = typeof payload === "string" ? payload : (payload?.text || "");
+                            const textResult = TextPayloadSchema.safeParse(payload);
+                            const text =
+                                typeof payload === "string"
+                                    ? payload
+                                    : textResult.success
+                                      ? textResult.data.text || ""
+                                      : "";
                             if (text) {
                                 store.setDraft(text);
                                 useShadowStore.getState().setShadowCorrectedText(text);
@@ -158,12 +212,19 @@ async function consumeStream(
                             break;
                         }
                         case "annotations": {
-                            const annotations = Array.isArray(payload) ? payload : [];
+                            const annotationsResult = z.array(AnnotationSchema).safeParse(payload);
+                            const annotations = annotationsResult.success ? annotationsResult.data : [];
                             useShadowStore.getState().setAnnotations(annotations);
                             break;
                         }
                         case "system_alert": {
-                            const alertMessage = typeof payload === "string" ? payload : (payload?.message || payload?.data || "");
+                            const alertResult = TextPayloadSchema.safeParse(payload);
+                            const alertMessage =
+                                typeof payload === "string"
+                                    ? payload
+                                    : alertResult.success
+                                      ? alertResult.data.message || alertResult.data.data || ""
+                                      : "";
                             if (alertMessage) {
                                 store.setSystemAlert(alertMessage);
                             }

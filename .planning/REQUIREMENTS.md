@@ -33,12 +33,12 @@
 
 ### Shadow Mode — Korekta Stylu
 
-- [ ] **SHAD-01**: Użytkownik może uruchomić tryb Shadow wklejając gotowy tekst do analizy
-- [ ] **SHAD-02**: Agent porównuje dostarczony tekst ze wzorcami stylistycznymi z bazy wektorowej
-- [ ] **SHAD-03**: Agent generuje tekst z anotacjami inline (konkretne sugestie korekty)
-- [ ] **SHAD-04**: Agent generuje poprawioną wersję tekstu (po zastosowaniu sugestii)
-- [ ] **SHAD-05**: Użytkownik widzi oba outputy: tekst z anotacjami i wersję poprawioną
-- [ ] **SHAD-06**: Użytkownik może odrzucić sugestie podając powód — agent regeneruje alternatywne korekty (max 3 iteracje)
+- [x] **SHAD-01**: Użytkownik może uruchomić tryb Shadow wklejając gotowy tekst do analizy
+- [x] **SHAD-02**: Agent porównuje dostarczony tekst ze wzorcami stylistycznymi z bazy wektorowej
+- [x] **SHAD-03**: Agent generuje tekst z anotacjami inline (konkretne sugestie korekty)
+- [x] **SHAD-04**: Agent generuje poprawioną wersję tekstu (po zastosowaniu sugestii)
+- [ ] **SHAD-05**: Użytkownik widzi oba outputy: tekst z anotacjami i wersję poprawioną ⚠️ *Backend complete; frontend gap — annotations not extracted from hitlPause payload*
+- [ ] **SHAD-06**: Użytkownik może odrzucić sugestie podając powód — agent regeneruje alternatywne korekty (max 3 iteracje) ⚠️ *Backend complete; no approve/reject UI in /shadow route*
 
 ### Duplicate Detection
 
@@ -49,14 +49,14 @@
 
 ### Chat Interface
 
-- [ ] **UI-01**: Interfejs zawiera wyraźny przełącznik trybu Author / Shadow widoczny w głównym widoku czatu
-- [ ] **UI-02**: Interfejs zawiera progress indicator podczas długich operacji z etapami: research → struktura → pisanie (lub: analiza → korekta)
-- [ ] **UI-03**: Użytkownik widzi wygenerowany content w edytorze Markdown z podglądem
-- [ ] **UI-04**: Użytkownik może zatwierdzić lub odrzucić output na każdym checkpoint (przyciski Zatwierdź / Odrzuć)
-- [ ] **UI-05**: Przy odrzuceniu, użytkownik może wpisać feedback tekstowy dla agenta
-- [ ] **UI-06**: Przycisk "Zatwierdź i Zapisz" zapisuje metadane do Metadata Log i oznacza temat jako użyty
-- [ ] **UI-07**: Interfejs reaguje na zdarzenia strumieniowe — tokeny LLM są wyświetlane progressywnie (nie czeka na cały output)
-- [ ] **UI-08**: Użytkownik ma dostęp do sekcji zarządzania corpus (dodawanie artykułów, widok statusu)
+- [x] **UI-01**: Interfejs zawiera wyraźny przełącznik trybu Author / Shadow widoczny w głównym widoku czatu
+- [x] **UI-02**: Interfejs zawiera progress indicator podczas długich operacji z etapami: research → struktura → pisanie (lub: analiza → korekta)
+- [x] **UI-03**: Użytkownik widzi wygenerowany content w edytorze Markdown z podglądem
+- [x] **UI-04**: Użytkownik może zatwierdzić lub odrzucić output na każdym checkpoint (przyciski Zatwierdź / Odrzuć)
+- [x] **UI-05**: Przy odrzuceniu, użytkownik może wpisać feedback tekstowy dla agenta
+- [x] **UI-06**: Przycisk "Zatwierdź i Zapisz" zapisuje metadane do Metadata Log i oznacza temat jako użyty
+- [x] **UI-07**: Interfejs reaguje na zdarzenia strumieniowe — tokeny LLM są wyświetlane progressywnie (nie czeka na cały output)
+- [x] **UI-08**: Użytkownik ma dostęp do sekcji zarządzania corpus (dodawanie artykułów, widok statusu)
 
 ---
 
@@ -122,20 +122,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DUPL-02 | Phase 2 | Complete |
 | DUPL-03 | Phase 2 | Complete |
 | DUPL-04 | Phase 2 | Complete |
-| UI-01 | Phase 3 | Pending |
-| UI-02 | Phase 3 | Pending |
-| UI-03 | Phase 3 | Pending |
-| UI-04 | Phase 3 | Pending |
-| UI-05 | Phase 3 | Pending |
-| UI-06 | Phase 3 | Pending |
-| UI-07 | Phase 3 | Pending |
-| UI-08 | Phase 3 | Pending |
-| SHAD-01 | Phase 4 | Pending |
-| SHAD-02 | Phase 4 | Pending |
-| SHAD-03 | Phase 4 | Pending |
-| SHAD-04 | Phase 4 | Pending |
-| SHAD-05 | Phase 4 | Pending |
-| SHAD-06 | Phase 4 | Pending |
+| UI-01 | Phase 3 | Complete |
+| UI-02 | Phase 3 | Complete |
+| UI-03 | Phase 3 | Complete |
+| UI-04 | Phase 3 | Complete |
+| UI-05 | Phase 3 | Complete |
+| UI-06 | Phase 3 | Complete |
+| UI-07 | Phase 3 | Complete |
+| UI-08 | Phase 3 | Complete |
+| SHAD-01 | Phase 4 | Complete |
+| SHAD-02 | Phase 4 | Complete |
+| SHAD-03 | Phase 4 | Complete |
+| SHAD-04 | Phase 4 | Complete |
+| SHAD-05 | Phase 4 | Partial (backend done; frontend gap) |
+| SHAD-06 | Phase 4 | Partial (backend done; frontend gap) |
 
 **Coverage:**
 - v1 requirements: 36 total
@@ -145,4 +145,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 ---
 
 *Requirements defined: 2026-02-20*
-*Last updated: 2026-02-22 after 01-03 completion — CORP-06, CORP-07 marked complete (all Phase 1 requirements done)*
+*Last updated: 2026-04-28 — UI-01 through UI-08 and SHAD-01 through SHAD-04 marked complete; SHAD-05 and SHAD-06 partial (backend done, frontend HITL integration gap)*

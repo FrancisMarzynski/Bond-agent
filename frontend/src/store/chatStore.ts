@@ -1,5 +1,6 @@
 "use client";
 import { create } from "zustand";
+import type { Annotation } from "@/store/shadowStore";
 
 export type Stage = "idle" | "research" | "structure" | "writing" | "done" | "error";
 export type StageStatus = "pending" | "running" | "complete" | "error";
@@ -15,6 +16,10 @@ export type HitlPause = {
     existing_title?: string;
     existing_date?: string;
     similarity_score?: number;
+    // Shadow mode fields
+    annotations?: Annotation[];
+    shadow_corrected_text?: string;
+    iteration_count?: number;
 } | null;
 
 export interface ChatMessage {

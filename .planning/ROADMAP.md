@@ -14,8 +14,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: RAG Corpus Onboarding** - Users can populate and validate the style corpus that all generation depends on
 - [x] **Phase 2: Author Mode Backend** - The full research-to-approved-draft pipeline works end-to-end in Python with HITL checkpoints
-- [ ] **Phase 3: Streaming API and Frontend** - Users can run the complete Author mode workflow in a browser with streaming output and approval UI
-- [ ] **Phase 4: Shadow Mode** - Users can submit existing text for style analysis and receive annotated corrections against their style corpus
+- [x] **Phase 3: Streaming API and Frontend** - Users can run the complete Author mode workflow in a browser with streaming output and approval UI
+- [~] **Phase 4: Shadow Mode** - Backend complete; frontend HITL loop has one integration gap (see phase details)
 
 ## Phase Details
 
@@ -59,36 +59,77 @@ Plans:
 **Goal**: Users can run the complete Author mode workflow in a browser, seeing tokens stream progressively and approving or rejecting at each checkpoint through a dedicated UI
 **Depends on**: Phase 2
 **Requirements**: UI-01, UI-02, UI-03, UI-04, UI-05, UI-06, UI-07, UI-08
-**Success Criteria** (what must be TRUE):
-  1. User can select Author or Shadow mode via a visible toggle in the main chat view
-  2. During long operations (research, writing), a progress indicator shows the current stage (research, structure, writing) and LLM tokens appear progressively as they are generated — the user never sees a blank screen for more than 5 seconds
-  3. Generated content appears in a Markdown editor with rendered preview
-  4. Approve and Reject buttons appear at each checkpoint; Reject reveals a feedback text field; the session resumes correctly from the checkpoint after the user acts
-  5. The "Approve and Save" button saves metadata to the Metadata Log and marks the topic as used
-  6. The corpus management section is accessible from the UI, showing article count, chunk count, and allowing new article ingestion
-**Plans**: 5 plans
+**Status**: ✅ Complete — 2026-04-23
+**Success Criteria** (all met):
+  1. ✅ User can select Author or Shadow mode via ModeToggle in the header
+  2. ✅ StageProgress stepper shows current stage; LLM tokens stream progressively via SSE
+  3. ✅ Generated content appears in EditorPane (@uiw/react-md-editor) with live preview
+  4. ✅ CheckpointPanel shows Approve/Reject at each HITL pause; Reject reveals feedback field; session resumes via /api/chat/resume
+  5. ✅ "Approve and Save" button triggers approve_save action saving metadata to SQLite
+  6. ✅ Corpus management at /corpus route: CorpusStatusPanel + CorpusAddForm (text/file/URL/Drive tabs)
+**Plans**: 5 original plans + 46 additional sub-tasks completed during execution
 
 Plans:
-- [ ] 03-01-PLAN.md — FastAPI app scaffold (lifespan, CORS, AsyncSqliteSaver) + /api/chat/stream, /api/chat/resume, /api/corpus/ingest, /api/corpus/status endpoints
-- [ ] 03-02-PLAN.md — Next.js 15 project bootstrap, Zustand chatStore, SSEParser, useStream and useSession hooks
-- [ ] 03-03-PLAN.md — App layout (sidebar, header), ModeToggle (Author/Shadow switch), StageProgress stepper (Research → Structure → Writing)
-- [ ] 03-04-PLAN.md — ChatInterface, EditorPane (@uiw/react-md-editor streaming), CheckpointPanel (Approve/Reject/Approve+Save), main page layout
-- [ ] 03-05-PLAN.md — Corpus management page (/corpus route), CorpusStatus, IngestionForm (4 stacked cards), sidebar navigation, human verification checkpoint
+- [x] 03-01-PLAN.md — FastAPI scaffold (lifespan, CORS, AsyncSqliteSaver) + /api/chat/stream, /api/chat/resume, /api/corpus endpoints
+- [x] 03-02-PLAN.md — Next.js 15 bootstrap, Zustand chatStore, SSEParser, useStream and useSession hooks
+- [x] 03-03-PLAN.md — App layout (sidebar, header), ModeToggle, StageProgress stepper
+- [x] 03-04-PLAN.md — ChatInterface, EditorPane, CheckpointPanel, main page layout
+- [x] 03-05-PLAN.md — Corpus management (/corpus route), CorpusStatusPanel, CorpusAddForm (4 tabs), sidebar navigation
+
+Additional work completed during Phase 3 (selected highlights):
+- Docker + docker-compose for local dev
+- Multi-query prompt generation for Researcher node
+- Parallel Exa search with deduplication
+- Map-reduce structured synthesis in Researcher
+- ChromaDB metadata enrichment
+- FlashRank reranker (two-pass retrieval)
+- Few-shot label injection
+- Word count validation
+- Structure node promoted to frontier model (gpt-4o)
+- Semantic search cache (cross-session)
+- Editor export toolbar
+- Checkpoint 1 research view
+- Shadow mode backend infrastructure (shadow_analyze, shadow_annotate, shadow_checkpoint nodes)
+- Shadow mode BondState routing
+- Shadow mode HITL iteration loop (backend)
+- Shadow mode frontend (ShadowPanel, AnnotationList, /shadow route, shadowStore)
+- SSE reconnect with exponential backoff (MAX_RETRIES=5)
+- Safety cap on HITL routing (defense-in-depth guards in graph.py)
+- Global React ErrorBoundary + Next.js route-level error boundaries
+- Logging standardization
+- Async ainvoke refactor for all nodes
 
 ### Phase 4: Shadow Mode
 **Goal**: Users can submit an existing text and receive both an annotated version (inline correction suggestions) and a corrected version, with the ability to reject and regenerate alternatives
 **Depends on**: Phase 3
 **Requirements**: SHAD-01, SHAD-02, SHAD-03, SHAD-04, SHAD-05, SHAD-06
-**Success Criteria** (what must be TRUE):
-  1. User can paste existing text and trigger Shadow mode analysis from the main chat interface
-  2. The agent compares the submitted text against the style corpus and produces concrete, inline correction annotations
-  3. User sees two outputs side by side: the annotated original and the fully corrected version
-  4. User can reject the suggestions with a reason; the agent regenerates alternative corrections (max 3 iterations) without losing the original text or session context
-**Plans**: 2 plans
+**Status**: 🔶 Mostly complete — one frontend integration gap remains (SHAD-05, SHAD-06)
+
+**What is built:**
+- `shadow_analyze_node` — two-pass ChromaDB retrieval (own-first, external fill)
+- `shadow_annotate_node` — structured output via `with_structured_output(AnnotationResult)` with character-level index validation and auto-correction
+- `shadow_checkpoint_node` — HITL interrupt, approve/reject/abort, hard cap at 3 iterations
+- `BondState` extended with all shadow fields; `AuthorState` alias preserved
+- Dual-branch graph routing (`route_mode()` at START)
+- `ShadowPanel` — 3-column UI: annotation sidebar, highlighted original, editable corrected text
+- `AnnotationList` — sidebar with annotation cards, click-to-scroll navigation
+- `/shadow` route, `shadowStore` (Zustand)
+
+**Known gap (SHAD-05 / SHAD-06):**
+When `shadow_checkpoint` fires `interrupt()`, the backend emits a `hitl_pause` SSE event containing `annotations` and `shadow_corrected_text` in its payload. The frontend `HitlPauseSchema` (Zod) does not include these fields — they are stripped and never reach `shadowStore`. Additionally, the `/shadow` route renders only `ShadowPanel`, which has no approve/reject buttons. As a result:
+- Annotations and corrected text are never displayed after Shadow mode runs
+- The user has no way to approve, reject, or trigger re-generation
+
+**Fix required** (estimated: 1–2 hours):
+1. Extend `HitlPauseSchema` in `chatStore.ts` with `annotations`, `shadow_corrected_text`, `iteration_count` fields
+2. In the `hitl_pause` handler in `useStream.ts`, call `useShadowStore.getState().setAnnotations()` and `setShadowCorrectedText()` when `checkpoint_id === "shadow_checkpoint"`
+3. Add approve/reject buttons to `ShadowPanel` when `hitlPause?.checkpoint_id === "shadow_checkpoint"`
+
+**Plans**: 2 plans (both superseded by work done in Phase 3; listed for traceability)
 
 Plans:
-- [ ] 04-01-PLAN.md — BondState extension + Shadow branch nodes (shadow_analyze, shadow_annotate, graph dual-branch routing, AuthorState alias)
-- [ ] 04-02-PLAN.md — Shadow HITL checkpoint node, full branch wiring, FastAPI shadow state init, frontend ShadowPanel + AnnotationList + useSyncScroll, end-to-end smoke test
+- [~] 04-01-PLAN.md — BondState extension + Shadow branch nodes (done during Phase 3 sub-tasks 11–19)
+- [~] 04-02-PLAN.md — Shadow HITL checkpoint node + frontend (backend done; frontend HITL gap remains)
 
 ## Progress
 
@@ -99,5 +140,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. RAG Corpus Onboarding | 3/3 | Complete | 2026-02-22 |
 | 2. Author Mode Backend | 4/4 | Complete | 2026-02-23 |
-| 3. Streaming API and Frontend | 0/4 | Not started | - |
-| 4. Shadow Mode | 0/2 | Not started | - |
+| 3. Streaming API and Frontend | 5/5 + 46 sub-tasks | Complete | 2026-04-23 |
+| 4. Shadow Mode | ~1.5/2 | Mostly complete — 1 frontend gap | - |

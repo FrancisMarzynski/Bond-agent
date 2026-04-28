@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { useChatStore } from "@/store/chatStore";
+import { useChatStore, type ChatMessage } from "@/store/chatStore";
 import { API_URL } from "@/config";
 
 const STORAGE_KEY = "bond_thread_id";
@@ -92,7 +92,7 @@ export function useSession() {
         }
     }, [setThreadId, setMode, loadSessionHistory]);
 
-    const saveSessionMeta = (id: string, messages: any[]) => {
+    const saveSessionMeta = (id: string, messages: ChatMessage[]) => {
         const storedSessions = localStorage.getItem(SESSIONS_KEY);
         let updated: SessionMeta[] = [];
         try {

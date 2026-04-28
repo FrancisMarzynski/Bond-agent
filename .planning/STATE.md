@@ -5,85 +5,99 @@
 See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksymalnie 4 godzin — przy zachowaniu stylu nieodróżnialnego od ludzkiego, z human-in-the-loop przed każdą publikacją.
-**Current focus:** Phase 2 — Author Mode Backend
+**Current focus:** Phase 4 — Shadow Mode (1 frontend integration gap remains)
 
 ## Current Position
 
-Phase: 2 of 4 (Author Mode Backend) — COMPLETE
-Plan: 4 of 4 in current phase — COMPLETE
-Status: 02-04 all tasks complete including human-verify checkpoint approved; full pipeline verified end-to-end (Metadata saved: True, draft produced); Phase 2 complete — ready for Phase 3
-Last activity: 2026-02-23 — 02-04 complete; live pipeline run approved; Phase 2 fully done
+Phase: 4 of 4 (Shadow Mode) — MOSTLY COMPLETE; 1 gap
+Last activity: 2026-04-23 — Phase 3 E2E hardening complete (SSE reconnect, safety caps, ErrorBoundary); Shadow mode backend and UI built; frontend HITL integration gap identified
+Status: All backend complete; Author mode fully working end-to-end; Shadow mode backend + UI built but the HITL loop is not connected in the frontend
 
-Progress: [██████████] 100% (Phase 2 complete)
+Progress: [████████░░] ~90% (Shadow HITL frontend wiring remains)
+
+**Known Gap — Shadow mode HITL frontend (SHAD-05, SHAD-06):**
+
+When `shadow_checkpoint` fires `interrupt()`, the backend packages `annotations` and `shadow_corrected_text` into the `hitl_pause` SSE payload. Three things are broken in the frontend:
+
+1. `HitlPauseSchema` (Zod, `chatStore.ts`) does not declare `annotations`, `shadow_corrected_text`, or `iteration_count` fields — Zod strips them, so `shadowStore` is never populated
+2. The `hitl_pause` handler in `useStream.ts` does not call `useShadowStore.getState().setAnnotations()` / `setShadowCorrectedText()` for the shadow checkpoint case
+3. The `/shadow` route renders only `ShadowPanel`; `ShadowPanel` has no approve/reject buttons — users cannot resume the graph
+
+**Fix** (estimated 1–2 hours):
+- Extend `HitlPauseSchema` in `chatStore.ts`: add `annotations?: Annotation[]`, `shadow_corrected_text?: string`, `iteration_count?: number`
+- In `useStream.ts` `hitl_pause` handler: when `checkpoint_id === "shadow_checkpoint"`, call `useShadowStore.getState().setAnnotations()` and `setShadowCorrectedText()`
+- Add approve/reject buttons to `ShadowPanel` (visible when `hitlPause?.checkpoint_id === "shadow_checkpoint"`), wired to `resumeStream(threadId, "approve"/"reject", feedback)`
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 8 min
-- Total execution time: 0.7 hours
+- Total tasks/sub-tasks completed: ~70+ (across all phases)
+- Phase 3 alone: 51 documented sub-tasks
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-rag-corpus-onboarding | 3 | 30 min | 10 min |
-| 02-author-mode-backend | 3 | 10 min | 3.3 min |
-
-**Recent Trend:**
-- Last 5 plans: 4 min, 10 min, 2 min, 3 min
-- Trend: Consistent, fast for infrastructure plans
+| 02-author-mode-backend | 4 | 10 min | 3.3 min |
+| 03-streaming-api-and-frontend | 5 + 46 sub-tasks | ~2 months | — |
+| 04-shadow-mode | Built within Phase 3 + 1 gap | — | — |
 
 ## Accumulated Context
 
-### Decisions
+### Key Architectural Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
+**Phase 1–2 (foundation):**
+- Singleton ChromaDB PersistentClient — avoids reloading 420MB embedding model per request
+- SQLite for article log (not ChromaDB metadata) — efficient article-level counting
+- 1875 chars chunk size (~500 tokens for Polish text) with 10% overlap
+- Two separate SQLite files: bond_checkpoints.db (LangGraph) + bond_metadata.db (metadata log) — avoids schema conflicts
+- Two-pass retrieval: own-before-external weighting; author style always prioritised
+- check_same_thread=False on SQLite connections — required for async execution across thread boundaries
+- Schema-on-connect pattern (_get_conn runs CREATE TABLE IF NOT EXISTS on every open) — zero-config migration
 
-- [Init]: Single LangGraph StateGraph with dual-branch routing (Author + Shadow); shared RAG retriever and save_metadata nodes
-- [Init]: SqliteSaver from day one (never MemorySaver) — required for HITL resume across page refreshes
-- [Init]: ChromaDB + paraphrase-multilingual-MiniLM-L12-v2 for Polish-language embeddings
-- [Init]: Exa (not Tavily) for web research — returns full article text, not snippets
-- [Init]: Author mode backend proved in Python before streaming frontend is added
-- [01-01]: Singleton pattern for ChromaDB PersistentClient to avoid re-initializing 420MB embedding model
-- [01-01]: SQLite for article log (not ChromaDB metadata) for efficient article-level counting
-- [01-01]: 1875 chars chunk size (~500 tokens for Polish text) with 10% overlap
-- [01-02]: Pydantic models for URL/Drive requests added to bond/models.py (not inline in router) for reuse
-- [01-02]: Drive auth failure caught at service build time and returned as warnings — /ingest/drive never returns 500
-- [01-02]: sitemap_search fallback to [url] list for single-post mode when no sitemap found
-- [01-03]: Two-pass retrieval (own-first, external fills remainder) — author style always prioritised in RAG context
-- [01-03]: ChromaDB filtered query exception caught broadly — no clean way to pre-check filtered collection size
-- [01-03]: CorpusStatus and SmokeTestResult Pydantic models inline in corpus.py (endpoint-specific, not shared)
-- [02-01]: Stub node replacement via register_node() dict pattern — graph wiring finalized in Plan 01; Plans 02-04 only replace stub bodies without touching edge logic
-- [02-01]: Two separate SQLite files (bond_checkpoints.db for LangGraph SqliteSaver, bond_metadata.db for article metadata_log) to avoid LangGraph internal schema conflicts
-- [02-01]: Schema-on-connect pattern (_get_conn() runs CREATE TABLE IF NOT EXISTS on every open) — zero-config migration for simple schema
-- [02-01]: check_same_thread=False for both SQLite connections — required for LangGraph async execution across thread boundaries
-- [02-02]: ChromaDB cosine DISTANCE conversion: similarity = 1.0 - distance; distance range 0-2 maps to similarity 1.0-(-1.0), threshold of 0.85 catches near-identical topics
-- [02-02]: interrupt() payload contains existing_title, existing_date, similarity_score — frontend HITL surface shape is locked
-- [02-02]: Text stripped from Exa session cache after report synthesis — slim_results keeps only title/url/summary to prevent SqliteSaver state bloat
-- [02-03]: cp1_feedback concatenates edited_structure + optional note into single string; structure_node reads this as strong prior on re-run
-- [02-03]: RAG exemplar injection as system prompt prefix (soft prompt technique) — provides strongest style transfer signal vs user message injection
-- [02-03]: Low-corpus gate: corpus count checked before any LLM call; interrupt() with warning when < 10 articles; user confirms True/False to proceed or abort
-- [02-03]: Writer auto-retry cp2_feedback only on attempt 0; subsequent retries fall back to fresh draft to avoid compounding revision errors
-- [02-04]: checkpoint_2 soft cap is warning only — after 3 iterations interrupt payload gains "warning" field but does not hard-block; user can still approve or reject
-- [02-04]: save_metadata_node generates published_date at call time (not from state) — ensures accurate SQLite and ChromaDB persistence timestamp
-- [02-04]: Harness duplicate checkpoint returns bool True (not dict) — matches resume shape expected by duplicate_check_node
-- [02-04]: Harness max_interrupts=20 safety limit prevents infinite HITL loop if graph state is misconfigured
+**Phase 2 (Author backend):**
+- Stub node replacement via _node_registry dict — graph wiring finalized in Plan 01; later plans replace stub bodies without touching edge logic
+- interrupt() payload shape locked for cp1, cp2, duplicate_check
+- RAG exemplar injection as system prompt prefix (soft prompt technique)
+- Low-corpus gate: interrupt() warning when < 10 articles; user confirms True/False
+- Writer auto-retry on cp2_feedback only on attempt 0 — avoids compounding revision errors
+- save_metadata_node generates published_date at call time — ensures accurate timestamp
+
+**Phase 3 (Streaming API + Frontend):**
+- FastAPI lifespan compiles LangGraph graph once with AsyncSqliteSaver — graph lives on `app.state.graph`
+- Per-thread asyncio.Lock (_resume_locks) prevents race on rapid HITL clicks
+- _RECURSION_LIMIT=50 as absolute backstop behind per-node hard caps
+- Safety cap guards in _route_after_cp1/cp2: check cp_iterations >= HARD_CAP before routing
+- SSE event flow: thread_id → stage → node_start/end → token → [hitl_pause | done/error]
+- Post-stream state inspection: _emit_post_stream_events checks state_snapshot.next to decide hitl_pause vs terminal events
+- SSE reconnect: MAX_RETRIES=5, exponential backoff (1s→2s→4s→8s→16s) + jitter, Last-Event-ID header sent
+- Zustand chatStore holds AbortController per stream — isolated, no module-level global
+- FlashRank reranker after two-pass ChromaDB retrieval
+- Semantic cache cross-session (ChromaDB embeddings for Exa results)
+- Structure node promoted to DRAFT_MODEL (gpt-4o) for better H1/H2/H3 quality
+
+**Phase 4 (Shadow Mode):**
+- BondState = AuthorState (alias) — backward-compat across all Phase 2 nodes
+- Shadow branch: shadow_analyze → shadow_annotate → shadow_checkpoint (with HITL loop back to shadow_annotate on reject)
+- shadow_annotate uses with_structured_output(AnnotationResult) + three-pass index validation (accept / auto-correct / discard)
+- _apply_annotations applies in reverse index order — preserves correct offsets after length-changing replacements
+- shadow_checkpoint hard cap at 3 iterations (lower than cp1/cp2 because structured LLM calls on full user text are expensive)
+- SHAD-06 frontend HITL wiring is the last remaining gap (see above)
 
 ### Pending Todos
 
-None yet.
+- [ ] Fix Shadow mode HITL frontend gap (SHAD-05, SHAD-06) — see Known Gap section above
 
 ### Blockers/Concerns
 
-- [Phase 2]: LangGraph SqliteSaver import resolved — path is `langgraph.checkpoint.sqlite` with `langgraph-checkpoint-sqlite>=3.0.3`
-- [Phase 2]: Exa API Polish-language query parameters pending live verification — EXA_API_KEY not set in .env
-- [Phase 2]: astream_events version="v2" needs Context7 confirmation
-- [Phase 2]: RAG corpus quality threshold (10 articles, 0.85 cosine similarity for duplicates) are recommendations, not validated values — budget time for tuning
+- Shadow mode is functionally broken end-to-end for users until the HITL gap is fixed
+- EXA_API_KEY live verification with Polish-language queries still pending from Phase 2 note (may already work; just not formally verified)
+- RAG corpus quality thresholds (10 articles, 0.85 similarity) are recommendations, not empirically validated values
 
 ## Session Continuity
 
-Last session: 2026-02-23
-Stopped at: 02-04 complete (all 3 tasks done including human-verify checkpoint); Phase 2 Author Mode Backend fully complete; ready for Phase 3 Streaming API and Frontend
+Last session: 2026-04-23
+Stopped at: Phase 3 E2E hardening complete; Shadow mode built except for frontend HITL wiring
 Resume file: None
+Next task: Fix Shadow HITL frontend gap (extend HitlPauseSchema, wire setAnnotations in hitl_pause handler, add approve/reject to ShadowPanel)

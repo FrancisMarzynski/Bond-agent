@@ -26,10 +26,10 @@ Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksym
 - [ ] Zatwierdzenie draftu zapisuje metadane (temat, data) do Metadata Log
 
 **Tryb Shadow — Korekta stylu:**
-- [ ] Użytkownik dostarcza gotowy tekst i uruchamia tryb Shadow
-- [ ] Agent analizuje tekst, porównuje ze wzorcami z bazy wektorowej i proponuje konkretne korekty
-- [ ] Output: tekst z anotacjami + poprawiona wersja
-- [ ] Użytkownik może odrzucić sugestie z powodem — Agent regeneruje alternatywne korekty
+- [x] Użytkownik dostarcza gotowy tekst i uruchamia tryb Shadow
+- [x] Agent analizuje tekst, porównuje ze wzorcami z bazy wektorowej i proponuje konkretne korekty
+- [ ] Output: tekst z anotacjami + poprawiona wersja ⚠️ *Backend done; frontend HITL gap (annotations not surfaced to user)*
+- [ ] Użytkownik może odrzucić sugestie z powodem — Agent regeneruje alternatywne korekty ⚠️ *Backend done; no approve/reject UI in /shadow route*
 
 **Repurposing (Blog → Social Media):**
 - [ ] Użytkownik dostarcza artykuł, Agent generuje warianty dla Facebook, LinkedIn, Instagram, X (Twitter)
@@ -46,10 +46,10 @@ Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksym
 - [ ] Onboarding: użytkownik może zasilić bazę własnymi tekstami lub wskazać URL/teksty zewnętrznych blogerów
 
 **Interfejs użytkownika:**
-- [ ] Przełącznik trybu Author/Shadow widoczny w głównym widoku czatu
-- [ ] Progress indicator dla długich operacji (research → struktura → pisanie)
-- [ ] Edytor Markdown dla wygenerowanego contentu
-- [ ] Przycisk "Zatwierdź i Zapisz" zapisujący metadane do Metadata Log
+- [x] Przełącznik trybu Author/Shadow widoczny w głównym widoku czatu
+- [x] Progress indicator dla długich operacji (research → struktura → pisanie)
+- [x] Edytor Markdown dla wygenerowanego contentu
+- [x] Przycisk "Zatwierdź i Zapisz" zapisujący metadane do Metadata Log
 
 **Kontrola duplikatów:**
 - [ ] Metadata Log (SQL lub JSON) rejestruje tematy z datą publikacji
