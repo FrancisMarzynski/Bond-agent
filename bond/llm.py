@@ -59,7 +59,11 @@ def _build_llm(model: str, tokens: int, temperature: float) -> BaseChatModel:
         max_retries=settings.openai_max_retries,
     )
     if "claude" in model.lower():
+        if settings.anthropic_api_key:
+            kwargs["api_key"] = settings.anthropic_api_key
         return ChatAnthropic(**kwargs)
+    if settings.openai_api_key:
+        kwargs["api_key"] = settings.openai_api_key
     return ChatOpenAI(**kwargs)
 
 

@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle2, XCircle, Database, X, AlertTriangle, ChevronDown, ChevronRight, ScrollText } from "lucide-react";
 
 export function CheckpointPanel() {
-  const { hitlPause, isStreaming } = useChatStore();
+  const { hitlPause, isStreaming, isRecoveringSession, pendingAction } = useChatStore();
   const { threadId, persistThreadId } = useSession();
   const { resumeStream } = useStream();
 
@@ -19,9 +19,11 @@ export function CheckpointPanel() {
   if (!hitlPause || isStreaming) return null;
 
   const isDuplicateCheck = hitlPause.checkpoint_id === "duplicate_check";
+  const isLowCorpus = hitlPause.checkpoint_id === "low_corpus";
   const isCheckpoint2 = hitlPause.checkpoint_id === "cp2" ||
     hitlPause.checkpoint_id === "checkpoint_2";
   const iterationsRemaining = hitlPause.iterations_remaining;
+  const controlsDisabled = isStreaming || (isRecoveringSession && pendingAction === "resume");
 
   // --- Duplicate check handlers ---
   const handleDuplicateContinue = async () => {
@@ -59,32 +61,53 @@ export function CheckpointPanel() {
     await resumeStream(threadId, "reject", feedback, persistThreadId);
   };
 
-  // --- Duplicate check warning UI ---
-  if (isDuplicateCheck) {
+  // --- Warning checkpoints UI ---
+  if (isDuplicateCheck || isLowCorpus) {
+    const warningTitle = isDuplicateCheck
+      ? "Wykryto podobny temat"
+      : "Niski stan korpusu";
+
     return (
       <div className="border border-amber-500/40 rounded-lg p-3 bg-amber-500/5 mx-4 mt-3 mb-3 flex flex-col gap-3 shrink-0">
         <div className="flex items-start gap-2">
           <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
           <div className="flex flex-col gap-1 flex-1 min-w-0">
             <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
-              Wykryto podobny temat
+              {warningTitle}
             </span>
-            {hitlPause.existing_title && (
+            {hitlPause.warning && (
+              <span className="text-xs text-muted-foreground">
+                {hitlPause.warning}
+              </span>
+            )}
+            {isDuplicateCheck && hitlPause.existing_title && (
               <span className="text-xs text-muted-foreground">
                 <span className="font-medium">Istniejący artykuł:</span>{" "}
                 {hitlPause.existing_title}
               </span>
             )}
-            {hitlPause.existing_date && (
+            {isDuplicateCheck && hitlPause.existing_date && (
               <span className="text-xs text-muted-foreground">
                 <span className="font-medium">Data publikacji:</span>{" "}
                 {hitlPause.existing_date}
               </span>
             )}
-            {hitlPause.similarity_score !== undefined && (
+            {isDuplicateCheck && hitlPause.similarity_score !== undefined && (
               <span className="text-xs text-muted-foreground">
                 <span className="font-medium">Podobieństwo:</span>{" "}
                 {Math.round(hitlPause.similarity_score * 100)}%
+              </span>
+            )}
+            {isLowCorpus && hitlPause.corpus_count !== undefined && (
+              <span className="text-xs text-muted-foreground">
+                <span className="font-medium">Artykułów w korpusie:</span>{" "}
+                {hitlPause.corpus_count}
+                {hitlPause.threshold !== undefined && ` / próg ${hitlPause.threshold}`}
+              </span>
+            )}
+            {isRecoveringSession && pendingAction === "resume" && (
+              <span className="text-xs text-muted-foreground">
+                Przywracanie stanu po wysłaniu decyzji...
               </span>
             )}
           </div>
@@ -94,21 +117,21 @@ export function CheckpointPanel() {
             variant="outline"
             size="sm"
             onClick={handleDuplicateAbort}
-            disabled={isStreaming}
+            disabled={controlsDisabled}
             className="gap-1.5 text-destructive border-destructive/40 hover:bg-destructive/10"
           >
             <XCircle className="h-3.5 w-3.5" />
-            Anuluj
+            {isLowCorpus ? "Przerwij" : "Anuluj"}
           </Button>
           <Button
             variant="default"
             size="sm"
             onClick={handleDuplicateContinue}
-            disabled={isStreaming}
+            disabled={controlsDisabled}
             className="gap-1.5 bg-amber-600 hover:bg-amber-700"
           >
             <CheckCircle2 className="h-3.5 w-3.5" />
-            Kontynuuj mimo to
+            {isLowCorpus ? "Kontynuuj mimo ryzyka" : "Kontynuuj mimo to"}
           </Button>
         </div>
       </div>
@@ -159,7 +182,7 @@ export function CheckpointPanel() {
             variant="default"
             size="sm"
             onClick={handleApprove}
-            disabled={isStreaming}
+            disabled={controlsDisabled}
             className="gap-1.5 bg-green-600 hover:bg-green-700"
           >
             <Database className="h-3.5 w-3.5" />
@@ -170,7 +193,7 @@ export function CheckpointPanel() {
             variant="default"
             size="sm"
             onClick={handleApprove}
-            disabled={isStreaming}
+            disabled={controlsDisabled}
             className="gap-1.5"
           >
             <CheckCircle2 className="h-3.5 w-3.5" />
@@ -185,7 +208,7 @@ export function CheckpointPanel() {
               variant="ghost"
               size="sm"
               onClick={handleRejectCancel}
-              disabled={isStreaming}
+              disabled={controlsDisabled}
               className="gap-1.5 text-muted-foreground"
             >
               <X className="h-3.5 w-3.5" />
@@ -196,7 +219,7 @@ export function CheckpointPanel() {
               variant="outline"
               size="sm"
               onClick={handleRejectClick}
-              disabled={isStreaming}
+              disabled={controlsDisabled}
               className="gap-1.5 text-destructive border-destructive/40 hover:bg-destructive/10"
             >
               <XCircle className="h-3.5 w-3.5" />
@@ -222,7 +245,7 @@ export function CheckpointPanel() {
             onChange={(e) => setFeedbackText(e.target.value)}
             placeholder="Np. Sekcja wstępna jest zbyt ogólna, dodaj konkretne przykłady..."
             className="text-sm min-h-[80px] resize-none"
-            disabled={isStreaming}
+            disabled={controlsDisabled}
             autoFocus
           />
           <div className="flex justify-end">
@@ -230,7 +253,7 @@ export function CheckpointPanel() {
               variant="destructive"
               size="sm"
               onClick={handleRejectSubmit}
-              disabled={isStreaming}
+              disabled={controlsDisabled}
               className="gap-1.5"
             >
               <XCircle className="h-3.5 w-3.5" />

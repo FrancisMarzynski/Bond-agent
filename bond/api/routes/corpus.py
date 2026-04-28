@@ -7,7 +7,6 @@ from bond.models import (
     IngestUrlRequest,
     IngestDriveRequest,
     BatchIngestResult,
-    DriveFileInfo,
     DriveIngestResult,
 )
 from bond.corpus.sources.text_source import ingest_text

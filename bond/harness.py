@@ -24,10 +24,6 @@ from dotenv import load_dotenv
 
 load_dotenv()  # Must be before bond.graph imports so env vars are available
 
-from langgraph.types import Command
-
-from bond.graph.graph import compile_graph
-
 
 def _handle_interrupt(result: dict, interactive: bool) -> dict:
     """
@@ -102,10 +98,10 @@ def _handle_interrupt(result: dict, interactive: bool) -> dict:
 
         if not interactive:
             print("\n[AUTO] Kontynuuję.")
-            return True
+            return {"action": "approve"}
 
         user_input = input("\nKontynuować? [t/n]: ").strip().lower()
-        return user_input == "t"
+        return {"action": "approve"} if user_input == "t" else {"action": "reject"}
 
     return {"approved": True}  # fallback
 
@@ -137,9 +133,13 @@ async def run_author_pipeline(
     if thread_id is None:
         thread_id = str(uuid.uuid4())
 
+    from langgraph.types import Command
+
+    from bond.graph.graph import compile_graph
+
     config = {"configurable": {"thread_id": thread_id}}
 
-    print(f"\nAuthor Mode Pipeline")
+    print("\nAuthor Mode Pipeline")
     print(f"Topic: {topic}")
     print(f"Keywords: {keywords}")
     print(f"Thread ID: {thread_id}")

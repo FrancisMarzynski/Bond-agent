@@ -17,7 +17,7 @@ class SSEParser {
     buffer = "";
 
     feed(chunk) {
-        this.buffer += chunk;
+        this.buffer = `${this.buffer}${chunk}`.replace(/\r\n?/g, "\n");
         if (this.buffer.length > MAX_BUFFER_SIZE) {
             this.buffer = "";
             throw new Error(
@@ -47,6 +47,23 @@ class SSEParser {
             }
         }
         return events;
+    }
+}
+
+function parseNestedPayload(raw) {
+    if (typeof raw !== "string") {
+        return raw;
+    }
+
+    const trimmed = raw.trim();
+    if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+        return raw;
+    }
+
+    try {
+        return JSON.parse(raw);
+    } catch {
+        return raw;
     }
 }
 
@@ -123,6 +140,20 @@ test("SSEParser: obsługuje wieloliniowe pole data: (ciągłość)", () => {
     const events = parser.feed("data: line1\ndata: line2\n\n");
     assert.equal(events.length, 1);
     assert.equal(events[0].data, "line1\nline2");
+});
+
+test("SSEParser: obsługuje separatory CRLF z przeglądarki", () => {
+    const parser = new SSEParser();
+    const events = parser.feed('data: {"type":"token","data":"Hello"}\r\n\r\n');
+    assert.equal(events.length, 1);
+    assert.equal(JSON.parse(events[0].data).data, "Hello");
+});
+
+test("parseNestedPayload: zachowuje tokeny liczbowe jako string", () => {
+    assert.equal(parseNestedPayload("144"), "144");
+    assert.equal(parseNestedPayload("1"), "1");
+    assert.deepEqual(parseNestedPayload('{"thread_id":"abc"}'), { thread_id: "abc" });
+    assert.deepEqual(parseNestedPayload('[1,2,3]'), [1, 2, 3]);
 });
 
 test("SSEParser: rzuca błąd po przekroczeniu limitu bufora (brak \\n\\n)", () => {
@@ -216,5 +247,80 @@ test(`FastAPI POST /api/chat/stream zwraca SSE Content-Type (${API_URL})`, async
     for (const ev of parsed) {
         const obj = JSON.parse(ev.data);
         assert.ok(obj.type, `Każde zdarzenie musi mieć pole type, otrzymano: ${JSON.stringify(obj)}`);
+    }
+});
+
+test(`FastAPI GET /api/chat/history/{thread_id} zwraca pola recovery (${API_URL})`, async () => {
+    let res;
+    try {
+        res = await fetch(`${API_URL}/api/chat/stream`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: "__history_ping__", thread_id: null, mode: "author" }),
+            signal: AbortSignal.timeout(5000),
+        });
+    } catch (err) {
+        console.warn(`  ⚠  Serwer niedostępny pod ${API_URL}: ${err.message} — test pominięty`);
+        return;
+    }
+
+    if (!res.ok || !res.body) {
+        console.warn(`  ⚠  Nie udało się otworzyć streamu testowego (${res.status}) — test pominięty`);
+        return;
+    }
+
+    const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+    const parser = new SSEParser();
+    let threadId = null;
+    let timeout = false;
+
+    const deadline = setTimeout(() => {
+        timeout = true;
+        reader.cancel();
+    }, 4000);
+
+    try {
+        while (!threadId && !timeout) {
+            const { value, done } = await reader.read();
+            if (done || timeout) break;
+            if (!value) continue;
+
+            for (const ev of parser.feed(value)) {
+                const parsed = JSON.parse(ev.data);
+                if (parsed.type === "thread_id") {
+                    const payload = JSON.parse(parsed.data);
+                    threadId = payload.thread_id;
+                    break;
+                }
+            }
+        }
+    } finally {
+        clearTimeout(deadline);
+        reader.cancel().catch(() => {});
+    }
+
+    if (!threadId) {
+        console.warn("  ⚠  Nie udało się odczytać thread_id ze streamu testowego — test pominięty");
+        return;
+    }
+
+    const historyRes = await fetch(`${API_URL}/api/chat/history/${threadId}`, {
+        signal: AbortSignal.timeout(5000),
+    });
+    assert.equal(historyRes.ok, true, `Historia sesji powinna zwrócić HTTP 200, otrzymano ${historyRes.status}`);
+
+    const history = await historyRes.json();
+    assert.ok(
+        ["idle", "running", "paused", "completed", "error"].includes(history.session_status),
+        `Nieprawidłowy session_status: ${history.session_status}`
+    );
+    assert.equal(typeof history.can_resume, "boolean");
+    assert.ok(Object.hasOwn(history, "pending_node"), "Brakuje pola pending_node");
+    assert.ok(Object.hasOwn(history, "hitlPause"), "Brakuje pola hitlPause");
+    assert.ok(Array.isArray(history.messages), "Pole messages musi być tablicą");
+    assert.equal(typeof history.stageStatus, "object");
+
+    if (history.pending_node !== null) {
+        assert.equal(typeof history.pending_node, "string");
     }
 });

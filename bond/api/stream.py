@@ -139,8 +139,10 @@ async def parse_stream_events(events: AsyncIterator[Any]) -> AsyncIterator[str]:
 
     finally:
         # Best-effort cleanup: close the astream_events async iterator so that
-        # the underlying LangGraph tasks are cancelled when the client disconnects
-        # or an error occurs upstream.
+        # LangGraph releases its internal resources when the producer finishes or
+        # an unrecoverable error occurs. This runs in the background task, not in
+        # the SSE response generator, so it does not cancel graph execution on
+        # client disconnect.
         if hasattr(events, "aclose"):
             try:
                 await events.aclose()

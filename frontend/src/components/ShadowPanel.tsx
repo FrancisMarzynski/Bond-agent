@@ -2,6 +2,7 @@
 import { useState, useCallback, useRef, useMemo } from "react";
 import { useShadowStore, type Annotation } from "@/store/shadowStore";
 import { useChatStore } from "@/store/chatStore";
+import { useSession } from "@/hooks/useSession";
 import { useStream } from "@/hooks/useStream";
 import { AnnotationList } from "@/components/AnnotationList";
 import { Button } from "@/components/ui/button";
@@ -60,9 +61,20 @@ export function ShadowPanel() {
 
   const { originalText, setOriginalText, resetShadow, annotations, shadowCorrectedText } =
     useShadowStore();
-  const { draft, setDraft, isStreaming, threadId, setThreadId, resetSession, hitlPause } =
+  const { threadId, persistThreadId } = useSession();
+  const {
+    draft,
+    setDraft,
+    isStreaming,
+    isReconnecting,
+    isRecoveringSession,
+    pendingAction,
+    resetSession,
+    hitlPause,
+  } =
     useChatStore();
   const { startStream, resumeStream } = useStream();
+  const isResumeRecovery = isRecoveringSession && pendingAction === "resume";
 
   const handleSubmit = useCallback(async () => {
     const trimmed = inputText.trim();
@@ -72,8 +84,8 @@ export function ShadowPanel() {
     spanRefs.current = {};
     setActiveAnnotationId(null);
     setFeedbackText("");
-    await startStream(trimmed, threadId, "shadow", (id) => setThreadId(id));
-  }, [inputText, isStreaming, resetSession, setOriginalText, startStream, threadId, setThreadId]);
+    await startStream(trimmed, threadId, "shadow", persistThreadId);
+  }, [inputText, isStreaming, persistThreadId, resetSession, setOriginalText, startStream, threadId]);
 
   const handleReset = useCallback(() => {
     resetSession();
@@ -102,15 +114,15 @@ export function ShadowPanel() {
   const handleApprove = useCallback(async () => {
     if (!threadId) return;
     setFeedbackText("");
-    await resumeStream(threadId, "approve", null, (id) => setThreadId(id));
-  }, [resumeStream, setThreadId, threadId]);
+    await resumeStream(threadId, "approve", null, persistThreadId);
+  }, [persistThreadId, resumeStream, threadId]);
 
   const handleReject = useCallback(async () => {
     const feedback = feedbackText.trim();
     if (!threadId || !feedback) return;
-    await resumeStream(threadId, "reject", feedback, (id) => setThreadId(id));
+    await resumeStream(threadId, "reject", feedback, persistThreadId);
     setFeedbackText("");
-  }, [feedbackText, resumeStream, setThreadId, threadId]);
+  }, [feedbackText, persistThreadId, resumeStream, threadId]);
 
   // Memoize segments — recalculate only when originalText or annotations change,
   // not on every streaming draft update.
@@ -121,7 +133,11 @@ export function ShadowPanel() {
 
   // ── Comparison view ──────────────────────────────────────────────────────
   if (originalText) {
-    const showHitlPanel = hitlPause?.checkpoint_id === "shadow_checkpoint" && !isStreaming && threadId;
+    const showHitlPanel =
+      hitlPause?.checkpoint_id === "shadow_checkpoint" &&
+      !isStreaming &&
+      !isReconnecting &&
+      threadId;
 
     return (
       <div className="flex flex-col h-full bg-background overflow-hidden">
@@ -132,6 +148,25 @@ export function ShadowPanel() {
               <>
                 <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">Analizuję tekst...</span>
+              </>
+            ) : isReconnecting ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Ponawiam połączenie...</span>
+              </>
+            ) : isResumeRecovery ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">
+                  Przywracam stan sesji po wysłaniu decyzji...
+                </span>
+              </>
+            ) : isRecoveringSession ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">
+                  Trwa przetwarzanie — oczekuję na wynik...
+                </span>
               </>
             ) : (
               <span className="text-xs text-muted-foreground">
@@ -158,15 +193,20 @@ export function ShadowPanel() {
                 {hitlPause?.iteration_count !== undefined &&
                   ` Iteracja ${hitlPause.iteration_count + 1}/3`}
               </p>
+              {isResumeRecovery && (
+                <p className="text-xs text-muted-foreground">
+                  Decyzja została już wysłana. Panel pozostaje widoczny do czasu odzyskania stanu z historii.
+                </p>
+              )}
               <div className="flex gap-2">
-                <Button size="sm" onClick={handleApprove}>
+                <Button size="sm" onClick={handleApprove} disabled={isResumeRecovery}>
                   Zatwierdź
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleReject}
-                  disabled={!feedbackText.trim()}
+                  disabled={!feedbackText.trim() || isResumeRecovery}
                 >
                   Odrzuć
                 </Button>
@@ -176,6 +216,7 @@ export function ShadowPanel() {
                 onChange={(e) => setFeedbackText(e.target.value)}
                 placeholder="Napisz co poprawić (wymagane do odrzucenia)..."
                 className="text-xs min-h-[60px] resize-none"
+                disabled={isResumeRecovery}
               />
             </div>
           )}

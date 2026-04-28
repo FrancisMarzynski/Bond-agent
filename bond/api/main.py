@@ -12,6 +12,7 @@ from bond.config import settings
 from bond.api.routes.corpus import router as corpus_router
 from bond.api.routes.chat import router as chat_router
 from bond.graph.graph import compile_graph
+from bond.api.runtime import CommandRuntime
 
 logging.basicConfig(
     level=logging.INFO,
@@ -23,9 +24,12 @@ logging.basicConfig(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    runtime = CommandRuntime()
+    app.state.runtime = runtime
     async with compile_graph() as graph:
         app.state.graph = graph
         yield
+    await runtime.shutdown()
 
 app = FastAPI(title="Bond — Agent Redakcyjny", version="0.1.0", lifespan=lifespan)
 
@@ -35,6 +39,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Bond-Thread-Id"],
 )
 
 app.include_router(corpus_router)

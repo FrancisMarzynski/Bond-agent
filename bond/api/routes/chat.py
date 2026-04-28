@@ -8,6 +8,7 @@ from fastapi import APIRouter, Request
 from pydantic import BaseModel, field_validator
 from sse_starlette.sse import EventSourceResponse
 
+from bond.api.runtime import ActiveRun, CommandRuntime
 from bond.api.stream import parse_stream_events
 from bond.schemas import StreamEvent
 from langgraph.types import Command
@@ -24,20 +25,125 @@ TOPIC_MAX_CHARS = 1_000     # author mode topic guard
 # --- Per-thread resume lock — prevents race conditions when rapidly clicking "Reject" ---
 _resume_locks: dict[str, asyncio.Lock] = {}
 
-# Sentinel prefix used to pass stream metadata from _stream_graph_events to callers.
-_META_PREFIX = "__META__:"
-
 # LangGraph recursion limit — acts as safety backstop behind the per-node hard caps.
 # Base path: ~7 nodes. cp1 loop: up to 10 * 2 = 20. cp2 loop: up to 10 * 2 = 20. Total ≤ 47.
 _RECURSION_LIMIT = 50
 
 # SSE response headers shared by all streaming endpoints.
-# Note: EventSourceResponse already sets Connection: keep-alive and
-# X-Accel-Buffering: no automatically; we only override Cache-Control.
 _SSE_HEADERS = {
     "Cache-Control": "no-cache",
     "Content-Encoding": "identity",
 }
+
+_HEARTBEAT_INTERVAL_SECONDS = 5.0
+
+# Maps pending_node → frontend stage label for GET /history and _emit_post_stream_events.
+# Shadow stages aligned with bond/api/stream.py _STAGE_MAP.
+_STAGE_MAP = {
+    "duplicate_check": "idle",
+    "researcher": "research",
+    "structure": "structure",
+    "checkpoint_1": "structure",
+    "writer": "writing",
+    "checkpoint_2": "writing",
+    "save_metadata": "done",
+    "shadow_analyze": "shadow_analysis",
+    "shadow_annotate": "shadow_annotation",
+    "shadow_checkpoint": "shadow_annotation",
+}
+
+
+def _build_hitl_pause_from_state(next_node: str, st: dict[str, Any]) -> dict[str, Any] | None:
+    """Fallback HITL payload builder when LangGraph interrupts are absent in tasks."""
+    if next_node == "duplicate_check" and st.get("duplicate_match"):
+        match = st["duplicate_match"]
+        return {
+            "checkpoint_id": "duplicate_check",
+            "type": "approve_reject",
+            "warning": "Wykryto podobny temat",
+            "existing_title": match.get("existing_title") or match.get("title"),
+            "existing_date": match.get("existing_date") or match.get("date"),
+            "similarity_score": match.get("similarity_score") or match.get("similarity"),
+        }
+
+    if next_node == "checkpoint_1":
+        return {
+            "checkpoint_id": "checkpoint_1",
+            "type": "approve_reject",
+            "research_report": st.get("research_report", ""),
+            "heading_structure": st.get("heading_structure", ""),
+            "cp1_iterations": st.get("cp1_iterations", 0),
+        }
+
+    if next_node == "checkpoint_2":
+        return {
+            "checkpoint_id": "checkpoint_2",
+            "type": "approve_reject",
+            "draft": st.get("draft", ""),
+            "draft_validated": st.get("draft_validated", True),
+            "cp2_iterations": st.get("cp2_iterations", 0),
+            "iterations_remaining": 3 - st.get("cp2_iterations", 0),
+        }
+
+    if next_node == "shadow_checkpoint":
+        return {
+            "checkpoint_id": "shadow_checkpoint",
+            "type": "approve_reject",
+            "annotations": st.get("annotations", []) or [],
+            "shadow_corrected_text": st.get("shadow_corrected_text", "") or "",
+            "iteration_count": st.get("iteration_count", 0),
+        }
+
+    return None
+
+
+def _build_hitl_pause_from_snapshot(state_snapshot) -> dict[str, Any] | None:
+    """Extract HITL pause payload from a LangGraph state snapshot."""
+    st = state_snapshot.values
+    next_nodes = list(getattr(state_snapshot, "next", []) or [])
+    pending_node = next_nodes[0] if next_nodes else None
+
+    if not pending_node:
+        return None
+
+    hitl_pause = None
+
+    if hasattr(state_snapshot, "tasks"):
+        for task in state_snapshot.tasks:
+            if hasattr(task, "interrupts") and task.interrupts:
+                for intr in task.interrupts:
+                    val = getattr(intr, "value", intr)
+                    if isinstance(val, dict):
+                        hitl_pause = {
+                            "checkpoint_id": val.get("checkpoint", task.name),
+                            "type": val.get("type", "approve_reject"),
+                        }
+                        for k, v in val.items():
+                            if k not in ("checkpoint", "type", "instructions"):
+                                hitl_pause[k] = v
+                        if task.name == "checkpoint_2" and "iterations_remaining" not in hitl_pause:
+                            hitl_pause["iterations_remaining"] = 3 - st.get("cp2_iterations", 0)
+                        break
+                if hitl_pause:
+                    break
+
+    if not hitl_pause:
+        hitl_pause = _build_hitl_pause_from_state(pending_node, st)
+
+    return hitl_pause
+
+
+def _build_stage_status(stage: str, session_status: str) -> dict[str, str]:
+    """Map explicit session status to the existing frontend stage-status contract."""
+    if session_status == "paused":
+        return {stage: "pending"}
+    if session_status == "running":
+        return {stage: "running"}
+    if session_status == "completed":
+        return {stage: "complete"}
+    if session_status == "error":
+        return {stage: "error"}
+    return {}
 
 
 def _get_resume_lock(thread_id: str) -> asyncio.Lock:
@@ -55,8 +161,6 @@ class ChatRequest(BaseModel):
     @field_validator("message")
     @classmethod
     def validate_message_length(cls, v: str, info) -> str:
-        # Apply the stricter shadow limit universally; mode-specific feedback is
-        # handled inside the endpoint itself.
         if len(v) > SHADOW_MAX_CHARS:
             raise ValueError(
                 f"Tekst wejściowy jest zbyt długi ({len(v)} znaków). "
@@ -74,157 +178,35 @@ class ResumeRequest(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Core SSE streaming helper
+# Post-stream state emission (no longer requires a Request object)
 # ---------------------------------------------------------------------------
 
-async def _stream_graph_events(graph, input_or_command, config: dict, request: Request):
+async def _emit_post_stream_events(graph, config: dict, state_snapshot=None):
     """
-    Async generator that drives ``graph.astream_events(version="v2")``.
+    Inspect the persisted checkpoint and yield terminal SSE events.
 
-    Design:
-    - Wraps ``parse_stream_events`` in an inner generator that catches all errors
-      and converts them to SSE ``error`` events, while tracking whether the error
-      occurred via ``had_error``.
-    - Sends an SSE ``heartbeat`` every 15 s so that proxies/load-balancers do not
-      time out idle connections.
-    - Polls ``request.is_disconnected()`` on every 1 s timeout to detect client
-      drops and stop processing without waiting for the next LangGraph event.
-    - Closes the inner generator in a ``finally`` block to guarantee that the
-      underlying ``astream_events`` async iterator and any open model connections
-      are properly released — even on client disconnect or task cancellation.
-
-    Yields:
-        Raw JSON strings (StreamEvent payloads) consumed by EventSourceResponse.
-        One terminal sentinel ``"__META__:{...}"`` carrying bookkeeping flags.
+    Emitted after the graph stream exhausts without error:
+    - If paused at HITL: stage + hitl_pause events.
+    - If reached END: optional system_alert + shadow output + done.
     """
-    events = graph.astream_events(input_or_command, config=config, version="v2")
-
-    # Tracks whether a model / graph error occurred inside the inner generator.
-    # Used to distinguish a clean "stream finished" from "stream finished after error".
-    had_error = False
-
-    async def _inner():
-        """Parse LangGraph events and surface errors as SSE error events."""
-        nonlocal had_error
-        try:
-            async for json_str in parse_stream_events(events):
-                yield json_str
-        except GraphRecursionError:
-            had_error = True
-            yield StreamEvent(
-                type="error",
-                data=(
-                    "Osiągnięto limit iteracji pętli HITL. "
-                    "Pipeline zatrzymany automatycznie po przekroczeniu maksymalnej liczby kroków."
-                ),
-            ).model_dump_json()
-        except Exception as exc:
-            had_error = True
-            logger.error("Model/graph error during streaming: %s", exc, exc_info=True)
-            yield StreamEvent(type="error", data=str(exc)).model_dump_json()
-
-    gen = _inner()
-    last_heartbeat = asyncio.get_event_loop().time()
-    client_disconnected = False
-    finished_cleanly = False
-
-    # Pull chunks from the inner generator without cancelling it on timeout.
-    # asyncio.wait_for cancels the wrapped coroutine on timeout in Python ≥3.11,
-    # which finalises the async generator prematurely (the next __anext__ call
-    # raises StopAsyncIteration even though the graph is still running).
-    # Instead we create a persistent Task for the next chunk and use asyncio.wait
-    # (which never cancels) to implement the heartbeat/disconnect poll loop.
-    chunk_task: asyncio.Task | None = None
-
-    try:
-        while True:
-            # Check for client disconnect before every pull from the graph.
-            if await request.is_disconnected():
-                client_disconnected = True
-                break
-
-            if chunk_task is None:
-                chunk_task = asyncio.ensure_future(gen.__anext__())
-
-            done, _ = await asyncio.wait({chunk_task}, timeout=1.0)
-
-            if done:
-                try:
-                    chunk = chunk_task.result()
-                    chunk_task = None
-                    yield chunk
-                    last_heartbeat = asyncio.get_event_loop().time()
-                except StopAsyncIteration:
-                    # Inner generator exhausted.  Mark as clean only when no error occurred.
-                    chunk_task = None
-                    finished_cleanly = not had_error
-                    break
-            else:
-                # 1 s elapsed without a new chunk — maybe send a heartbeat.
-                now = asyncio.get_event_loop().time()
-                if now - last_heartbeat > 15.0:
-                    yield StreamEvent(type="heartbeat", data="ping").model_dump_json()
-                    last_heartbeat = now
-
-    except asyncio.CancelledError:
-        # Task was cancelled (e.g. ASGI server shutdown).  Treat as client disconnect.
-        client_disconnected = True
-
-    except Exception as exc:
-        # Unexpected error in the outer polling loop (not from the model).
-        had_error = True
-        logger.error("Unexpected error in stream loop: %s", exc, exc_info=True)
-        yield StreamEvent(type="error", data=str(exc)).model_dump_json()
-
-    finally:
-        # Cancel the pending chunk task (if any) to avoid a dangling Task warning.
-        if chunk_task is not None and not chunk_task.done():
-            chunk_task.cancel()
-            try:
-                await chunk_task
-            except (asyncio.CancelledError, StopAsyncIteration, Exception):
-                pass
-        # Always close the inner generator so that parse_stream_events' finally block
-        # runs and the astream_events iterator is released — freeing model connections.
-        await gen.aclose()
-
-    yield _META_PREFIX + json.dumps({
-        "finished_cleanly": finished_cleanly,
-        "client_disconnected": client_disconnected,
-    })
-
-
-# ---------------------------------------------------------------------------
-# Post-stream state emission helpers
-# ---------------------------------------------------------------------------
-
-async def _emit_post_stream_events(graph, config: dict, thread_id: str, request: Request):
-    """
-    After the graph stream finishes cleanly, inspect the persisted checkpoint
-    and yield any final SSE events (hitl_pause, done, shadow output, …).
-
-    Yields raw JSON strings for EventSourceResponse.
-    """
-    state_snapshot = await graph.aget_state(config)
+    if state_snapshot is None:
+        state_snapshot = await graph.aget_state(config)
 
     if state_snapshot.next:
-        # Graph is paused at a HITL checkpoint — surface stage + pause info.
-        history_state = await get_chat_history(thread_id, request, state_snapshot=state_snapshot)
-        if history_state.get("stage"):
-            yield StreamEvent(
-                type="stage",
-                data=json.dumps({
-                    "stage": history_state["stage"],
-                    "status": history_state["stageStatus"].get(history_state["stage"], "running"),
-                }),
-            ).model_dump_json()
-        if history_state.get("hitlPause"):
+        next_node = state_snapshot.next[0]
+        stage = _STAGE_MAP.get(next_node, "idle")
+        yield StreamEvent(
+            type="stage",
+            data=json.dumps({"stage": stage, "status": "pending"}),
+        ).model_dump_json()
+
+        hitl_pause = _build_hitl_pause_from_snapshot(state_snapshot)
+        if hitl_pause:
             yield StreamEvent(
                 type="hitl_pause",
-                data=json.dumps(history_state["hitlPause"]),
+                data=json.dumps(hitl_pause),
             ).model_dump_json()
     else:
-        # Graph reached END — emit terminal output events.
         st = state_snapshot.values
 
         hard_cap_msg = st.get("hard_cap_message")
@@ -249,6 +231,84 @@ async def _emit_post_stream_events(graph, config: dict, thread_id: str, request:
 
 
 # ---------------------------------------------------------------------------
+# Background graph producer
+# ---------------------------------------------------------------------------
+
+async def _run_graph_events(
+    run: ActiveRun,
+    graph,
+    input_or_command,
+    config: dict,
+) -> None:
+    """
+    Background producer: drives graph.astream_events() and publishes SSE events
+    to the ActiveRun queue. Graph execution is NOT cancelled if the SSE consumer
+    disconnects — it continues until the next durable checkpoint or END.
+    """
+    events = graph.astream_events(input_or_command, config=config, version="v2")
+    had_error = False
+
+    try:
+        async for json_str in parse_stream_events(events):
+            run.publish(json_str)
+    except GraphRecursionError:
+        had_error = True
+        run.publish(
+            StreamEvent(
+                type="error",
+                data=(
+                    "Osiągnięto limit iteracji pętli HITL. "
+                    "Pipeline zatrzymany automatycznie po przekroczeniu maksymalnej liczby kroków."
+                ),
+            ).model_dump_json()
+        )
+    except Exception as exc:
+        had_error = True
+        logger.error("Model/graph error during streaming: %s", exc, exc_info=True)
+        run.publish(StreamEvent(type="error", data=str(exc)).model_dump_json())
+
+    if not had_error:
+        async for event_json in _emit_post_stream_events(graph, config):
+            run.publish(event_json)
+
+
+# ---------------------------------------------------------------------------
+# Shared SSE consumer generator
+# ---------------------------------------------------------------------------
+
+async def _consume_run(run: ActiveRun, request: Request):
+    """
+    Async generator that reads events from the ActiveRun queue and yields them
+    as SSE strings. Polls for client disconnect and sends heartbeats.
+
+    Calls run.detach_subscriber() in its finally block so the background
+    producer keeps running after the response closes.
+    """
+    last_heartbeat = asyncio.get_event_loop().time()
+    try:
+        while True:
+            is_done, event = await run.consume_next(timeout=0.5)
+
+            if is_done:
+                break
+
+            if event is None:
+                if await request.is_disconnected():
+                    break
+                now = asyncio.get_event_loop().time()
+                if now - last_heartbeat > _HEARTBEAT_INTERVAL_SECONDS:
+                    yield StreamEvent(type="heartbeat", data="ping").model_dump_json()
+                    last_heartbeat = now
+                continue
+
+            last_heartbeat = asyncio.get_event_loop().time()
+            yield event
+
+    finally:
+        run.detach_subscriber()
+
+
+# ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
 
@@ -258,18 +318,12 @@ async def chat_stream(req: ChatRequest, request: Request):
     POST /api/chat/stream
 
     Starts a new agent pipeline run and streams events back as SSE.
+    Graph execution is owned by a background task independent of the SSE
+    response lifetime. A client disconnect detaches the consumer but does not
+    cancel the graph — the session remains recoverable via /history.
 
-    SSE event types (all carry ``{"type": "<kind>", "data": "<payload>"}`` JSON):
-      thread_id         — emitted first; carries the session ID
-      node_start/end    — LangGraph node lifecycle
-      stage             — frontend pipeline stage update
-      token             — LLM output chunk
-      heartbeat         — keep-alive ping (every 15 s of inactivity)
-      hitl_pause        — graph paused at a HITL checkpoint
-      shadow_corrected_text / annotations — shadow mode final output
-      system_alert      — hard-cap or other non-fatal warning
-      done              — terminal event (graph reached END cleanly)
-      error             — model or graph error; connection closed afterwards
+    Response header ``X-Bond-Thread-Id`` carries the thread ID so that same-tab
+    recovery works even when the body drops before the first thread_id SSE event.
     """
     thread_id = req.thread_id or str(uuid4())
     config = {
@@ -277,36 +331,30 @@ async def chat_stream(req: ChatRequest, request: Request):
         "recursion_limit": _RECURSION_LIMIT,
     }
     graph = request.app.state.graph
+    runtime: CommandRuntime = request.app.state.runtime
 
     initial_state: dict = {
         "topic": req.message,
         "keywords": [],
         "messages": [{"role": "user", "content": req.message}],
         "mode": req.mode,
+        "thread_id": thread_id,
     }
     if req.mode == "shadow":
         initial_state["original_text"] = req.message
 
-    async def generate():
-        # Always emit thread_id first so the frontend can associate events.
-        yield StreamEvent(type="thread_id", data=json.dumps({"thread_id": thread_id})).model_dump_json()
+    async def producer(run: ActiveRun) -> None:
+        run.publish(
+            StreamEvent(type="thread_id", data=json.dumps({"thread_id": thread_id})).model_dump_json()
+        )
+        await _run_graph_events(run, graph, initial_state, config)
 
-        finished_cleanly = False
-        client_disconnected = False
+    run = await runtime.start_run(thread_id, "stream", producer)
 
-        async for chunk in _stream_graph_events(graph, initial_state, config, request):
-            if chunk.startswith(_META_PREFIX):
-                meta = json.loads(chunk[len(_META_PREFIX):])
-                finished_cleanly = meta["finished_cleanly"]
-                client_disconnected = meta["client_disconnected"]
-            else:
-                yield chunk
+    headers = dict(_SSE_HEADERS)
+    headers["X-Bond-Thread-Id"] = thread_id
 
-        if finished_cleanly and not client_disconnected:
-            async for event_json in _emit_post_stream_events(graph, config, thread_id, request):
-                yield event_json
-
-    return EventSourceResponse(generate(), headers=_SSE_HEADERS, ping=None)
+    return EventSourceResponse(_consume_run(run, request), headers=headers, ping=None)
 
 
 @router.post("/resume")
@@ -316,14 +364,18 @@ async def chat_resume(req: ResumeRequest, request: Request):
 
     Resumes the agent pipeline after a HITL checkpoint pause.
 
-    Per-thread asyncio.Lock prevents race conditions when the user rapidly
-    clicks "Reject" — only one resume request per thread_id executes at once.
+    The per-thread asyncio.Lock is acquired HERE (in the route handler, before the
+    background task starts) so any concurrent resume request sees it as locked
+    immediately, not just after the SSE generator starts consuming. The lock is
+    released inside the producer's finally block when the graph reaches the next
+    durable state — not when the SSE response closes.
     """
     config = {
         "configurable": {"thread_id": req.thread_id},
         "recursion_limit": _RECURSION_LIMIT,
     }
     graph = request.app.state.graph
+    runtime: CommandRuntime = request.app.state.runtime
     lock = _get_resume_lock(req.thread_id)
 
     resume_value: dict[str, Any] = {"action": req.action}
@@ -334,34 +386,45 @@ async def chat_resume(req: ResumeRequest, request: Request):
     if req.note:
         resume_value["note"] = req.note
 
-    async def generate():
-        yield StreamEvent(type="thread_id", data=json.dumps({"thread_id": req.thread_id})).model_dump_json()
+    if lock.locked():
+        logger.warning("Concurrent resume for thread %s — rejecting duplicate.", req.thread_id)
 
-        if lock.locked():
-            logger.warning("Concurrent resume for thread %s — rejecting duplicate.", req.thread_id)
+        async def _reject():
+            yield StreamEvent(
+                type="thread_id",
+                data=json.dumps({"thread_id": req.thread_id}),
+            ).model_dump_json()
             yield StreamEvent(
                 type="error",
                 data="Poprzednia akcja HITL jest jeszcze w toku. Zaczekaj chwilę i spróbuj ponownie.",
             ).model_dump_json()
-            return
 
-        async with lock:
-            finished_cleanly = False
-            client_disconnected = False
+        return EventSourceResponse(_reject(), headers=_SSE_HEADERS, ping=None)
 
-            async for chunk in _stream_graph_events(graph, Command(resume=resume_value), config, request):
-                if chunk.startswith(_META_PREFIX):
-                    meta = json.loads(chunk.removeprefix(_META_PREFIX))
-                    finished_cleanly = meta["finished_cleanly"]
-                    client_disconnected = meta["client_disconnected"]
-                else:
-                    yield chunk
+    # Acquire the lock BEFORE starting the task so no concurrent request
+    # can sneak through between the locked() check and the task's first await.
+    await lock.acquire()
 
-            if finished_cleanly and not client_disconnected:
-                async for event_json in _emit_post_stream_events(graph, config, req.thread_id, request):
-                    yield event_json
+    async def producer(run: ActiveRun) -> None:
+        try:
+            run.publish(
+                StreamEvent(
+                    type="thread_id",
+                    data=json.dumps({"thread_id": req.thread_id}),
+                ).model_dump_json()
+            )
+            await _run_graph_events(run, graph, Command(resume=resume_value), config)
+        finally:
+            # Release the lock only when the graph has reached a durable state,
+            # not when the SSE consumer disconnects.
+            lock.release()
 
-    return EventSourceResponse(generate(), headers=_SSE_HEADERS, ping=None)
+    run = await runtime.start_run(req.thread_id, "resume", producer)
+
+    headers = dict(_SSE_HEADERS)
+    headers["X-Bond-Thread-Id"] = req.thread_id
+
+    return EventSourceResponse(_consume_run(run, request), headers=headers, ping=None)
 
 
 @router.get("/history/{thread_id}")
@@ -369,10 +432,12 @@ async def get_chat_history(thread_id: str, request: Request, state_snapshot=None
     """
     GET /api/chat/history/{thread_id}
 
-    Returns session state from the SQLite checkpoint store (AsyncSqliteSaver).
+    Returns session state from the SQLite checkpoint store (AsyncSqliteSaver),
+    overlaid with live runtime metadata when a background task is still running.
     """
     config = {"configurable": {"thread_id": thread_id}}
     graph = request.app.state.graph
+    runtime: Optional[CommandRuntime] = getattr(request.app.state, "runtime", None)
 
     if state_snapshot is None:
         state_snapshot = await graph.aget_state(config)
@@ -384,10 +449,19 @@ async def get_chat_history(thread_id: str, request: Request, state_snapshot=None
             "draft": "",
             "hitlPause": None,
             "stageStatus": {},
+            "session_status": "idle",
+            "pending_node": None,
+            "can_resume": False,
+            "originalText": "",
+            "annotations": [],
+            "shadowCorrectedText": "",
+            "active_command": None,
+            "error_message": None,
         }
 
     st = state_snapshot.values
-    next_nodes = state_snapshot.next
+    next_nodes = list(getattr(state_snapshot, "next", []) or [])
+    pending_node = next_nodes[0] if next_nodes else None
 
     messages = []
     for msg in st.get("messages", []):
@@ -399,23 +473,18 @@ async def get_chat_history(thread_id: str, request: Request, state_snapshot=None
 
     stage = "idle"
     hitl_pause = None
+    draft_value = st.get("draft") or st.get("shadow_corrected_text", "") or ""
 
-    if not next_nodes:
-        if st.get("metadata_saved"):
-            stage = "done"
-        else:
-            stage = "writing" if "draft" in st else "idle"
-    else:
-        stage_map = {
-            "duplicate_check": "idle",
-            "researcher": "research",
-            "structure": "structure",
-            "checkpoint_1": "structure",
-            "writer": "writing",
-            "checkpoint_2": "writing",
-            "save_metadata": "done",
-        }
-        stage = stage_map.get(next_nodes[0], "idle")
+    if pending_node:
+        stage = _STAGE_MAP.get(pending_node, "idle")
+    elif (
+        st.get("metadata_saved")
+        or st.get("shadow_corrected_text")
+        or st.get("annotations")
+    ):
+        stage = "done"
+    elif st.get("draft"):
+        stage = "writing"
 
     if hasattr(state_snapshot, "tasks"):
         for task in state_snapshot.tasks:
@@ -432,11 +501,49 @@ async def get_chat_history(thread_id: str, request: Request, state_snapshot=None
                                 hitl_pause[k] = v
                         if task.name == "checkpoint_2" and "iterations_remaining" not in hitl_pause:
                             hitl_pause["iterations_remaining"] = 3 - st.get("cp2_iterations", 0)
+                        break
+                if hitl_pause:
+                    break
+
+    if not hitl_pause and pending_node:
+        hitl_pause = _build_hitl_pause_from_state(pending_node, st)
+
+    if hitl_pause:
+        session_status = "paused"
+    elif pending_node:
+        session_status = "running"
+    else:
+        session_status = "completed"
+
+    # Runtime overlay — merge live execution state if a background task is still running.
+    active_command: Optional[str] = None
+    error_message: Optional[str] = None
+
+    run = runtime.get_run(thread_id) if runtime else None
+    if run is not None:
+        if run.task and not run.task.done():
+            active_command = run.active_command
+            # A still-running task means the graph hasn't committed a new checkpoint
+            # yet. Override session_status only when the checkpoint says "completed"
+            # (which would be a stale read from a previous run).
+            if session_status == "completed" and not run.finished_cleanly:
+                session_status = "running"
+        elif run.terminal_error and not pending_node:
+            error_message = run.terminal_error
+            session_status = "error"
 
     return {
         "messages": messages,
         "stage": stage,
-        "draft": st.get("draft", ""),
+        "draft": draft_value,
         "hitlPause": hitl_pause,
-        "stageStatus": {stage: "pending" if hitl_pause else "running"},
+        "stageStatus": _build_stage_status(stage, session_status),
+        "session_status": session_status,
+        "pending_node": pending_node,
+        "can_resume": session_status == "paused" and hitl_pause is not None,
+        "originalText": st.get("original_text", "") or "",
+        "annotations": st.get("annotations", []) or [],
+        "shadowCorrectedText": st.get("shadow_corrected_text", "") or "",
+        "active_command": active_command,
+        "error_message": error_message,
     }

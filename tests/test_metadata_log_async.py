@@ -8,11 +8,9 @@ Sprawdzają:
 """
 import asyncio
 import time
-from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
-import aiosqlite
 
 from bond.db import metadata_log
 

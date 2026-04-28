@@ -11,7 +11,9 @@ export class SSEParser {
     private buffer = "";
 
     feed(chunk: string): SSEEvent[] {
-        this.buffer += chunk;
+        // Browsers may surface SSE payloads with CRLF separators; normalize them
+        // before splitting so both `\n\n` and `\r\n\r\n` are handled identically.
+        this.buffer = `${this.buffer}${chunk}`.replace(/\r\n?/g, "\n");
         if (this.buffer.length > MAX_BUFFER_SIZE) {
             this.buffer = "";
             throw new Error(

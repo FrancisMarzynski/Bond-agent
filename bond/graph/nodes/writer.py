@@ -4,15 +4,18 @@ from typing import Optional
 
 import markdown as _md
 from bs4 import BeautifulSoup
+from pydantic import ValidationError
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from langgraph.types import interrupt
+from langgraph.graph import END
+from langgraph.types import Command, interrupt
 
 from bond.config import settings
 from bond.graph.state import AuthorState
 from bond.llm import estimate_cost_usd, get_draft_llm
 from bond.prompts.context import build_context_block
 from bond.prompts.writer import FORBIDDEN_WORD_STEMS, WRITER_SYSTEM_PROMPT
+from bond.schemas import CheckpointResponse
 from bond.store.chroma import get_corpus_collection
 
 log = logging.getLogger(__name__)
@@ -303,8 +306,7 @@ async def writer_node(state: AuthorState) -> dict:
 
     Before generation:
     - Checks RAG corpus count. If < LOW_CORPUS_THRESHOLD (10 articles), interrupts with
-      a warning and waits for user confirmation (locked user decision from CONTEXT.md).
-      User must respond True (proceed anyway) or False (abort pipeline).
+      a standard approve/reject warning payload and waits for user confirmation.
 
     After corpus check:
     - Auto-retries up to 2 times if hard constraints fail (SEO or forbidden words).
@@ -323,19 +325,31 @@ async def writer_node(state: AuthorState) -> dict:
     corpus_collection = get_corpus_collection()
     corpus_count = corpus_collection.count() if corpus_collection is not None else 0
     if corpus_count < LOW_CORPUS_THRESHOLD:
-        proceed = interrupt({
-            "warning": "low_corpus",
-            "message": (
-                f"Korpus zawiera tylko {corpus_count} artykułów "
-                f"(minimum: {LOW_CORPUS_THRESHOLD}). Styl draftu może być niespójny. "
-                "Kontynuować?"
-            ),
+        warning_message = (
+            f"Korpus zawiera tylko {corpus_count} artykułów "
+            f"(minimum: {LOW_CORPUS_THRESHOLD}). Styl draftu może być niespójny."
+        )
+        user_response = interrupt({
+            "checkpoint": "low_corpus",
+            "type": "approve_reject",
+            "warning": warning_message,
             "corpus_count": corpus_count,
             "threshold": LOW_CORPUS_THRESHOLD,
-            "instructions": "Odpowiedz True, aby kontynuować, lub False, aby przerwać.",
+            "instructions": (
+                'Wyślij {"action": "approve"}, {"action": "reject"} '
+                'lub {"action": "abort"} aby zdecydować o kontynuacji.'
+            ),
         })
-        if not proceed:
-            return {"draft": None, "draft_validated": False}
+        try:
+            response = CheckpointResponse(**user_response)
+        except ValidationError as exc:
+            raise ValueError(f"Nieprawidłowa odpowiedź low_corpus: {exc}") from exc
+
+        if response.action != "approve":
+            return Command(
+                goto=END,
+                update={"draft": "", "draft_validated": False},
+            )
 
     # Select DRAFT_MODEL LLM (temperature 0.5–0.7 per COMMUNICATION_STYLE.md §3)
     llm = get_draft_llm(max_tokens=4096, temperature=0.7)

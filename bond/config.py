@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     duplicate_threshold: float = 0.85
 
     # OpenAI API configuration
+    openai_api_key: str = ""
+    anthropic_api_key: str = ""
     openai_timeout: int = 120
     openai_max_retries: int = 3
 

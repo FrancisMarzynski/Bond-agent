@@ -37,8 +37,8 @@
 - [x] **SHAD-02**: Agent porównuje dostarczony tekst ze wzorcami stylistycznymi z bazy wektorowej
 - [x] **SHAD-03**: Agent generuje tekst z anotacjami inline (konkretne sugestie korekty)
 - [x] **SHAD-04**: Agent generuje poprawioną wersję tekstu (po zastosowaniu sugestii)
-- [ ] **SHAD-05**: Użytkownik widzi oba outputy: tekst z anotacjami i wersję poprawioną ⚠️ *Backend complete; frontend gap — annotations not extracted from hitlPause payload*
-- [ ] **SHAD-06**: Użytkownik może odrzucić sugestie podając powód — agent regeneruje alternatywne korekty (max 3 iteracje) ⚠️ *Backend complete; no approve/reject UI in /shadow route*
+- [x] **SHAD-05**: Użytkownik widzi oba outputy: tekst z anotacjami i wersję poprawioną
+- [x] **SHAD-06**: Użytkownik może odrzucić sugestie podając powód — agent regeneruje alternatywne korekty (max 3 iteracje)
 
 ### Duplicate Detection
 
@@ -57,6 +57,12 @@
 - [x] **UI-06**: Przycisk "Zatwierdź i Zapisz" zapisuje metadane do Metadata Log i oznacza temat jako użyty
 - [x] **UI-07**: Interfejs reaguje na zdarzenia strumieniowe — tokeny LLM są wyświetlane progressywnie (nie czeka na cały output)
 - [x] **UI-08**: Użytkownik ma dostęp do sekcji zarządzania corpus (dodawanie artykułów, widok statusu)
+
+### Streaming i Recovery Sesji
+
+- [x] **REC-01**: Frontend retry'uje `POST /api/chat/stream` i `POST /api/chat/resume` wyłącznie przed otrzymaniem streaming `Response`
+- [x] **REC-02**: Po committed disconnect frontend odzyskuje stan wyłącznie przez `GET /api/chat/history/{thread_id}`, bez replayu zatwierdzonego `POST`
+- [x] **REC-03**: Reload strony na checkpointcie Shadow przywraca `annotations`, `shadow_corrected_text`, `draft` i akcje HITL z historii sesji
 
 ---
 
@@ -134,15 +140,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SHAD-02 | Phase 4 | Complete |
 | SHAD-03 | Phase 4 | Complete |
 | SHAD-04 | Phase 4 | Complete |
-| SHAD-05 | Phase 4 | Partial (backend done; frontend gap) |
-| SHAD-06 | Phase 4 | Partial (backend done; frontend gap) |
+| SHAD-05 | Phase 4 | Complete |
+| SHAD-06 | Phase 4 | Complete |
+| REC-01 | Post-Phase 4 hardening | Implementation complete — E2E rerun pending (post detached runtime) |
+| REC-02 | Post-Phase 4 hardening | Implementation complete — E2E rerun pending (post detached runtime) |
+| REC-03 | Post-Phase 4 hardening | Implementation complete — E2E rerun pending (post detached runtime) |
 
 **Coverage:**
-- v1 requirements: 36 total
-- Mapped to phases: 36
+- v1 requirements: 39 total
+- Mapped to phases: 39
 - Unmapped: 0
 
 ---
 
 *Requirements defined: 2026-02-20*
-*Last updated: 2026-04-28 — UI-01 through UI-08 and SHAD-01 through SHAD-04 marked complete; SHAD-05 and SHAD-06 partial (backend done, frontend HITL integration gap)*
+*Last updated: 2026-04-28 — SHAD-05 i SHAD-06 domknięte; REC-01/02/03 zaimplementowane i zwalidowane w Playwright dla Shadow przed wdrożeniem detached runtime; pełny browser journey po `bond/api/runtime.py` jeszcze nie wykonany — wymagany do zamknięcia REC-01/02/03 jako "Complete"*

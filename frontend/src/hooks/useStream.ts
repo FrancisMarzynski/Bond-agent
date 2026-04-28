@@ -1,17 +1,52 @@
 "use client";
 import { useEffect, useCallback } from "react";
-import { useChatStore, type Stage, type StageStatus } from "@/store/chatStore";
-import { useShadowStore } from "@/store/shadowStore";
-import { SSEParser } from "@/lib/sse";
 import { z } from "zod";
+
 import { API_URL } from "@/config";
+import { loadSessionHistory, SessionHistoryNotFoundError } from "@/hooks/useSession";
+import { SSEParser } from "@/lib/sse";
+import {
+  classifyDisconnect,
+  getRecoveryDisposition,
+} from "@/lib/streamRecovery";
+import {
+  useChatStore,
+  type PendingAction,
+  type Stage,
+  type StageStatus,
+} from "@/store/chatStore";
+import { useShadowStore } from "@/store/shadowStore";
+
 const MAX_RETRIES = 5;
 const BASE_DELAY_MS = 1_000;
 const MAX_DELAY_MS = 30_000;
+const MAX_RECOVERY_POLLS = 20;
+const RECOVERY_POLL_DELAY_MS = 1_500;
 
 function backoffDelay(attempt: number): number {
-    const exponential = Math.min(BASE_DELAY_MS * 2 ** attempt, MAX_DELAY_MS);
-    return exponential + Math.random() * 500; // jitter avoids thundering-herd on shared infra
+  const exponential = Math.min(BASE_DELAY_MS * 2 ** attempt, MAX_DELAY_MS);
+  return exponential + Math.random() * 500;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function parseNestedPayload(raw: unknown): unknown {
+  if (typeof raw !== "string") {
+    return raw;
+  }
+
+  const trimmed = raw.trim();
+  if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+    return raw;
+  }
+
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return raw;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -22,38 +57,65 @@ const TokenSchema = z.object({ token: z.string() });
 const StageSchema = z.object({ stage: z.string(), status: z.string() });
 const MessageSchema = z.object({ content: z.string() });
 const AnnotationSchema = z.object({
-    id: z.string(),
-    original_span: z.string(),
-    replacement: z.string(),
-    reason: z.string(),
-    start_index: z.number(),
-    end_index: z.number(),
+  id: z.string(),
+  original_span: z.string(),
+  replacement: z.string(),
+  reason: z.string(),
+  start_index: z.number(),
+  end_index: z.number(),
 });
 const HitlPauseSchema = z.object({
-    checkpoint_id: z.string(),
-    type: z.string(),
-    iterations_remaining: z.number().optional(),
-    // Checkpoint 1 fields
-    research_report: z.string().optional(),
-    heading_structure: z.string().optional(),
-    // Duplicate check fields
-    warning: z.string().optional(),
-    existing_title: z.string().optional(),
-    existing_date: z.string().optional(),
-    similarity_score: z.number().optional(),
-    annotations: z.array(AnnotationSchema).optional(),
-    shadow_corrected_text: z.string().optional(),
-    iteration_count: z.number().optional(),
+  checkpoint_id: z.string(),
+  type: z.string(),
+  iterations_remaining: z.number().optional(),
+  research_report: z.string().optional(),
+  heading_structure: z.string().optional(),
+  cp1_iterations: z.number().optional(),
+  warning: z.string().optional(),
+  existing_title: z.string().optional(),
+  existing_date: z.string().optional(),
+  similarity_score: z.number().optional(),
+  draft: z.string().optional(),
+  draft_validated: z.boolean().optional(),
+  cp2_iterations: z.number().optional(),
+  validation_warning: z.string().optional(),
+  corpus_count: z.number().optional(),
+  threshold: z.number().optional(),
+  annotations: z.array(AnnotationSchema).optional(),
+  shadow_corrected_text: z.string().optional(),
+  iteration_count: z.number().optional(),
 });
 const ErrorSchema = z.object({
-    message: z.string().optional(),
-    data: z.string().optional(),
+  message: z.string().optional(),
+  data: z.string().optional(),
 });
 const TextPayloadSchema = z.object({
-    text: z.string().optional(),
-    message: z.string().optional(),
-    data: z.string().optional(),
+  text: z.string().optional(),
+  message: z.string().optional(),
+  data: z.string().optional(),
 });
+
+function setTerminalError(message: string): void {
+  const store = useChatStore.getState();
+  store.setStreaming(false);
+  store.setReconnecting(false);
+  store.setRecoveringSession(false);
+  store.setPendingAction(null);
+  store.setSystemAlert(message);
+
+  const currentStage = useChatStore.getState().stage;
+  const stageToMark =
+    currentStage !== "idle" && currentStage !== "done" ? currentStage : "error";
+  store.setStage(stageToMark, "error");
+}
+
+function clearResumePauseOnProgress(enabled: boolean, hasCleared: boolean): boolean {
+  if (!enabled || hasCleared) {
+    return hasCleared;
+  }
+  useChatStore.getState().setHitlPause(null);
+  return true;
+}
 
 // ---------------------------------------------------------------------------
 // Internal stream consumer
@@ -61,353 +123,508 @@ const TextPayloadSchema = z.object({
 // Returns false if the stream was cut unexpectedly (connection drop, server crash, etc.).
 // ---------------------------------------------------------------------------
 async function consumeStream(
-    response: Response,
-    signal: AbortSignal,
-    onThreadId: (id: string) => void
+  response: Response,
+  signal: AbortSignal,
+  onThreadId: (id: string) => void,
+  options: { clearPauseOnProgress?: boolean } = {}
 ): Promise<boolean> {
-    const store = useChatStore.getState();
-    const parser = new SSEParser();
-    const reader = response.body!
-        .pipeThrough(new TextDecoderStream())
-        .getReader();
+  if (!response.body) {
+    throw new Error("Serwer nie zwrócił strumienia SSE.");
+  }
 
-    let endedCleanly = false;
+  const parser = new SSEParser();
+  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+  let endedCleanly = false;
+  let pauseCleared = false;
 
-    try {
-        while (true) {
-            if (signal.aborted) {
-                endedCleanly = true; // Intentional abort is a clean exit
-                break;
+  try {
+    while (true) {
+      if (signal.aborted) {
+        endedCleanly = true;
+        break;
+      }
+
+      const { value, done } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+
+      const events = parser.feed(value);
+      for (const { event, data } of events) {
+        try {
+          const parsed = JSON.parse(data) as { type?: string; data?: unknown };
+          const eventType = parsed.type || event;
+
+          const payload = parseNestedPayload(parsed.data);
+
+          switch (eventType) {
+            case "thread_id": {
+              const result = ThreadIdSchema.safeParse(payload);
+              if (!result.success) throw new Error("Invalid thread_id event data");
+              onThreadId(result.data.thread_id);
+              break;
             }
-            const { value, done } = await reader.read();
-            if (done) break; // Connection closed — endedCleanly determined by terminal event
-            if (!value) continue;
-
-            const events = parser.feed(value);
-            for (const { id, event, data } of events) {
-                if (id) {
-                    store.setLastEventId(id);
-                }
-                try {
-                    const parsed = JSON.parse(data) as {
-                        type?: string;
-                        data?: unknown;
-                    };
-
-                    // The backend emits events in the format: data: {"type": "<event_type>", "data": "<payload_string>"}
-                    // Therefore, the SSE `event` header is missing, defaulting to "message".
-                    // We must determine the true event type from `parsed.type`.
-                    const eventType = parsed.type || event;
-
-                    // Extract payload. If parsed.data is a string that looks like JSON, parse it.
-                    let payload: unknown;
-                    if (typeof parsed.data === "string") {
-                        try {
-                            payload = JSON.parse(parsed.data) as unknown;
-                        } catch {
-                            payload = parsed.data; // e.g. plain text for 'token', 'done', 'heartbeat'
-                        }
-                    } else {
-                        payload = parsed.data;
-                    }
-
-                    switch (eventType) {
-                        case "thread_id": {
-                            const result = ThreadIdSchema.safeParse(payload);
-                            if (!result.success) throw new Error("Invalid thread_id event data");
-                            onThreadId(result.data.thread_id);
-                            break;
-                        }
-                        case "token": {
-                            const tokenResult = TokenSchema.safeParse(payload);
-                            const tokenContent =
-                                typeof payload === "string"
-                                    ? payload
-                                    : tokenResult.success
-                                      ? tokenResult.data.token
-                                      : "";
-                            if (!tokenContent) throw new Error("Invalid token event data");
-                            store.appendDraftToken(tokenContent);
-                            break;
-                        }
-                        case "stage": {
-                            const result = StageSchema.safeParse(payload);
-                            if (!result.success) throw new Error("Invalid stage event data");
-                            store.setStage(
-                                result.data.stage as Stage,
-                                result.data.status as StageStatus
-                            );
-                            break;
-                        }
-                        case "message": { // Keeping this just in case backend ever sends direct message
-                            const result = MessageSchema.safeParse(payload);
-                            if (!result.success) throw new Error("Invalid message event data");
-                            store.addMessage({ role: "assistant", content: result.data.content });
-                            break;
-                        }
-                        case "hitl_pause": {
-                            const result = HitlPauseSchema.safeParse(payload);
-                            if (!result.success) throw new Error("Invalid hitl_pause event data");
-                            store.setHitlPause({
-                                checkpoint_id: result.data.checkpoint_id,
-                                type: result.data.type,
-                                iterations_remaining: result.data.iterations_remaining,
-                                research_report: result.data.research_report,
-                                heading_structure: result.data.heading_structure,
-                                warning: result.data.warning,
-                                existing_title: result.data.existing_title,
-                                existing_date: result.data.existing_date,
-                                similarity_score: result.data.similarity_score,
-                                annotations: result.data.annotations,
-                                shadow_corrected_text: result.data.shadow_corrected_text,
-                                iteration_count: result.data.iteration_count,
-                            });
-                            if (result.data.checkpoint_id === "shadow_checkpoint") {
-                                const shadowState = useShadowStore.getState();
-                                shadowState.setAnnotations(result.data.annotations ?? []);
-                                shadowState.setShadowCorrectedText(
-                                    result.data.shadow_corrected_text ?? ""
-                                );
-                                store.setDraft(result.data.shadow_corrected_text ?? "");
-                            }
-                            store.setStreaming(false);
-                            endedCleanly = true;
-                            return endedCleanly; // Stream ends at HITL pause
-                        }
-                        case "error": {
-                            const errorResult = ErrorSchema.safeParse(payload);
-                            const errorMessage =
-                                typeof payload === "string"
-                                    ? payload
-                                    : errorResult.success
-                                      ? errorResult.data.message ||
-                                        errorResult.data.data ||
-                                        "Unknown error"
-                                      : "Unknown error";
-                            const currentStage =
-                                store.stage !== "idle" && store.stage !== "done"
-                                    ? store.stage
-                                    : "error";
-                            store.setStage(currentStage, "error");
-                            store.addMessage({
-                                role: "assistant",
-                                content: `Error: ${errorMessage}`,
-                            });
-                            store.setStreaming(false);
-                            endedCleanly = true; // Error is a terminal state — no retry
-                            return endedCleanly;
-                        }
-                        case "shadow_corrected_text": {
-                            const textResult = TextPayloadSchema.safeParse(payload);
-                            const text =
-                                typeof payload === "string"
-                                    ? payload
-                                    : textResult.success
-                                      ? textResult.data.text || ""
-                                      : "";
-                            if (text) {
-                                store.setDraft(text);
-                                useShadowStore.getState().setShadowCorrectedText(text);
-                            }
-                            break;
-                        }
-                        case "annotations": {
-                            const annotationsResult = z.array(AnnotationSchema).safeParse(payload);
-                            const annotations = annotationsResult.success ? annotationsResult.data : [];
-                            useShadowStore.getState().setAnnotations(annotations);
-                            break;
-                        }
-                        case "system_alert": {
-                            const alertResult = TextPayloadSchema.safeParse(payload);
-                            const alertMessage =
-                                typeof payload === "string"
-                                    ? payload
-                                    : alertResult.success
-                                      ? alertResult.data.message || alertResult.data.data || ""
-                                      : "";
-                            if (alertMessage) {
-                                store.setSystemAlert(alertMessage);
-                            }
-                            break;
-                        }
-                        case "node_start":
-                        case "node_end":
-                            // Informational lifecycle events — no store integration yet.
-                            break;
-                        case "heartbeat":
-                            // Silent ping — keeps proxy connections alive during long generation pauses.
-                            if (process.env.NODE_ENV === "development") {
-                                console.log(
-                                    "[SSE] Otrzymano Heartbeat (ping) z serwera by podtrzymać strumień..."
-                                );
-                            }
-                            break;
-                        case "done":
-                            store.setStage("done", "complete");
-                            store.setStreaming(false);
-                            endedCleanly = true;
-                            return endedCleanly;
-                        default:
-                            if (process.env.NODE_ENV === "development") {
-                                console.warn(`Unhandled SSE event type: ${eventType}`, parsed);
-                            }
-                    }
-                } catch (err) {
-                    // Skip malformed JSON — log in development only
-                    if (process.env.NODE_ENV === "development") {
-                        console.warn("SSE parse error or invalid format:", data, err);
-                    }
-                }
+            case "token": {
+              pauseCleared = clearResumePauseOnProgress(
+                options.clearPauseOnProgress === true,
+                pauseCleared
+              );
+              const tokenResult = TokenSchema.safeParse(payload);
+              const tokenContent =
+                typeof payload === "string"
+                  ? payload
+                  : tokenResult.success
+                    ? tokenResult.data.token
+                    : "";
+              if (!tokenContent) throw new Error("Invalid token event data");
+              useChatStore.getState().appendDraftToken(tokenContent);
+              break;
             }
+            case "stage": {
+              pauseCleared = clearResumePauseOnProgress(
+                options.clearPauseOnProgress === true,
+                pauseCleared
+              );
+              const result = StageSchema.safeParse(payload);
+              if (!result.success) throw new Error("Invalid stage event data");
+              useChatStore
+                .getState()
+                .setStage(result.data.stage as Stage, result.data.status as StageStatus);
+              break;
+            }
+            case "message": {
+              const result = MessageSchema.safeParse(payload);
+              if (!result.success) throw new Error("Invalid message event data");
+              useChatStore
+                .getState()
+                .addMessage({ role: "assistant", content: result.data.content });
+              break;
+            }
+            case "hitl_pause": {
+              const result = HitlPauseSchema.safeParse(payload);
+              if (!result.success) throw new Error("Invalid hitl_pause event data");
+              const store = useChatStore.getState();
+              store.setHitlPause({
+                checkpoint_id: result.data.checkpoint_id,
+                type: result.data.type,
+                iterations_remaining: result.data.iterations_remaining,
+                research_report: result.data.research_report,
+                heading_structure: result.data.heading_structure,
+                cp1_iterations: result.data.cp1_iterations,
+                warning: result.data.warning,
+                existing_title: result.data.existing_title,
+                existing_date: result.data.existing_date,
+                similarity_score: result.data.similarity_score,
+                draft: result.data.draft,
+                draft_validated: result.data.draft_validated,
+                cp2_iterations: result.data.cp2_iterations,
+                validation_warning: result.data.validation_warning,
+                corpus_count: result.data.corpus_count,
+                threshold: result.data.threshold,
+                annotations: result.data.annotations,
+                shadow_corrected_text: result.data.shadow_corrected_text,
+                iteration_count: result.data.iteration_count,
+              });
+              if (result.data.checkpoint_id === "shadow_checkpoint") {
+                const shadowState = useShadowStore.getState();
+                shadowState.setAnnotations(result.data.annotations ?? []);
+                shadowState.setShadowCorrectedText(
+                  result.data.shadow_corrected_text ?? ""
+                );
+                store.setDraft(result.data.shadow_corrected_text ?? "");
+              }
+              store.setStreaming(false);
+              store.setRecoveringSession(false);
+              store.setPendingAction(null);
+              endedCleanly = true;
+              return endedCleanly;
+            }
+            case "error": {
+              const errorResult = ErrorSchema.safeParse(payload);
+              const errorMessage =
+                typeof payload === "string"
+                  ? payload
+                  : errorResult.success
+                    ? errorResult.data.message ||
+                      errorResult.data.data ||
+                      "Unknown error"
+                    : "Unknown error";
+              const store = useChatStore.getState();
+              const currentStage =
+                store.stage !== "idle" && store.stage !== "done"
+                  ? store.stage
+                  : "error";
+              store.setStage(currentStage, "error");
+              store.addMessage({
+                role: "assistant",
+                content: `Error: ${errorMessage}`,
+              });
+              store.setStreaming(false);
+              store.setRecoveringSession(false);
+              store.setPendingAction(null);
+              endedCleanly = true;
+              return endedCleanly;
+            }
+            case "shadow_corrected_text": {
+              pauseCleared = clearResumePauseOnProgress(
+                options.clearPauseOnProgress === true,
+                pauseCleared
+              );
+              const textResult = TextPayloadSchema.safeParse(payload);
+              const text =
+                typeof payload === "string"
+                  ? payload
+                  : textResult.success
+                    ? textResult.data.text || ""
+                    : "";
+              if (text) {
+                useChatStore.getState().setDraft(text);
+                useShadowStore.getState().setShadowCorrectedText(text);
+              }
+              break;
+            }
+            case "annotations": {
+              pauseCleared = clearResumePauseOnProgress(
+                options.clearPauseOnProgress === true,
+                pauseCleared
+              );
+              const annotationsResult = z.array(AnnotationSchema).safeParse(payload);
+              const annotations = annotationsResult.success ? annotationsResult.data : [];
+              useShadowStore.getState().setAnnotations(annotations);
+              break;
+            }
+            case "system_alert": {
+              const alertResult = TextPayloadSchema.safeParse(payload);
+              const alertMessage =
+                typeof payload === "string"
+                  ? payload
+                  : alertResult.success
+                    ? alertResult.data.message || alertResult.data.data || ""
+                    : "";
+              if (alertMessage) {
+                useChatStore.getState().setSystemAlert(alertMessage);
+              }
+              break;
+            }
+            case "node_start":
+            case "node_end":
+              pauseCleared = clearResumePauseOnProgress(
+                options.clearPauseOnProgress === true,
+                pauseCleared
+              );
+              break;
+            case "heartbeat":
+              if (process.env.NODE_ENV === "development") {
+                console.log("[SSE] Otrzymano heartbeat z serwera.");
+              }
+              break;
+            case "done": {
+              pauseCleared = clearResumePauseOnProgress(
+                options.clearPauseOnProgress === true,
+                pauseCleared
+              );
+              const store = useChatStore.getState();
+              store.setHitlPause(null);
+              store.setStage("done", "complete");
+              store.setStreaming(false);
+              store.setRecoveringSession(false);
+              store.setPendingAction(null);
+              endedCleanly = true;
+              return endedCleanly;
+            }
+            default:
+              if (process.env.NODE_ENV === "development") {
+                console.warn(`Unhandled SSE event type: ${eventType}`, parsed);
+              }
+          }
+        } catch (err) {
+          if (process.env.NODE_ENV === "development") {
+            console.warn("SSE parse error or invalid format:", data, err);
+          }
         }
-    } finally {
-        reader.releaseLock(); // Always release to avoid memory leak
+      }
     }
+  } finally {
+    reader.releaseLock();
+  }
 
-    return endedCleanly;
+  return endedCleanly;
 }
 
-// ---------------------------------------------------------------------------
-// Retry loop helper
-// ---------------------------------------------------------------------------
-async function fetchWithRetry(
-    url: string,
-    body: string,
-    signal: AbortSignal,
-    onThreadId: (id: string) => void
-): Promise<void> {
-    const store = useChatStore.getState();
-    let attempt = 0;
+async function openCommandStream(
+  url: string,
+  body: string,
+  signal: AbortSignal
+): Promise<Response | null> {
+  const store = useChatStore.getState();
+  let attempt = 0;
 
-    while (attempt <= MAX_RETRIES) {
-        try {
-            const headers: Record<string, string> = {
-                "Content-Type": "application/json",
-            };
-            // Allows the backend to resume SSE from the last delivered event.
-            if (store.lastEventId) {
-                headers["Last-Event-ID"] = store.lastEventId;
-            }
+  while (attempt <= MAX_RETRIES) {
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+        signal,
+      });
+      store.setReconnecting(false);
+      return response;
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === "AbortError") {
+        store.setReconnecting(false);
+        return null;
+      }
 
-            const response = await fetch(url, {
-                method: "POST",
-                headers,
-                body,
-                signal,
-            });
+      attempt += 1;
+      if (attempt <= MAX_RETRIES) {
+        store.setReconnecting(true);
+        await sleep(backoffDelay(attempt - 1));
+        continue;
+      }
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const endedCleanly = await consumeStream(response, signal, onThreadId);
-            store.setReconnecting(false);
-            if (!endedCleanly) {
-                // Stream ended without a terminal event — treat as a recoverable disconnect.
-                throw new Error("Połączenie SSE zerwane przed zakończeniem strumienia.");
-            }
-            return; // Success — exit retry loop
-        } catch (e: unknown) {
-            if (e instanceof Error && e.name === "AbortError") {
-                store.setReconnecting(false);
-                return; // Intentional abort — exit cleanly
-            }
-            attempt++;
-            if (attempt <= MAX_RETRIES) {
-                const delay = backoffDelay(attempt - 1);
-                store.setReconnecting(true);
-                store.setSystemAlert(
-                    `Połączenie zerwane. Próbuję ponownie (${attempt}/${MAX_RETRIES})...`
-                );
-                await new Promise((resolve) => setTimeout(resolve, delay));
-            } else {
-                store.setReconnecting(false);
-                store.setSystemAlert(
-                    `[Błąd krytyczny]: Nie udało się nawiązać stabilnego połączenia po ${MAX_RETRIES} próbach. Odśwież stronę.`
-                );
-                store.setStreaming(false);
-                const currentStage =
-                    store.stage !== "idle" && store.stage !== "done" ? store.stage : "error";
-                store.setStage(currentStage, "error");
-            }
-        }
+      throw error;
     }
+  }
+
+  return null;
+}
+
+async function recoverCommittedSession(
+  threadId: string,
+  pendingAction: PendingAction,
+  signal: AbortSignal
+): Promise<void> {
+  const store = useChatStore.getState();
+  store.setStreaming(false);
+  store.setReconnecting(false);
+  store.setRecoveringSession(true);
+  store.setPendingAction(pendingAction);
+
+  for (let attempt = 0; attempt < MAX_RECOVERY_POLLS; attempt += 1) {
+    if (signal.aborted) {
+      return;
+    }
+
+    try {
+      const history = await loadSessionHistory(threadId, {
+        mode: "recovery",
+        clearRecoveredPause: pendingAction === "resume",
+      });
+      const disposition = getRecoveryDisposition(history, pendingAction);
+
+      if (disposition === "poll") {
+        await sleep(RECOVERY_POLL_DELAY_MS);
+        continue;
+      }
+
+      store.setRecoveringSession(false);
+      store.setPendingAction(null);
+      store.setStreaming(false);
+      return;
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === "AbortError") {
+        return;
+      }
+
+      if (error instanceof SessionHistoryNotFoundError) {
+        setTerminalError("Nie udało się odnaleźć sesji podczas przywracania stanu.");
+        return;
+      }
+
+      if (attempt < MAX_RECOVERY_POLLS - 1) {
+        await sleep(backoffDelay(attempt));
+        continue;
+      }
+
+      setTerminalError(
+        "[Błąd krytyczny]: Nie udało się przywrócić stanu sesji z historii."
+      );
+      return;
+    }
+  }
+
+  setTerminalError(
+    "[Błąd krytyczny]: Sesja nadal przetwarza zadanie, ale stan nie został odzyskany w oczekiwanym czasie."
+  );
+}
+
+async function readErrorResponse(response: Response): Promise<string> {
+  try {
+    const text = await response.text();
+    return text || `HTTP ${response.status}`;
+  } catch {
+    return `HTTP ${response.status}`;
+  }
+}
+
+async function runCommandStream(
+  url: string,
+  body: string,
+  signal: AbortSignal,
+  pendingAction: PendingAction,
+  initialThreadId: string | null,
+  onThreadId: (id: string) => void
+): Promise<void> {
+  let activeThreadId = initialThreadId;
+  const handleThreadId = (id: string) => {
+    activeThreadId = id;
+    onThreadId(id);
+  };
+
+  const response = await openCommandStream(url, body, signal);
+  if (!response) {
+    return;
+  }
+
+  if (!response.ok) {
+    const message = await readErrorResponse(response);
+    if (classifyDisconnect(true) === "recover" && activeThreadId) {
+      await recoverCommittedSession(activeThreadId, pendingAction, signal);
+      return;
+    }
+    setTerminalError(`[Błąd krytyczny]: ${message}`);
+    return;
+  }
+
+  // Read thread ID from response header immediately — before consuming the body.
+  // This ensures same-tab recovery works even when the body drops before the
+  // first thread_id SSE event is parsed.
+  const headerThreadId = response.headers.get("X-Bond-Thread-Id");
+  if (headerThreadId) {
+    handleThreadId(headerThreadId);
+  }
+
+  const endedCleanly = await consumeStream(response, signal, handleThreadId, {
+    clearPauseOnProgress: pendingAction === "resume",
+  });
+
+  if (endedCleanly || signal.aborted) {
+    useChatStore.getState().setReconnecting(false);
+    return;
+  }
+
+  if (classifyDisconnect(true) === "recover" && activeThreadId) {
+    await recoverCommittedSession(activeThreadId, pendingAction, signal);
+    return;
+  }
+
+  setTerminalError(
+    "[Błąd krytyczny]: Połączenie zostało zerwane po rozpoczęciu przetwarzania, ale brak thread_id uniemożliwia odzyskanie sesji."
+  );
 }
 
 // ---------------------------------------------------------------------------
 // React hook — the single public export.
-//
-// Encapsulates AbortController lifecycle: the controller lives in Zustand
-// (isolated per-store instance) and is automatically aborted when the
-// consuming component unmounts via useEffect cleanup.
 // ---------------------------------------------------------------------------
 export function useStream() {
-    const { createController, abortController } = useChatStore();
+  const { createController, abortController } = useChatStore();
 
-    // Automatically stop any in-flight stream when the component unmounts.
-    useEffect(() => {
-        return () => {
-            abortController();
-        };
-    }, [abortController]);
+  useEffect(() => {
+    return () => {
+      abortController();
+    };
+  }, [abortController]);
 
-    const startStream = useCallback(
-        async (
-            message: string,
-            threadId: string | null,
-            mode: "author" | "shadow",
-            onThreadId: (id: string) => void
-        ): Promise<void> => {
-            const store = useChatStore.getState();
-            if (store.isStreaming) {
-                console.warn("Stream is already active. Blocking startStream.");
-                return;
-            }
+  const startStream = useCallback(
+    async (
+      message: string,
+      threadId: string | null,
+      mode: "author" | "shadow",
+      onThreadId: (id: string) => void
+    ): Promise<void> => {
+      const store = useChatStore.getState();
+      if (store.isStreaming || store.isRecoveringSession) {
+        console.warn("Stream is already active or recovering. Blocking startStream.");
+        return;
+      }
 
-            store.setStreaming(true);
-            store.addMessage({ role: "user", content: message });
+      store.setStreaming(true);
+      store.setReconnecting(false);
+      store.setRecoveringSession(false);
+      store.setPendingAction("stream");
+      store.addMessage({ role: "user", content: message });
 
-            const signal = createController();
-            await fetchWithRetry(
-                `${API_URL}/api/chat/stream`,
-                JSON.stringify({ message, thread_id: threadId, mode }),
-                signal,
-                onThreadId
-            );
-        },
-        [createController]
-    );
+      const signal = createController();
 
-    const resumeStream = useCallback(
-        async (
-            threadId: string,
-            action: "approve" | "approve_save" | "reject",
-            feedback: string | null,
-            onThreadId: (id: string) => void
-        ): Promise<void> => {
-            const store = useChatStore.getState();
-            if (store.isStreaming) {
-                console.warn("Stream is already active. Blocking resumeStream.");
-                return;
-            }
+      try {
+        await runCommandStream(
+          `${API_URL}/api/chat/stream`,
+          JSON.stringify({ message, thread_id: threadId, mode }),
+          signal,
+          "stream",
+          threadId,
+          onThreadId
+        );
+      } catch {
+        setTerminalError(
+          `[Błąd krytyczny]: Nie udało się nawiązać stabilnego połączenia po ${MAX_RETRIES} próbach.`
+        );
+      } finally {
+        const latest = useChatStore.getState();
+        if (!latest.isRecoveringSession) {
+          latest.setReconnecting(false);
+        }
+        if (!latest.isStreaming && !latest.isRecoveringSession) {
+          latest.setPendingAction(null);
+        }
+      }
+    },
+    [createController]
+  );
 
-            store.setHitlPause(null);
-            store.setStreaming(true);
+  const resumeStream = useCallback(
+    async (
+      threadId: string,
+      action: "approve" | "approve_save" | "reject",
+      feedback: string | null,
+      onThreadId: (id: string) => void
+    ): Promise<void> => {
+      const store = useChatStore.getState();
+      if (store.isStreaming || store.isRecoveringSession) {
+        console.warn("Stream is already active or recovering. Blocking resumeStream.");
+        return;
+      }
 
-            const signal = createController();
-            await fetchWithRetry(
-                `${API_URL}/api/chat/resume`,
-                JSON.stringify({ thread_id: threadId, action, feedback }),
-                signal,
-                onThreadId
-            );
-        },
-        [createController]
-    );
+      store.setStreaming(true);
+      store.setReconnecting(false);
+      store.setRecoveringSession(false);
+      store.setPendingAction("resume");
 
-    const stopStream = useCallback(() => {
-        abortController();
-    }, [abortController]);
+      const signal = createController();
+      const normalizedAction = action === "approve_save" ? "approve" : action;
 
-    return { startStream, resumeStream, stopStream };
+      try {
+        await runCommandStream(
+          `${API_URL}/api/chat/resume`,
+          JSON.stringify({
+            thread_id: threadId,
+            action: normalizedAction,
+            feedback,
+          }),
+          signal,
+          "resume",
+          threadId,
+          onThreadId
+        );
+      } catch {
+        setTerminalError(
+          `[Błąd krytyczny]: Nie udało się nawiązać stabilnego połączenia po ${MAX_RETRIES} próbach.`
+        );
+      } finally {
+        const latest = useChatStore.getState();
+        if (!latest.isRecoveringSession) {
+          latest.setReconnecting(false);
+        }
+        if (!latest.isStreaming && !latest.isRecoveringSession) {
+          latest.setPendingAction(null);
+        }
+      }
+    },
+    [createController]
+  );
+
+  const stopStream = useCallback(() => {
+    abortController();
+  }, [abortController]);
+
+  return { startStream, resumeStream, stopStream };
 }

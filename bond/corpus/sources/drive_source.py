@@ -4,8 +4,6 @@ import io
 import logging
 import os
 
-log = logging.getLogger(__name__)
-
 from google.auth.transport.requests import Request
 from google.oauth2 import service_account
 from google.oauth2.credentials import Credentials
@@ -17,6 +15,8 @@ from bond.config import settings
 from bond.corpus.sources.file_source import extract_text
 from bond.corpus.ingestor import CorpusIngestor
 from bond.models import DriveFileInfo
+
+log = logging.getLogger(__name__)
 
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 SUPPORTED_MIME_TYPES = {

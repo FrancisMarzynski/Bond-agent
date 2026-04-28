@@ -1,7 +1,14 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react"; // useState still needed for sessions list
 import { useChatStore, type ChatMessage } from "@/store/chatStore";
+import { useShadowStore } from "@/store/shadowStore";
 import { API_URL } from "@/config";
+import {
+    buildSessionHydration,
+    type HydrationMode,
+    type SessionHistoryResponse,
+    type SessionHydrationSnapshot,
+} from "@/lib/streamRecovery";
 
 const STORAGE_KEY = "bond_thread_id";
 const MODE_KEY = "bond_mode";
@@ -13,10 +20,79 @@ export interface SessionMeta {
     updatedAt: number;
 }
 
+export class SessionHistoryNotFoundError extends Error {
+    constructor(threadId: string) {
+        super(`Sesja ${threadId} nie istnieje na serwerze.`);
+        this.name = "SessionHistoryNotFoundError";
+    }
+}
+
+function getSessionSnapshot(): SessionHydrationSnapshot {
+    const chat = useChatStore.getState();
+    const shadow = useShadowStore.getState();
+
+    return {
+        chat: {
+            messages: chat.messages,
+            draft: chat.draft,
+            hitlPause: chat.hitlPause,
+            stage: chat.stage,
+            stageStatus: chat.stageStatus,
+        },
+        shadow: {
+            originalText: shadow.originalText,
+            annotations: shadow.annotations,
+            shadowCorrectedText: shadow.shadowCorrectedText,
+        },
+    };
+}
+
+function hydrateSessionStores(
+    history: SessionHistoryResponse,
+    options: { mode?: HydrationMode; clearRecoveredPause?: boolean } = {}
+): SessionHistoryResponse {
+    const current = getSessionSnapshot();
+    const hydration = buildSessionHydration(history, current, options);
+
+    useChatStore.setState({
+        messages: hydration.chat.messages,
+        draft: hydration.chat.draft,
+        hitlPause: hydration.chat.hitlPause,
+        stage: hydration.chat.stage,
+        stageStatus: {
+            ...current.chat.stageStatus,
+            ...hydration.chat.stageStatus,
+        },
+    });
+    useShadowStore.setState({
+        originalText: hydration.shadow.originalText,
+        annotations: hydration.shadow.annotations,
+        shadowCorrectedText: hydration.shadow.shadowCorrectedText,
+    });
+
+    return history;
+}
+
+export async function loadSessionHistory(
+    id: string,
+    options: { mode?: HydrationMode; clearRecoveredPause?: boolean } = {}
+): Promise<SessionHistoryResponse> {
+    const res = await fetch(`${API_URL}/api/chat/history/${id}`);
+
+    if (!res.ok) {
+        if (res.status === 404) {
+            throw new SessionHistoryNotFoundError(id);
+        }
+        throw new Error(`Nie udało się pobrać historii sesji (${res.status}).`);
+    }
+
+    const data = (await res.json()) as SessionHistoryResponse;
+    return hydrateSessionStores(data, options);
+}
+
 export function useSession() {
     const { threadId, setThreadId, mode, setMode, resetSession } = useChatStore();
 
-    const [isRestoring, setIsRestoring] = useState(true);
     const [sessions, setSessions] = useState<SessionMeta[]>([]);
 
     useEffect(() => {
@@ -46,51 +122,18 @@ export function useSession() {
         };
     }, []);
 
-    const loadSessionHistory = useCallback(async (id: string) => {
-        setIsRestoring(true);
+    // Used by switchSession only — not called on every mount.
+    const restoreSessionHistory = useCallback(async (id: string) => {
         try {
-            const res = await fetch(`${API_URL}/api/chat/history/${id}`);
-            if (!res.ok) throw new Error("Sesja nie znaleziona na serwerze");
-            const data = await res.json();
-
-            const store = useChatStore.getState();
-            if (data.messages && Array.isArray(data.messages)) {
-                useChatStore.setState({ messages: data.messages });
-            }
-            if (data.draft) {
-                store.setDraft(data.draft);
-            }
-            if (data.hitlPause) {
-                store.setHitlPause(data.hitlPause);
-            }
-            if (data.stage && data.stage !== "idle") {
-                const status = data.stageStatus?.[data.stage] || "complete";
-                store.setStage(data.stage, status);
-            }
+            await loadSessionHistory(id, { mode: "restore" });
         } catch (err) {
             console.error("Przywracanie sesji przerwane:", err);
-            sessionStorage.removeItem(STORAGE_KEY);
-            setThreadId(null);
-        } finally {
-            setIsRestoring(false);
+            if (err instanceof SessionHistoryNotFoundError) {
+                sessionStorage.removeItem(STORAGE_KEY);
+                setThreadId(null);
+            }
         }
     }, [setThreadId]);
-
-    useEffect(() => {
-        const storedThread = sessionStorage.getItem(STORAGE_KEY);
-        const storedMode = sessionStorage.getItem(MODE_KEY);
-
-        if (storedMode === "author" || storedMode === "shadow") {
-            setMode(storedMode);
-        }
-
-        if (storedThread) {
-            setThreadId(storedThread);
-            loadSessionHistory(storedThread);
-        } else {
-            setIsRestoring(false);
-        }
-    }, [setThreadId, setMode, loadSessionHistory]);
 
     const saveSessionMeta = (id: string, messages: ChatMessage[]) => {
         const storedSessions = localStorage.getItem(SESSIONS_KEY);
@@ -137,15 +180,26 @@ export function useSession() {
 
     const newSession = () => {
         sessionStorage.removeItem(STORAGE_KEY);
+        useShadowStore.getState().resetShadow();
         resetSession();
     };
 
     const switchSession = (id: string) => {
         sessionStorage.setItem(STORAGE_KEY, id);
+        useShadowStore.getState().resetShadow();
         resetSession();
         setThreadId(id);
-        loadSessionHistory(id);
+        restoreSessionHistory(id);
     };
 
-    return { threadId, mode, sessions, persistThreadId, persistMode, newSession, switchSession, isRestoring };
+    return {
+        threadId,
+        mode,
+        sessions,
+        persistThreadId,
+        persistMode,
+        newSession,
+        switchSession,
+        loadSessionHistory: restoreSessionHistory,
+    };
 }

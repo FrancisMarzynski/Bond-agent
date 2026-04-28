@@ -1,12 +1,12 @@
 import json
 import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from bond.api.routes.chat import router
-from bond.api.routes.chat import ChatRequest
+from bond.api.runtime import CommandRuntime
 
 
 # Fake LangChain AIMessageChunk with content
@@ -25,19 +25,25 @@ async def fake_astream_events(*args, **kwargs):
 @pytest.fixture
 def app():
     app = FastAPI()
-    
-    # Mock LangGraph compile graph and inject
+    captured = {}
+
+    async def capturing_astream_events(input_or_command, *args, **kwargs):
+        captured["input"] = input_or_command
+        async for event in fake_astream_events(*args, **kwargs):
+            yield event
+
     mock_graph = AsyncMock()
-    mock_graph.astream_events = fake_astream_events
-    
-    # Mock aget_state return
+    mock_graph.astream_events = capturing_astream_events
+
     class MockState:
         values = {"messages": []}
         next = []
-        
+
     mock_graph.aget_state.return_value = MockState()
-    
+
     app.state.graph = mock_graph
+    app.state.runtime = CommandRuntime()
+    app.state.captured_stream_input = captured
     app.include_router(router, prefix="/api/chat")
     return app
 
@@ -49,18 +55,18 @@ def client(app):
 
 def test_chat_stream_returns_sse(client):
     req_data = {"message": "Hello Bond", "mode": "author"}
-    
+
     # With TestClient, we can read the streaming response
     with client.stream("POST", "/api/chat/stream", json=req_data) as response:
         assert response.status_code == 200
         assert response.headers["content-type"] == "text/event-stream; charset=utf-8"
         assert response.headers["cache-control"] == "no-cache"
         assert response.headers["connection"] == "keep-alive"
-        
+
         # Parse the SSE output
         content = response.iter_lines()
         lines = [line for line in content if line.strip()]
-        
+
         # Verify the chunks from fake_astream_events
         # lines[0] is now thread_id
         assert 'data: {"type":"thread_id"' in lines[0]
@@ -81,3 +87,20 @@ def test_chat_stream_returns_sse(client):
         assert 'data: {"type":"token","data":"Hel"}' in lines[3]
         # lines[4] is token
         assert 'data: {"type":"token","data":"lo"}' in lines[4]
+
+
+def test_chat_stream_injects_thread_id_into_initial_state(app, client):
+    thread_id = "thread-123"
+
+    with client.stream(
+        "POST",
+        "/api/chat/stream",
+        json={"message": "Hello Bond", "mode": "author", "thread_id": thread_id},
+    ) as response:
+        assert response.status_code == 200
+        list(response.iter_lines())
+
+    initial_state = app.state.captured_stream_input["input"]
+    assert initial_state["thread_id"] == thread_id
+    assert initial_state["topic"] == "Hello Bond"
+    assert initial_state["mode"] == "author"

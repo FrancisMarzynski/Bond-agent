@@ -16,7 +16,6 @@ Co robi:
 """
 
 import argparse
-import os
 import shutil
 import sqlite3
 import sys

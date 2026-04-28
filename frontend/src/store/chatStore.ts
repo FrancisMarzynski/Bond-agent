@@ -2,8 +2,18 @@
 import { create } from "zustand";
 import type { Annotation } from "@/store/shadowStore";
 
-export type Stage = "idle" | "research" | "structure" | "writing" | "done" | "error";
+export type Stage =
+  | "idle"
+  | "checking"
+  | "research"
+  | "structure"
+  | "writing"
+  | "shadow_analysis"
+  | "shadow_annotation"
+  | "done"
+  | "error";
 export type StageStatus = "pending" | "running" | "complete" | "error";
+export type PendingAction = "stream" | "resume" | null;
 export type HitlPause = {
     checkpoint_id: string;
     type: string;
@@ -11,11 +21,19 @@ export type HitlPause = {
     // Checkpoint 1 fields
     research_report?: string;
     heading_structure?: string;
+    cp1_iterations?: number;
     // Duplicate check specific fields (checkpoint_id === "duplicate_check")
     warning?: string;
     existing_title?: string;
     existing_date?: string;
     similarity_score?: number;
+    // Writer / checkpoint_2 specific fields
+    draft?: string;
+    draft_validated?: boolean;
+    cp2_iterations?: number;
+    validation_warning?: string;
+    corpus_count?: number;
+    threshold?: number;
     // Shadow mode fields
     annotations?: Annotation[];
     shadow_corrected_text?: string;
@@ -37,7 +55,8 @@ interface ChatStore {
     hitlPause: HitlPause;
     isStreaming: boolean;
     isReconnecting: boolean;
-    lastEventId?: string;
+    isRecoveringSession: boolean;
+    pendingAction: PendingAction;
     systemAlert?: string;
     /** AbortController belonging to the current active stream. Stored here
      *  so that every hook/component instance has its own isolated reference
@@ -52,7 +71,8 @@ interface ChatStore {
     setHitlPause: (pause: HitlPause) => void;
     setStreaming: (v: boolean) => void;
     setReconnecting: (v: boolean) => void;
-    setLastEventId: (id: string | undefined) => void;
+    setRecoveringSession: (v: boolean) => void;
+    setPendingAction: (action: PendingAction) => void;
     setSystemAlert: (alert: string | undefined) => void;
     addMessage: (msg: ChatMessage) => void;
     resetSession: () => void;
@@ -65,9 +85,12 @@ interface ChatStore {
 
 const initialStageStatus: Record<Stage, StageStatus> = {
     idle: "pending",
+    checking: "pending",
     research: "pending",
     structure: "pending",
     writing: "pending",
+    shadow_analysis: "pending",
+    shadow_annotation: "pending",
     done: "pending",
     error: "pending",
 };
@@ -82,7 +105,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     hitlPause: null,
     isStreaming: false,
     isReconnecting: false,
-    lastEventId: undefined,
+    isRecoveringSession: false,
+    pendingAction: null,
     systemAlert: undefined,
     activeController: null,
 
@@ -95,7 +119,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     setHitlPause: (hitlPause) => set({ hitlPause }),
     setStreaming: (isStreaming) => set({ isStreaming }),
     setReconnecting: (isReconnecting) => set({ isReconnecting }),
-    setLastEventId: (lastEventId) => set({ lastEventId }),
+    setRecoveringSession: (isRecoveringSession) => set({ isRecoveringSession }),
+    setPendingAction: (pendingAction) => set({ pendingAction }),
     setSystemAlert: (systemAlert) => set({ systemAlert }),
     addMessage: (msg) => set((s) => ({ messages: [...s.messages, msg] })),
     resetSession: () =>
@@ -108,7 +133,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
             hitlPause: null,
             isStreaming: false,
             isReconnecting: false,
-            lastEventId: undefined,
+            isRecoveringSession: false,
+            pendingAction: null,
             systemAlert: undefined,
             activeController: null,
         }),
@@ -124,6 +150,12 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     abortController: () => {
         const controller = get().activeController;
         if (controller) controller.abort();
-        set({ activeController: null, isStreaming: false });
+        set({
+            activeController: null,
+            isStreaming: false,
+            isReconnecting: false,
+            isRecoveringSession: false,
+            pendingAction: null,
+        });
     },
 }));

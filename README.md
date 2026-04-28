@@ -25,6 +25,14 @@ Skopiuj `.env.example` do `.env` i dostosuj według potrzeb (patrz [Konfiguracja
 
 Aby korzystać z importu z Google Drive, umieść plik `credentials.json` w głównym katalogu projektu (OAuth2 lub konto serwisowe).
 
+Jeśli repo zostało przeniesione do innego katalogu i entrypointy w `.venv/bin/` wskazują na starą ścieżkę, odśwież środowisko:
+
+```bash
+uv sync --reinstall
+```
+
+W ostateczności usuń `.venv/` i uruchom `uv sync` ponownie.
+
 ## Uruchamianie
 
 **Serwer API (korpus):**
@@ -165,13 +173,36 @@ CORS_ORIGINS=["http://localhost:3000"]
 
 ### Strumień SSE przerywa się po ~30 sekundach
 
-Niektóre proxy (nginx, Cloudflare) zamykają idle connections. Backend wysyła heartbeat co 15 sekund — event `{"type": "heartbeat", "data": "ping"}`. Frontend (`useStream.ts`) ignoruje te eventy.
+Niektóre proxy (nginx, Cloudflare) zamykają idle connections. Backend wysyła heartbeat co 5 sekund — event `{"type": "heartbeat", "data": "ping"}`. Frontend (`useStream.ts`) ignoruje heartbeat, ale rozróżnia teraz dwa przypadki:
+
+- brak `Response` z `fetch()` — bezpieczny retry po stronie przeglądarki
+- zerwanie po otrzymaniu `Response` — **brak replayu `POST`**, recovery idzie przez `GET /api/chat/history/{thread_id}`
+
+Frontend normalizuje też browserowe separatory `CRLF` w strumieniu SSE i nie próbuje już traktować tokenów-numerycznych jako obiektów JSON, więc eventy z prawdziwego `ReadableStream` są konsumowane poprawnie również w Playwright/Chromium.
 
 Jeśli mimo to połączenie pada, zwiększ timeout proxy:
 
 ```nginx
 proxy_read_timeout 600s;
 ```
+
+---
+
+### Lokalny frontend działa pod `127.0.0.1:3000`, ale backend odrzuca CORS
+
+Domyślnie lokalna konfiguracja zakłada frontend pod `http://localhost:3000`. Jeśli uruchamiasz lub testujesz UI pod `http://127.0.0.1:3000`, backend może odrzucić `POST /api/chat/stream` i `POST /api/chat/resume`.
+
+Najprostsze rozwiązanie:
+
+- używaj `http://localhost:3000`
+
+albo dopisz origin do `CORS_ORIGINS` w `.env`, np.:
+
+```env
+CORS_ORIGINS=["http://localhost:3000","http://127.0.0.1:3000"]
+```
+
+To jest szczególnie ważne przy testach Playwright i ręcznym debugowaniu browserowego SSE.
 
 ---
 
@@ -184,13 +215,56 @@ data: {"type": "stage", ...}
 data: {"type": "hitl_pause", ...}
 ```
 
-Jeśli frontend nie odbiera tych eventów, sprawdź czy `EventSource` / `fetch` z `ReadableStream` są poprawnie zamknięte i otwarte ponownie po przerwie. Patrz: `frontend/src/hooks/useStream.ts`.
+Jeśli frontend nie odbiera tych eventów, sprawdź czy backend zwraca w historii sesji pola:
+
+```json
+{
+  "session_status": "paused",
+  "pending_node": "checkpoint_2",
+  "can_resume": true
+}
+```
+
+Frontend używa teraz tych pól do odtworzenia checkpointu bez ponownego wysyłania tej samej komendy `POST`.
+
+W Shadow `thread_id` jest też zapisywany do `sessionStorage`, więc reload strony na `shadow_checkpoint` powinien odtworzyć adnotacje, poprawioną wersję i akcje `Zatwierdź / Odrzuć`.
 
 ---
 
 ### `POST /api/chat/resume` zwraca błąd "Poprzednia akcja HITL jest jeszcze w toku"
 
-Backend używa per-thread locka (`asyncio.Lock`) — dwa kliknięcia "Zatwierdź" dla tego samego `thread_id` blokują się wzajemnie. Drugie żądanie jest odrzucane z tym komunikatem. Poczekaj na zakończenie aktualnego strumienia.
+Backend używa per-thread locka (`asyncio.Lock`) — dwa kliknięcia "Zatwierdź" dla tego samego `thread_id` blokują się wzajemnie. Drugie żądanie jest odrzucane z tym komunikatem.
+
+Aktualny frontend ogranicza ten problem na dwa sposoby:
+
+- podczas aktywnego streamu blokuje kolejne akcje HITL
+- po zerwaniu committed `resume` pokazuje banner recovery i pobiera stan z `/api/chat/history/{thread_id}`, zamiast replayować `POST /api/chat/resume`
+
+Jeśli błąd nadal się pojawia, sprawdź w DevTools, czy użytkownik nie wysłał drugiego `resume` ręcznie albo czy nie działa niestandardowy reverse proxy cache.
+
+Jeśli chcesz odtworzyć poprawne zachowanie lokalnie, najpewniejszy przebieg testowy to:
+
+1. otwórz `http://localhost:3000/shadow`
+2. doprowadź sesję do `shadow_checkpoint`
+3. odśwież stronę i potwierdź, że checkpoint się odtworzył
+4. kliknij `Zatwierdź`
+5. zerwij połączenie po wysłaniu `resume`
+6. potwierdź przez `GET /api/chat/history/{thread_id}`, że sesja jest `completed` albo wróciła do poprawnego stanu recovery bez replayu `POST /api/chat/resume`
+
+---
+
+### Checkpoint `low_corpus` zachowuje się inaczej niż pozostałe checkpointy
+
+To już nie powinno występować. `low_corpus` używa tego samego kontraktu HITL co reszta pipeline'u:
+
+```json
+{
+  "checkpoint": "low_corpus",
+  "type": "approve_reject"
+}
+```
+
+W UI pojawia się jako standardowy panel ostrzeżenia z akcjami kontynuacji lub przerwania.
 
 ---
 
