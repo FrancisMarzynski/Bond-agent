@@ -2,6 +2,7 @@
 
 **Defined:** 2026-02-20
 **Core Value:** Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksymalnie 4 godzin — przy zachowaniu stylu nieodróżnialnego od ludzkiego, z human-in-the-loop przed każdą publikacją.
+**Status:** v1 signed off — wszystkie 39 wymagań v1 oznaczone jako complete i zwalidowane do 2026-04-28.
 
 ---
 

@@ -2,18 +2,18 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-20)
+See: .planning/PROJECT.md (updated 2026-04-28)
 
 **Core value:** Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksymalnie 4 godzin — przy zachowaniu stylu nieodróżnialnego od ludzkiego, z human-in-the-loop przed każdą publikacją.
-**Current focus:** v1 sign-off po transport hardening i responsive remediation — detached runtime oraz layouty mobile/tablet zwalidowane end-to-end; kolejne prace to SSRF hardening dla URL ingest
+**Current focus:** v1 formalnie signed off 2026-04-28 po domknięciu Shadow HITL, detached runtime, recovery sesji, responsive remediation oraz potwierdzeniu istniejącej ochrony SSRF dla URL ingest. Następna decyzja dotyczy już backlogu post-v1.
 
 ## Current Position
 
-Phase: 4 of 4 (Shadow Mode) — COMPLETE + transport hardening (complete) + responsive remediation (complete)
-Last activity: 2026-04-28 — Domknięto responsive remediation dla shell / Author / Shadow, odświeżono screenshoty `e2e-screenshots/responsive/` i dopisano addendum do `E2E_REPORT_2026-04-28.md`; wcześniej tego samego dnia zwalidowano też detached runtime end-to-end dla Shadow i Author
-Status: REC-01/02/03 oraz responsive remediation zwalidowane end-to-end; transport/HITL recovery ani layout mobile/tablet nie blokują już formalnego v1 sign-off
+Phase: Post-Phase 4 — v1 SIGNED OFF
+Last activity: 2026-04-28 — zsynchronizowano planning docs do stanu repo i potwierdzono, że URL ingest ma już aktywną walidację publicznych URL-i wraz z testami jednostkowymi; wcześniej tego samego dnia domknięto responsive remediation oraz detached runtime end-to-end dla Shadow i Author
+Status: v1 formalnie signed off; brak otwartych blockerów dla Author, Shadow, recovery/HITL, layoutów mobile/tablet ani hardeningu `/api/corpus/ingest/url`
 
-Progress: [██████████] 100% dla aktualnego zakresu transport hardening / REC-01/02/03 + responsive remediation
+Progress: [██████████] 100% dla v1 + transport hardening / REC-01/02/03 + responsive remediation
 
 **Niedawno domknięte:**
 
@@ -33,6 +33,7 @@ Progress: [██████████] 100% dla aktualnego zakresu transport
 14. **Responsive app shell** — sidebar poniżej `lg` działa jako drawer z triggerem w nagłówku; desktop zachowuje persistent sidebar bez regresji.
 15. **Author layout reflow** — główny workspace pozostaje stacked do `lg`; chat, checkpoint i toolbar edytora nie wymagają już poziomego scrolla na `375x812` i `768x1024`.
 16. **Shadow layout reflow** — poniżej `lg` adnotacje są promowane do pełnej górnej sekcji, a panele `Tekst oryginalny` / `Wersja poprawiona` stackują się pionowo bez ścisku szerokości.
+17. **URL ingest SSRF hardening już obecny w kodzie** — `/api/corpus/ingest/url` waliduje publiczne hosty przed scrapingiem, a testy pokrywają loopback, localhost, link-local, schematy inne niż HTTP(S) oraz skipowanie niebezpiecznych URL-i odkrytych przez sitemap.
 
 ## Browser Validation Notes
 
@@ -141,7 +142,13 @@ Artefakty lokalne:
 
 ### Pending Todos
 
-- [ ] Dodać ochronę SSRF dla `/api/corpus/ingest/url`
+- Brak otwartych zadań blokujących v1 sign-off.
+
+### Post-v1 Candidates
+
+- Ograniczyć lub usunąć obcinanie `research_report` przed `structure_node` i `writer_node`.
+- Wykonać formalną live walidację Exa na polskich zapytaniach researchowych.
+- Skalibrować progi jakości korpusu i duplicate similarity na realnych danych.
 
 ### Blockers/Concerns
 
@@ -151,6 +158,6 @@ Artefakty lokalne:
 ## Session Continuity
 
 Last session: 2026-04-28
-Stopped at: REC-01/02/03 domknięte; responsive remediation dla shell / Author / Shadow domknięta; screenshoty i raport E2E zsynchronizowane do stanu po rerunie
+Stopped at: planning docs zsynchronizowane do faktycznego stanu repo; v1 signed off po potwierdzeniu Shadow/transport/responsive i istniejącej walidacji SSRF dla URL ingest
 Resume file: None
-Next task: SSRF hardening dla URL ingest
+Next task: post-v1 priorytetyzacja — quality improvements vs formalne walidacje vs pierwszy feature v2

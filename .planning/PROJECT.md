@@ -12,48 +12,20 @@ Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksym
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] **v1 signed off — 2026-04-28.** Author i Shadow przeszły end-to-end walidację po domknięciu detached runtime, recovery sesji oraz responsive remediation.
+- [x] **Corpus onboarding**: text, file, Google Drive i blog URL działają; corpus pokazuje status i low-corpus warning.
+- [x] **Author mode**: topic → research → checkpoint 1 → draft → checkpoint 2 → save metadata działa w UI z pełnym HITL.
+- [x] **Shadow mode**: użytkownik widzi anotacje i wersję poprawioną oraz może approve/reject z pętlą regeneracji.
+- [x] **Frontend v1**: streaming SSE, progress indicator, edytor Markdown z exportem, corpus panel i lokalna historia sesji w sidebarze są dostępne.
+- [x] **URL ingest hardening**: `/api/corpus/ingest/url` waliduje wyłącznie publiczne adresy `http/https`; hosty prywatne, loopback i link-local są odrzucane przed scrapingiem.
 
 ### Active
 
-**Tryb Author — Generowanie artykułu:**
-- [ ] Użytkownik podaje temat + słowa kluczowe i uruchamia tryb Author
-- [ ] Agent wykonuje web research i generuje raport (lista źródeł z linkami i streszczeniami)
-- [ ] Użytkownik zatwierdza raport + proponowaną strukturę nagłówków (checkpoint)
-- [ ] Agent generuje pełny draft w Markdown zgodny z zasadami SEO (H1/H2/H3, meta-description 150–160 znaków, min. 800 słów)
-- [ ] Agent stylizuje draft przy użyciu RAG (wstrzykuje 3–5 fragmentów wzorcowych z bazy wektorowej)
-- [ ] Użytkownik może odrzucić draft i podać feedback — Agent regeneruje bez utraty kontekstu sesji
-- [ ] Zatwierdzenie draftu zapisuje metadane (temat, data) do Metadata Log
-
-**Tryb Shadow — Korekta stylu:**
-- [x] Użytkownik dostarcza gotowy tekst i uruchamia tryb Shadow
-- [x] Agent analizuje tekst, porównuje ze wzorcami z bazy wektorowej i proponuje konkretne korekty
-- [ ] Output: tekst z anotacjami + poprawiona wersja ⚠️ *Backend done; frontend HITL gap (annotations not surfaced to user)*
-- [ ] Użytkownik może odrzucić sugestie z powodem — Agent regeneruje alternatywne korekty ⚠️ *Backend done; no approve/reject UI in /shadow route*
-
-**Repurposing (Blog → Social Media):**
-- [ ] Użytkownik dostarcza artykuł, Agent generuje warianty dla Facebook, LinkedIn, Instagram, X (Twitter)
-- [ ] Output: wyłącznie tekst w Markdown, dostosowany do limitów znaków każdej platformy
-- [ ] Brak automatycznej publikacji — treść do ręcznego opublikowania
-
-**YouTube → Artykuł:**
-- [ ] Użytkownik podaje link YouTube, Agent pobiera transkrypcję (youtube-transcript-api)
-- [ ] Agent generuje artykuł blogowy lub streszczenie w Markdown
-- [ ] Działa wyłącznie dla filmów z napisami (ręcznymi lub auto-generowanymi); brak przetwarzania audio/video
-
-**Zarządzanie stylem (RAG):**
-- [ ] Baza wektorowa przechowuje fragmenty z dwóch źródeł: własne teksty użytkownika + wskazani zewnętrzni blogerzy, tagowane według źródła
-- [ ] Onboarding: użytkownik może zasilić bazę własnymi tekstami lub wskazać URL/teksty zewnętrznych blogerów
-
-**Interfejs użytkownika:**
-- [x] Przełącznik trybu Author/Shadow widoczny w głównym widoku czatu
-- [x] Progress indicator dla długich operacji (research → struktura → pisanie)
-- [x] Edytor Markdown dla wygenerowanego contentu
-- [x] Przycisk "Zatwierdź i Zapisz" zapisujący metadane do Metadata Log
-
-**Kontrola duplikatów:**
-- [ ] Metadata Log (SQL lub JSON) rejestruje tematy z datą publikacji
-- [ ] Agent weryfikuje unikalność tematu przed research'em (próg X miesięcy — do ustalenia)
+- [ ] **Post-v1 quality**: ograniczyć obcinanie `research_report` przed `structure_node` i `writer_node`, żeby poprawić jakość outline'u i final draftu.
+- [ ] **Post-v1 validation**: wykonać formalną live walidację Exa dla polskich zapytań researchowych.
+- [ ] **Post-v1 calibration**: skalibrować progi `low_corpus_threshold` i duplicate similarity na realnych danych.
+- [ ] **V2 — Repurposing**: blog → Facebook / LinkedIn / Instagram / X.
+- [ ] **V2 — YouTube → Artykuł**: generowanie artykułu lub streszczenia z napisów.
 
 ### Out of Scope
 
@@ -86,13 +58,13 @@ Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksym
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| LangGraph jako orkiestrator | Zarządzanie stanem i przepływem agentów; Python-native | — Pending |
-| RAG z dwoma źródłami stylu (własne + zewnętrzni) | Elastyczność przy onboardingu; tagowanie źródła w metadanych wektora | — Pending |
-| SEO przez prompt-engineering (nie API) | Brak zewnętrznych zależności w MVP; znana luka (brak danych o wolumenie fraz) | — Pending |
-| Brak autopostu w MVP | Human-in-the-loop jako zasada; ryzyko niesprawdzonej treści | — Pending |
-| Custom React/Next.js frontend | Pełna kontrola UX; możliwość precyzyjnego odwzorowania wymagań PRD | — Pending |
+| LangGraph jako orkiestrator | Zarządzanie stanem i przepływem agentów; Python-native | ✓ Validated in v1 |
+| RAG z dwoma źródłami stylu (własne + zewnętrzni) | Elastyczność przy onboardingu; tagowanie źródła w metadanych wektora | ✓ Implemented in v1 |
+| SEO przez prompt-engineering (nie API) | Brak zewnętrznych zależności w MVP; znana luka (brak danych o wolumenie fraz) | ✓ Implemented in v1 |
+| Brak autopostu w MVP | Human-in-the-loop jako zasada; ryzyko niesprawdzonej treści | ✓ Maintained in v1 |
+| Custom React/Next.js frontend | Pełna kontrola UX; możliwość precyzyjnego odwzorowania wymagań PRD | ✓ Validated in v1 |
 | Exa MCP dla web search (kandydat) | Darmowy; wymaga walidacji jakości vs Tavily przed decyzją finalną | — Pending |
 | Kaskadowy dobór modelu LLM | Mini dla research (koszt), Frontier dla draft (jakość); konfiguracja przez env vars | ✓ Good |
 
 ---
-*Last updated: 2026-02-20 after initialization*
+*Last updated: 2026-04-28 after v1 sign-off sync*

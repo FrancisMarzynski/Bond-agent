@@ -2,6 +2,8 @@
 
 Dokument opisuje konkretne usprawnienia zidentyfikowane w kodzie. Każdy punkt zawiera opis problemu, przyczynę i proponowane rozwiązanie.
 
+**Status note (2026-04-28):** ten dokument zawiera miks otwartych ulepszeń i historycznych znalezisk z okresu przed v1 sign-off. Część pozycji została już domknięta w kodzie i zwalidowana gdzie indziej, w tym Shadow HITL loop, research report w UI, export/copy draftu, lokalna historia sesji, async `ainvoke`, cross-session search cache, logging standardization oraz cost tracking. Traktuj pozostałe punkty jako backlog do ponownej weryfikacji względem aktualnego stanu repo, a nie jako listę bieżących blockerów.
+
 ---
 
 ## Spis treści

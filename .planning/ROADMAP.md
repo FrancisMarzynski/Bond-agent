@@ -4,6 +4,8 @@
 
 Bond is built in four sequential phases, each unlocking the next. Phase 1 populates the RAG style corpus and proves retrieval quality — this is a hard prerequisite because no style-mimicry node has value without a validated corpus. Phase 2 implements the full Author mode pipeline end-to-end in Python, with HITL checkpoints proven in isolation before any streaming surface is added. Phase 3 wires the proven backend to a browser via FastAPI SSE and a Next.js frontend, completing the user-facing Author mode flow. Phase 4 adds Shadow mode as a second branch on the same LangGraph graph, reusing all shared infrastructure from earlier phases. YouTube and social repurposing are v2 and not covered here.
 
+**Current status:** v1 signed off on 2026-04-28 after Shadow HITL closure, detached runtime validation, responsive remediation, and confirmation of URL ingest SSRF protection already present in code.
+
 ## Phases
 
 **Phase Numbering:**
@@ -15,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: RAG Corpus Onboarding** - Users can populate and validate the style corpus that all generation depends on
 - [x] **Phase 2: Author Mode Backend** - The full research-to-approved-draft pipeline works end-to-end in Python with HITL checkpoints
 - [x] **Phase 3: Streaming API and Frontend** - Users can run the complete Author mode workflow in a browser with streaming output and approval UI
-- [~] **Phase 4: Shadow Mode** - Backend complete; frontend HITL loop has one integration gap (see phase details)
+- [x] **Phase 4: Shadow Mode** - Complete, including frontend HITL loop and responsive layout validation
 
 ## Phase Details
 
@@ -133,9 +135,11 @@ Plans:
 **Execution Order:**
 Phases execute in numeric order: 1 → 2 → 3 → 4
 
+**Overall milestone:** v1 sign-off reached on 2026-04-28.
+
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. RAG Corpus Onboarding | 3/3 | Complete | 2026-02-22 |
 | 2. Author Mode Backend | 4/4 | Complete | 2026-02-23 |
 | 3. Streaming API and Frontend | 5/5 + 46 sub-tasks | Complete | 2026-04-23 |
-| 4. Shadow Mode | ~1.5/2 | Mostly complete — 1 frontend gap | - |
+| 4. Shadow Mode | 2/2 | Complete | 2026-04-28 |
