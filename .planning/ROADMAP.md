@@ -103,7 +103,7 @@ Additional work completed during Phase 3 (selected highlights):
 **Goal**: Users can submit an existing text and receive both an annotated version (inline correction suggestions) and a corrected version, with the ability to reject and regenerate alternatives
 **Depends on**: Phase 3
 **Requirements**: SHAD-01, SHAD-02, SHAD-03, SHAD-04, SHAD-05, SHAD-06
-**Status**: 🔶 Mostly complete — one frontend integration gap remains (SHAD-05, SHAD-06)
+**Status**: ✅ Complete — frontend HITL wiring and responsive Shadow layout validated on 2026-04-28
 
 **What is built:**
 - `shadow_analyze_node` — two-pass ChromaDB retrieval (own-first, external fill)
@@ -111,25 +111,22 @@ Additional work completed during Phase 3 (selected highlights):
 - `shadow_checkpoint_node` — HITL interrupt, approve/reject/abort, hard cap at 3 iterations
 - `BondState` extended with all shadow fields; `AuthorState` alias preserved
 - Dual-branch graph routing (`route_mode()` at START)
-- `ShadowPanel` — 3-column UI: annotation sidebar, highlighted original, editable corrected text
-- `AnnotationList` — sidebar with annotation cards, click-to-scroll navigation
+- `ShadowPanel` — desktop 3-column UI plus stacked mobile/tablet comparison flow below `lg`
+- `AnnotationList` — sidebar / top-section annotations with click-to-scroll navigation
 - `/shadow` route, `shadowStore` (Zustand)
+- Shadow HITL frontend wiring: `HitlPauseSchema` carries `annotations`, `shadow_corrected_text`, `iteration_count`; approve/reject flow resumes graph correctly
+- Browser validation: Shadow route, checkpoint hydration, approve/reject loop and responsive stacked layout re-tested successfully
 
-**Known gap (SHAD-05 / SHAD-06):**
-When `shadow_checkpoint` fires `interrupt()`, the backend emits a `hitl_pause` SSE event containing `annotations` and `shadow_corrected_text` in its payload. The frontend `HitlPauseSchema` (Zod) does not include these fields — they are stripped and never reach `shadowStore`. Additionally, the `/shadow` route renders only `ShadowPanel`, which has no approve/reject buttons. As a result:
-- Annotations and corrected text are never displayed after Shadow mode runs
-- The user has no way to approve, reject, or trigger re-generation
+**Validation closed 2026-04-28:**
+- SHAD-05: user sees annotated original and corrected version
+- SHAD-06: user can approve/reject and trigger re-generation loop
+- Shadow remains usable at `375x812`, `768x1024`, and desktop widths without permanent 3-column squeeze
 
-**Fix required** (estimated: 1–2 hours):
-1. Extend `HitlPauseSchema` in `chatStore.ts` with `annotations`, `shadow_corrected_text`, `iteration_count` fields
-2. In the `hitl_pause` handler in `useStream.ts`, call `useShadowStore.getState().setAnnotations()` and `setShadowCorrectedText()` when `checkpoint_id === "shadow_checkpoint"`
-3. Add approve/reject buttons to `ShadowPanel` when `hitlPause?.checkpoint_id === "shadow_checkpoint"`
-
-**Plans**: 2 plans (both superseded by work done in Phase 3; listed for traceability)
+**Plans**: 2 plans (completed; listed for traceability)
 
 Plans:
-- [~] 04-01-PLAN.md — BondState extension + Shadow branch nodes (done during Phase 3 sub-tasks 11–19)
-- [~] 04-02-PLAN.md — Shadow HITL checkpoint node + frontend (backend done; frontend HITL gap remains)
+- [x] 04-01-PLAN.md — BondState extension + Shadow branch nodes (done during Phase 3 sub-tasks 11–19)
+- [x] 04-02-PLAN.md — Shadow HITL checkpoint node + frontend
 
 ## Progress
 

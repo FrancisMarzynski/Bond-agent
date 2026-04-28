@@ -5,15 +5,15 @@
 See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksymalnie 4 godzin — przy zachowaniu stylu nieodróżnialnego od ludzkiego, z human-in-the-loop przed każdą publikacją.
-**Current focus:** v1 sign-off po transport hardening — detached runtime zwalidowany end-to-end dla Shadow i Author; kolejne prace to layout mobile/tablet oraz SSRF hardening
+**Current focus:** v1 sign-off po transport hardening i responsive remediation — detached runtime oraz layouty mobile/tablet zwalidowane end-to-end; kolejne prace to SSRF hardening dla URL ingest
 
 ## Current Position
 
-Phase: 4 of 4 (Shadow Mode) — COMPLETE + transport hardening (complete)
-Last activity: 2026-04-28 — Wykonano pełny browser journey Shadow + Author na detached runtime przez `scripts/playwright_detached_runtime_journey.py`; poprawiono limit recovery pollingu w `useSessionBootstrap` i `useStream`, który ucinał dłuższy reload-recovery w Author po ~30 s
-Status: REC-01/02/03 zwalidowane end-to-end na detached runtime; transport/HITL recovery nie blokuje już formalnego v1 sign-off
+Phase: 4 of 4 (Shadow Mode) — COMPLETE + transport hardening (complete) + responsive remediation (complete)
+Last activity: 2026-04-28 — Domknięto responsive remediation dla shell / Author / Shadow, odświeżono screenshoty `e2e-screenshots/responsive/` i dopisano addendum do `E2E_REPORT_2026-04-28.md`; wcześniej tego samego dnia zwalidowano też detached runtime end-to-end dla Shadow i Author
+Status: REC-01/02/03 oraz responsive remediation zwalidowane end-to-end; transport/HITL recovery ani layout mobile/tablet nie blokują już formalnego v1 sign-off
 
-Progress: [██████████] 100% dla aktualnego zakresu transport hardening / REC-01/02/03
+Progress: [██████████] 100% dla aktualnego zakresu transport hardening / REC-01/02/03 + responsive remediation
 
 **Niedawno domknięte:**
 
@@ -30,10 +30,13 @@ Progress: [██████████] 100% dla aktualnego zakresu transport
 11. **Shadow stages wyrównane** — `/history` zwraca `shadow_analysis`/`shadow_annotation` zamiast `idle`; `Stage` type i `StageProgress` obsługują nowe wartości.
 12. **`X-Bond-Thread-Id` header** — thread ID dostępny z headera response natychmiast po `fetch()`, zanim body zostanie sparsowane.
 13. **Recovery polling do trwałego stanu** — reload recovery dla dłuższych sesji nie kończy się już po ~30 s; zarówno bootstrap, jak i same-tab recovery czekają na `paused` / `completed` / `error`.
+14. **Responsive app shell** — sidebar poniżej `lg` działa jako drawer z triggerem w nagłówku; desktop zachowuje persistent sidebar bez regresji.
+15. **Author layout reflow** — główny workspace pozostaje stacked do `lg`; chat, checkpoint i toolbar edytora nie wymagają już poziomego scrolla na `375x812` i `768x1024`.
+16. **Shadow layout reflow** — poniżej `lg` adnotacje są promowane do pełnej górnej sekcji, a panele `Tekst oryginalny` / `Wersja poprawiona` stackują się pionowo bez ścisku szerokości.
 
 ## Browser Validation Notes
 
-Walidacja wykonana 2026-04-28 na:
+Walidacja transport / recovery wykonana 2026-04-28 na:
 
 - frontend: `http://localhost:3000`
 - backend: `http://localhost:8000`
@@ -49,6 +52,19 @@ Potwierdzone zachowania:
 5. Odpowiedzi `/api/chat/stream` i `/api/chat/resume` wystawiają `X-Bond-Thread-Id`, więc recovery działa także wtedy, gdy body urwie się przed pierwszym eventem `thread_id`.
 6. Dłuższe sesje Author po reloadzie nie gubią checkpointu przez zbyt krótki polling — recovery trwa do trwałego stanu `paused` / `completed` / `error`.
 
+Walidacja responsive wykonana 2026-04-28 na:
+
+- frontend: `http://localhost:3000`
+- backend: `http://localhost:8000`
+- narzędzie: headless Chromium przez lokalny Python Playwright
+
+Potwierdzone zachowania:
+
+1. `375x812`: sidebar jest ukryty domyślnie, dostępny przez trigger w nagłówku, Author pozostaje stacked i nie generuje poziomego overflow.
+2. `768x1024`: Author pozostaje stacked; Shadow checkpoint przenosi `Adnotacje` nad treść i stackuje pionowo `Tekst oryginalny` / `Wersja poprawiona`.
+3. `1440x900`: desktop zachowuje układ side-by-side bez widocznej regresji.
+4. Dla wszystkich powyższych viewportów: `overflow_px = 0`.
+
 Artefakty lokalne:
 
 - `/tmp/bond-playwright-detached-runtime-20260428-122040/summary.json`
@@ -58,6 +74,12 @@ Artefakty lokalne:
 - `/tmp/bond-playwright-detached-runtime-20260428-122040/author-01-checkpoint-1.png`
 - `/tmp/bond-playwright-detached-runtime-20260428-122040/author-02-checkpoint-2.png`
 - `/tmp/bond-playwright-detached-runtime-20260428-122040/author-03-final.png`
+- `e2e-screenshots/responsive/01-home-mobile.png`
+- `e2e-screenshots/responsive/02-home-tablet.png`
+- `e2e-screenshots/responsive/03-home-desktop.png`
+- `e2e-screenshots/responsive/04-home-mobile-drawer.png`
+- `e2e-screenshots/responsive/05-shadow-mobile.png`
+- `e2e-screenshots/responsive/06-shadow-tablet.png`
 
 ## Performance Metrics
 
@@ -72,7 +94,7 @@ Artefakty lokalne:
 | 01-rag-corpus-onboarding | 3 | 30 min | 10 min |
 | 02-author-mode-backend | 4 | 10 min | 3.3 min |
 | 03-streaming-api-and-frontend | 5 + 46 sub-tasks | ~2 months | — |
-| 04-shadow-mode | Built within Phase 3 + 1 gap | — | — |
+| 04-shadow-mode | Built within Phase 3, domknięte późniejszymi remediacjami | — | — |
 
 ## Accumulated Context
 
@@ -119,7 +141,6 @@ Artefakty lokalne:
 
 ### Pending Todos
 
-- [ ] Naprawić layout mobile/tablet z raportu E2E
 - [ ] Dodać ochronę SSRF dla `/api/corpus/ingest/url`
 
 ### Blockers/Concerns
@@ -130,6 +151,6 @@ Artefakty lokalne:
 ## Session Continuity
 
 Last session: 2026-04-28
-Stopped at: REC-01/02/03 domknięte; pełny Shadow + Author journey na detached runtime przeszedł; dokumentacja zsynchronizowana do stanu po rerunie
+Stopped at: REC-01/02/03 domknięte; responsive remediation dla shell / Author / Shadow domknięta; screenshoty i raport E2E zsynchronizowane do stanu po rerunie
 Resume file: None
-Next task: Mobile/tablet layout remediation lub SSRF hardening dla URL ingest
+Next task: SSRF hardening dla URL ingest
