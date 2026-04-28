@@ -112,8 +112,8 @@ async def test_writer_fresh_draft_prompt_keeps_late_report_content_when_budget_a
 
     monkeypatch.setattr(
         writer,
-        "get_corpus_collection",
-        lambda: FakeCollection(writer.LOW_CORPUS_THRESHOLD),
+        "get_article_count",
+        lambda: writer.settings.low_corpus_threshold,
     )
     monkeypatch.setattr(writer, "get_draft_llm", lambda **kwargs: fake_llm)
     monkeypatch.setattr(writer, "_fetch_rag_exemplars", lambda topic, n=5: [])
@@ -170,8 +170,8 @@ async def test_writer_tight_budget_drops_sources_before_losing_facts_and_stats(
 
     monkeypatch.setattr(
         writer,
-        "get_corpus_collection",
-        lambda: FakeCollection(writer.LOW_CORPUS_THRESHOLD),
+        "get_article_count",
+        lambda: writer.settings.low_corpus_threshold,
     )
     monkeypatch.setattr(writer, "get_draft_llm", lambda **kwargs: fake_llm)
     monkeypatch.setattr(writer, "_fetch_rag_exemplars", lambda topic, n=5: [])
@@ -207,7 +207,7 @@ async def test_writer_tight_budget_drops_sources_before_losing_facts_and_stats(
 async def test_writer_low_corpus_reject_still_short_circuits_before_budgeting(
     monkeypatch,
 ):
-    monkeypatch.setattr(writer, "get_corpus_collection", lambda: FakeCollection(0))
+    monkeypatch.setattr(writer, "get_article_count", lambda: 0)
     monkeypatch.setattr(writer, "interrupt", lambda payload: {"action": "reject"})
 
     def fail_get_draft_llm(**kwargs):

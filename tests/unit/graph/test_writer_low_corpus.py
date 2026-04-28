@@ -55,7 +55,15 @@ class FakeDraftModel:
 
 @pytest.mark.asyncio
 async def test_writer_low_corpus_interrupt_payload_shape(monkeypatch):
-    monkeypatch.setattr(writer, "get_corpus_collection", lambda: FakeCollection(0))
+    monkeypatch.setattr(writer.settings, "low_corpus_threshold", 11)
+    monkeypatch.setattr(writer, "get_article_count", lambda: 0)
+    monkeypatch.setattr(
+        writer,
+        "get_corpus_collection",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("writer low-corpus gate should not read Chroma chunk count")
+        ),
+    )
 
     def fake_interrupt(payload):
         raise LowCorpusInterrupt(payload)
@@ -69,13 +77,13 @@ async def test_writer_low_corpus_interrupt_payload_shape(monkeypatch):
     assert payload["checkpoint"] == "low_corpus"
     assert payload["type"] == "approve_reject"
     assert payload["corpus_count"] == 0
-    assert payload["threshold"] == writer.LOW_CORPUS_THRESHOLD
+    assert payload["threshold"] == 11
     assert "Korpus zawiera tylko 0 artykułów" in payload["warning"]
 
 
 @pytest.mark.asyncio
 async def test_writer_low_corpus_approve_continues_generation(monkeypatch):
-    monkeypatch.setattr(writer, "get_corpus_collection", lambda: FakeCollection(0))
+    monkeypatch.setattr(writer, "get_article_count", lambda: 0)
     monkeypatch.setattr(writer, "interrupt", lambda payload: {"action": "approve"})
     monkeypatch.setattr(writer, "get_draft_llm", lambda **kwargs: FakeDraftModel())
     monkeypatch.setattr(writer, "_fetch_rag_exemplars", lambda topic, n=5: [])
@@ -103,7 +111,7 @@ async def test_writer_low_corpus_approve_continues_generation(monkeypatch):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("action", ["reject", "abort"])
 async def test_writer_low_corpus_reject_and_abort_terminate_safely(monkeypatch, action):
-    monkeypatch.setattr(writer, "get_corpus_collection", lambda: FakeCollection(0))
+    monkeypatch.setattr(writer, "get_article_count", lambda: 0)
     monkeypatch.setattr(writer, "interrupt", lambda payload: {"action": action})
 
     result = await writer.writer_node({"topic": "Temat", "keywords": []})

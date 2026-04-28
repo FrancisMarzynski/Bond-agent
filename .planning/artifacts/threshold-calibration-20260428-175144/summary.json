@@ -1,0 +1,334 @@
+{
+  "generated_at": "2026-04-28T15:51:51.987934+00:00",
+  "overall_status": "pass",
+  "artifact_slug": "threshold-calibration-20260428-175144",
+  "warnings": [
+    "SQLite metadata_log ma 4 temat(y), a kolekcja Chroma duplicate ma 3 embeddingów."
+  ],
+  "low_corpus": {
+    "current_threshold": 10,
+    "recommended_threshold": 10,
+    "change_default": false,
+    "confidence": "umiarkowana",
+    "article_count": 12,
+    "chunk_count_sqlite": 12,
+    "chunk_count_chroma": 12,
+    "query_sets": {
+      "topic_like": 5,
+      "title_like": 12
+    },
+    "metrics": [
+      {
+        "article_count": 3,
+        "query_family": "topic_like",
+        "query_count": 5,
+        "mean_coverage_ratio": 0.6,
+        "mean_overlap_at_k": 0.4667,
+        "median_overlap_at_k": 0.3333,
+        "top1_match_rate": 0.6,
+        "mean_top1_similarity": 0.4767
+      },
+      {
+        "article_count": 3,
+        "query_family": "title_like",
+        "query_count": 12,
+        "mean_coverage_ratio": 0.6,
+        "mean_overlap_at_k": 0.4445,
+        "median_overlap_at_k": 0.6667,
+        "top1_match_rate": 0.25,
+        "mean_top1_similarity": 0.3881
+      },
+      {
+        "article_count": 4,
+        "query_family": "topic_like",
+        "query_count": 5,
+        "mean_coverage_ratio": 0.8,
+        "mean_overlap_at_k": 0.45,
+        "median_overlap_at_k": 0.5,
+        "top1_match_rate": 0.6,
+        "mean_top1_similarity": 0.4767
+      },
+      {
+        "article_count": 4,
+        "query_family": "title_like",
+        "query_count": 12,
+        "mean_coverage_ratio": 0.8,
+        "mean_overlap_at_k": 0.4583,
+        "median_overlap_at_k": 0.5,
+        "top1_match_rate": 0.3333,
+        "mean_top1_similarity": 0.4956
+      },
+      {
+        "article_count": 5,
+        "query_family": "topic_like",
+        "query_count": 5,
+        "mean_coverage_ratio": 1.0,
+        "mean_overlap_at_k": 0.48,
+        "median_overlap_at_k": 0.6,
+        "top1_match_rate": 0.6,
+        "mean_top1_similarity": 0.5011
+      },
+      {
+        "article_count": 5,
+        "query_family": "title_like",
+        "query_count": 12,
+        "mean_coverage_ratio": 1.0,
+        "mean_overlap_at_k": 0.4667,
+        "median_overlap_at_k": 0.5,
+        "top1_match_rate": 0.5,
+        "mean_top1_similarity": 0.5067
+      },
+      {
+        "article_count": 6,
+        "query_family": "topic_like",
+        "query_count": 5,
+        "mean_coverage_ratio": 1.0,
+        "mean_overlap_at_k": 0.52,
+        "median_overlap_at_k": 0.6,
+        "top1_match_rate": 0.6,
+        "mean_top1_similarity": 0.5011
+      },
+      {
+        "article_count": 6,
+        "query_family": "title_like",
+        "query_count": 12,
+        "mean_coverage_ratio": 1.0,
+        "mean_overlap_at_k": 0.5667,
+        "median_overlap_at_k": 0.6,
+        "top1_match_rate": 0.5833,
+        "mean_top1_similarity": 0.5181
+      },
+      {
+        "article_count": 7,
+        "query_family": "topic_like",
+        "query_count": 5,
+        "mean_coverage_ratio": 1.0,
+        "mean_overlap_at_k": 0.52,
+        "median_overlap_at_k": 0.6,
+        "top1_match_rate": 0.6,
+        "mean_top1_similarity": 0.5011
+      },
+      {
+        "article_count": 7,
+        "query_family": "title_like",
+        "query_count": 12,
+        "mean_coverage_ratio": 1.0,
+        "mean_overlap_at_k": 0.65,
+        "median_overlap_at_k": 0.6,
+        "top1_match_rate": 0.6667,
+        "mean_top1_similarity": 0.543
+      },
+      {
+        "article_count": 8,
+        "query_family": "topic_like",
+        "query_count": 5,
+        "mean_coverage_ratio": 1.0,
+        "mean_overlap_at_k": 0.6,
+        "median_overlap_at_k": 0.6,
+        "top1_match_rate": 0.6,
+        "mean_top1_similarity": 0.5074
+      },
+      {
+        "article_count": 8,
+        "query_family": "title_like",
+        "query_count": 12,
+        "mean_coverage_ratio": 1.0,
+        "mean_overlap_at_k": 0.7,
+        "median_overlap_at_k": 0.7,
+        "top1_match_rate": 0.75,
+        "mean_top1_similarity": 0.555
+      },
+      {
+        "article_count": 9,
+        "query_family": "topic_like",
+        "query_count": 5,
+        "mean_coverage_ratio": 1.0,
+        "mean_overlap_at_k": 0.8,
+        "median_overlap_at_k": 0.8,
+        "top1_match_rate": 0.8,
+        "mean_top1_similarity": 0.5094
+      },
+      {
+        "article_count": 9,
+        "query_family": "title_like",
+        "query_count": 12,
+        "mean_coverage_ratio": 1.0,
+        "mean_overlap_at_k": 0.7667,
+        "median_overlap_at_k": 0.8,
+        "top1_match_rate": 0.75,
+        "mean_top1_similarity": 0.555
+      },
+      {
+        "article_count": 10,
+        "query_family": "topic_like",
+        "query_count": 5,
+        "mean_coverage_ratio": 1.0,
+        "mean_overlap_at_k": 0.8,
+        "median_overlap_at_k": 0.8,
+        "top1_match_rate": 0.8,
+        "mean_top1_similarity": 0.5094
+      },
+      {
+        "article_count": 10,
+        "query_family": "title_like",
+        "query_count": 12,
+        "mean_coverage_ratio": 1.0,
+        "mean_overlap_at_k": 0.8667,
+        "median_overlap_at_k": 1.0,
+        "top1_match_rate": 0.8333,
+        "mean_top1_similarity": 0.565
+      },
+      {
+        "article_count": 11,
+        "query_family": "topic_like",
+        "query_count": 5,
+        "mean_coverage_ratio": 1.0,
+        "mean_overlap_at_k": 0.92,
+        "median_overlap_at_k": 1.0,
+        "top1_match_rate": 1.0,
+        "mean_top1_similarity": 0.5215
+      },
+      {
+        "article_count": 11,
+        "query_family": "title_like",
+        "query_count": 12,
+        "mean_coverage_ratio": 1.0,
+        "mean_overlap_at_k": 0.95,
+        "median_overlap_at_k": 1.0,
+        "top1_match_rate": 0.9167,
+        "mean_top1_similarity": 0.6011
+      },
+      {
+        "article_count": 12,
+        "query_family": "topic_like",
+        "query_count": 5,
+        "mean_coverage_ratio": 1.0,
+        "mean_overlap_at_k": 1.0,
+        "median_overlap_at_k": 1.0,
+        "top1_match_rate": 1.0,
+        "mean_top1_similarity": 0.5215
+      },
+      {
+        "article_count": 12,
+        "query_family": "title_like",
+        "query_count": 12,
+        "mean_coverage_ratio": 1.0,
+        "mean_overlap_at_k": 1.0,
+        "median_overlap_at_k": 1.0,
+        "top1_match_rate": 1.0,
+        "mean_top1_similarity": 0.6364
+      }
+    ],
+    "rationale": [
+      "Lokalny korpus ma tylko 12 artykułów, czyli zaledwie o 2 więcej niż obecny próg 10.",
+      "Zapytania topic-like osiągają stabilne pokrycie i zgodność top-1 dopiero przy około 9 artykułach.",
+      "Obniżenie progu na podstawie obecnych danych byłoby zbyt agresywne; zostawiam domyślną wartość bez zmian."
+    ]
+  },
+  "duplicate_threshold": {
+    "current_threshold": 0.85,
+    "recommended_threshold": 0.85,
+    "change_default": false,
+    "confidence": "niska",
+    "sqlite_topic_count": 4,
+    "chroma_topic_count": 3,
+    "extended_topic_count": 16,
+    "nearest_neighbor_min": 0.3023,
+    "nearest_neighbor_median": 0.5591,
+    "nearest_neighbor_p90": 0.855,
+    "nearest_neighbor_max": 0.9244,
+    "pairs_at_or_above": {
+      "0.70": 3,
+      "0.75": 2,
+      "0.80": 1,
+      "0.85": 1,
+      "0.90": 1
+    },
+    "borderline_band": [
+      {
+        "left_label": "Test Article",
+        "left_origin": "corpus_title",
+        "right_label": "test_article.txt",
+        "right_origin": "corpus_title",
+        "similarity": 0.7856
+      }
+    ],
+    "top_pairs": [
+      {
+        "left_label": "Testowy temat artykułu",
+        "left_origin": "metadata_sqlite",
+        "right_label": "Test Article",
+        "right_origin": "corpus_title",
+        "similarity": 0.9244
+      },
+      {
+        "left_label": "Test Article",
+        "left_origin": "corpus_title",
+        "right_label": "test_article.txt",
+        "right_origin": "corpus_title",
+        "similarity": 0.7856
+      },
+      {
+        "left_label": "Marketing Automation: Personalizacja to Nowy Standard",
+        "left_origin": "corpus_title",
+        "right_label": "Budowanie Personal Brandingu w Świecie Zdominowanym przez Algorytmy",
+        "right_origin": "corpus_title",
+        "similarity": 0.7475
+      },
+      {
+        "left_label": "Testowy temat artykułu",
+        "left_origin": "metadata_sqlite",
+        "right_label": "test_article.txt",
+        "right_origin": "corpus_title",
+        "similarity": 0.6912
+      },
+      {
+        "left_label": "Testowy temat artykułu",
+        "left_origin": "metadata_sqlite",
+        "right_label": "Test topic dla weryfikacji zapisu metadanych",
+        "right_origin": "metadata_sqlite",
+        "similarity": 0.6883
+      },
+      {
+        "left_label": "Test topic dla weryfikacji zapisu metadanych",
+        "left_origin": "metadata_sqlite",
+        "right_label": "Test Article",
+        "right_origin": "corpus_title",
+        "similarity": 0.627
+      },
+      {
+        "left_label": "Podstawy copywritingu",
+        "left_origin": "corpus_title",
+        "right_label": "Przyszłość AI w Copywritingu: Jak Modele Językowe Zmieniają Grę",
+        "right_origin": "corpus_title",
+        "similarity": 0.5649
+      },
+      {
+        "left_label": "Jak pisać angażujące treści",
+        "left_origin": "corpus_title",
+        "right_label": "Strategia Contentowa: Dlaczego Jakość Zawsze Wygra z Ilością",
+        "right_origin": "corpus_title",
+        "similarity": 0.5533
+      },
+      {
+        "left_label": "Storytelling w marketingu",
+        "left_origin": "corpus_title",
+        "right_label": "Strategia Contentowa: Dlaczego Jakość Zawsze Wygra z Ilością",
+        "right_origin": "corpus_title",
+        "similarity": 0.5521
+      },
+      {
+        "left_label": "Storytelling w marketingu",
+        "left_origin": "corpus_title",
+        "right_label": "Marketing Automation: Personalizacja to Nowy Standard",
+        "right_origin": "corpus_title",
+        "similarity": 0.5456
+      }
+    ],
+    "rationale": [
+      "Kolekcja duplicate w Chroma ma tylko 3 temat(y), więc realna próba produkcyjna jest za mała do przesuwania progu.",
+      "W rozszerzonej lokalnej puli (16 tematów/tytułów) jest tylko 1 para(y) w paśmie 0.75-0.90 wokół bieżącego progu 0.85.",
+      "Brak oznaczonych ręcznie duplikatów i brak gęstości punktów granicznych oznacza, że zmiana defaultu byłaby zgadywaniem."
+    ]
+  }
+}

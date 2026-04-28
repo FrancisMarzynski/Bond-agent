@@ -17,11 +17,11 @@ from bond.prompts.context import build_context_block
 from bond.prompts.research_context import select_research_context
 from bond.prompts.writer import FORBIDDEN_WORD_STEMS, WRITER_SYSTEM_PROMPT
 from bond.schemas import CheckpointResponse
+from bond.store.article_log import get_article_count
 from bond.store.chroma import get_corpus_collection
 
 log = logging.getLogger(__name__)
 
-LOW_CORPUS_THRESHOLD = 10
 _RERANK_FETCH_N = 15  # Candidates fetched before reranking
 _WRITER_MAX_OUTPUT_TOKENS = 4096
 
@@ -319,7 +319,7 @@ async def writer_node(state: AuthorState) -> dict:
     Generate SEO-compliant draft with RAG style injection and Tone of Voice enforcement.
 
     Before generation:
-    - Checks RAG corpus count. If < LOW_CORPUS_THRESHOLD (10 articles), interrupts with
+    - Checks RAG corpus count. If < settings.low_corpus_threshold, interrupts with
       a standard approve/reject warning payload and waits for user confirmation.
 
     After corpus check:
@@ -336,12 +336,11 @@ async def writer_node(state: AuthorState) -> dict:
     min_words = settings.min_word_count
 
     # --- Low corpus gate ---
-    corpus_collection = get_corpus_collection()
-    corpus_count = corpus_collection.count() if corpus_collection is not None else 0
-    if corpus_count < LOW_CORPUS_THRESHOLD:
+    corpus_count = get_article_count()
+    if corpus_count < settings.low_corpus_threshold:
         warning_message = (
             f"Korpus zawiera tylko {corpus_count} artykułów "
-            f"(minimum: {LOW_CORPUS_THRESHOLD}). Styl draftu może być niespójny."
+            f"(minimum: {settings.low_corpus_threshold}). Styl draftu może być niespójny."
         )
         user_response = interrupt(
             {
@@ -349,7 +348,7 @@ async def writer_node(state: AuthorState) -> dict:
                 "type": "approve_reject",
                 "warning": warning_message,
                 "corpus_count": corpus_count,
-                "threshold": LOW_CORPUS_THRESHOLD,
+                "threshold": settings.low_corpus_threshold,
                 "instructions": (
                     'Wyślij {"action": "approve"}, {"action": "reject"} '
                     'lub {"action": "abort"} aby zdecydować o kontynuacji.'

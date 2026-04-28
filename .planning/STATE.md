@@ -5,12 +5,12 @@
 See: .planning/PROJECT.md (updated 2026-04-28)
 
 **Core value:** Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksymalnie 4 godzin — przy zachowaniu stylu nieodróżnialnego od ludzkiego, z human-in-the-loop przed każdą publikacją.
-**Current focus:** v1 formalnie signed off 2026-04-28 po domknięciu Shadow HITL, detached runtime, recovery sesji, responsive remediation, potwierdzeniu istniejącej ochrony SSRF dla URL ingest oraz formalnej live walidacji Exa dla kuratorowanych polskich zapytań researchowych. Następny najwyższy-ROI temat post-v1 to kalibracja progów jakości korpusu i duplicate similarity na realnych danych.
+**Current focus:** v1 formalnie signed off 2026-04-28 po domknięciu Shadow HITL, detached runtime, recovery sesji, responsive remediation, potwierdzeniu istniejącej ochrony SSRF dla URL ingest, formalnej live walidacji Exa dla kuratorowanych polskich zapytań researchowych oraz kalibracji progów `low_corpus_threshold` / `duplicate_threshold` na lokalnych danych repo. Najbliższy follow-up post-v1 to wyrównanie driftu SQLite↔Chroma wykrytego w duplicate metadata.
 
 ## Current Position
 
 Phase: Post-Phase 4 — v1 SIGNED OFF
-Last activity: 2026-04-28 — dodano `scripts/validate_exa_polish.py` + `bond/validation/exa_polish.py`, uruchomiono live Exa baseline dla 4 polskich case'ów researchowych (wszystkie `pass`), zapisano artefakty w `.planning/artifacts/exa-polish-20260428-142434/`, zsynchronizowano docs z realnym setupem Exa MCP; wcześniej tego samego dnia domknięto token-aware budgeting research context dla `structure_node` i `writer_node` oraz potwierdzono brak regresji w graph/API unit suite
+Last activity: 2026-04-28 — dodano `scripts/calibrate_thresholds.py` + `bond/validation/threshold_calibration.py`, wygenerowano artefakty `.planning/artifacts/threshold-calibration-20260428-175144/summary.{md,json}`, ujednolicono writer low-corpus gate do `settings.low_corpus_threshold` + `articles.db` article_count, potwierdzono na lokalnych danych pozostawienie defaultów `low_corpus_threshold=10` i `duplicate_threshold=0.85`, wykryto drift `metadata_log` SQLite (`4`) vs Chroma duplicate collection (`3`) i domknięto targeted unit suite dla writer/calibration
 Status: v1 formalnie signed off; brak otwartych blockerów dla Author, Shadow, recovery/HITL, layoutów mobile/tablet ani hardeningu `/api/corpus/ingest/url`
 
 Progress: [██████████] 100% dla v1 + transport hardening / REC-01/02/03 + responsive remediation
@@ -35,6 +35,7 @@ Progress: [██████████] 100% dla v1 + transport hardening / R
 16. **Shadow layout reflow** — poniżej `lg` adnotacje są promowane do pełnej górnej sekcji, a panele `Tekst oryginalny` / `Wersja poprawiona` stackują się pionowo bez ścisku szerokości.
 17. **URL ingest SSRF hardening już obecny w kodzie** — `/api/corpus/ingest/url` waliduje publiczne hosty przed scrapingiem, a testy pokrywają loopback, localhost, link-local, schematy inne niż HTTP(S) oraz skipowanie niebezpiecznych URL-i odkrytych przez sitemap.
 18. **Token-aware research carry-through** — `structure_node` i fresh-draft path w `writer_node` nie tną już ślepo `research_report` po znakach; pełny raport przechodzi bez zmian, gdy mieści się w budżecie modelu, a przy ciasnym budżecie prompt degraduje się sekcyjnie przez `research_data` (fakty/statystyki najpierw, potem redukcja źródeł).
+19. **Threshold calibration harness** — lokalny skrypt `scripts/calibrate_thresholds.py` analizuje `articles.db`, `bond_metadata.db` i Chroma, zapisuje artefakty pod `.planning/artifacts/threshold-calibration-20260428-175144/` i konserwatywnie utrzymuje defaulty `10` / `0.85`, bo obecna próba nie uzasadnia ich ruszania.
 
 ## Browser Validation Notes
 
@@ -162,16 +163,18 @@ Potwierdzone zachowania:
 
 ### Post-v1 Candidates
 
-- Skalibrować progi jakości korpusu i duplicate similarity na realnych danych.
+- Wyrównać drift `metadata_log` SQLite ↔ Chroma duplicate collection i dodać/backfillować brakujące embeddingi tematów.
+- Zebrać większą próbę realnych opublikowanych tematów przed ewentualnym ponownym ruszaniem defaultów `low_corpus_threshold` / `duplicate_threshold`.
 
 ### Blockers/Concerns
 
-- RAG corpus quality thresholds (10 articles, 0.85 similarity) są rekomendacjami, nie wynikami empirycznej kalibracji
+- Kalibracja progów została wykonana 2026-04-28, ale confidence pozostaje ograniczone: lokalny corpus ma tylko 12 artykułów, a kolekcja duplicate w Chroma tylko 3 tematy.
+- Lokalnie wykryto drift `metadata_log` SQLite (`4` rekordy) vs Chroma duplicate collection (`3` embeddingi), co może zaniżać coverage duplicate check dla starszych tematów.
 - Baseline Exa jest zwalidowany tylko na 4 kuratorowanych case'ach; brak jeszcze porównania A/B vs Tavily i brak telemetrycznego feedbacku z produkcyjnych tematów użytkowników
 
 ## Session Continuity
 
 Last session: 2026-04-28
-Stopped at: domknięto live baseline Exa dla polskich zapytań (`scripts/validate_exa_polish.py` + artefakty w `.planning/artifacts/exa-polish-20260428-142434/`) oraz zsynchronizowano AGENTS/CLAUDE/README z faktem, że aplikacja nie czyta `EXA_API_KEY`
+Stopped at: domknięto lokalną kalibrację progów (`scripts/calibrate_thresholds.py` + artefakty w `.planning/artifacts/threshold-calibration-20260428-175144/`), pozostawiono defaulty `low_corpus_threshold=10` i `duplicate_threshold=0.85`, a jako follow-up wykryto drift SQLite↔Chroma w duplicate metadata
 Resume file: None
-Next task: skalibrować progi jakości korpusu i duplicate similarity na realnych danych, wykorzystując rzeczywiste tematy i wyniki z metadata/search cache
+Next task: zbadać i naprawić drift `metadata_log` SQLite ↔ Chroma duplicate collection, tak aby duplicate check miał pełny coverage opublikowanych tematów
