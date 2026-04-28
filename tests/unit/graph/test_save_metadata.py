@@ -15,10 +15,14 @@ def temp_metadata_db(tmp_path, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_save_metadata_node_persists_sqlite_and_chroma(temp_metadata_db, monkeypatch):
+async def test_save_metadata_node_persists_sqlite_and_chroma(
+    temp_metadata_db, monkeypatch
+):
     captured: dict[str, str] = {}
 
-    def fake_add_topic_to_metadata_collection(thread_id: str, topic: str, published_date: str) -> None:
+    def fake_add_topic_to_metadata_collection(
+        thread_id: str, topic: str, published_date: str
+    ) -> None:
         captured["thread_id"] = thread_id
         captured["topic"] = topic
         captured["published_date"] = published_date
@@ -52,8 +56,12 @@ async def test_save_metadata_node_persists_sqlite_and_chroma(temp_metadata_db, m
 
 
 @pytest.mark.asyncio
-async def test_save_metadata_node_rolls_back_sqlite_when_chroma_write_fails(temp_metadata_db, monkeypatch):
-    def failing_add_topic_to_metadata_collection(thread_id: str, topic: str, published_date: str) -> None:
+async def test_save_metadata_node_rolls_back_sqlite_when_chroma_write_fails(
+    temp_metadata_db, monkeypatch
+):
+    def failing_add_topic_to_metadata_collection(
+        thread_id: str, topic: str, published_date: str
+    ) -> None:
         raise RuntimeError("Chroma add failed")
 
     monkeypatch.setattr(

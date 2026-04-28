@@ -11,7 +11,9 @@ fake_markdown.markdown = lambda text: text
 sys.modules.setdefault("markdown", fake_markdown)
 
 fake_bs4 = types.ModuleType("bs4")
-fake_bs4.BeautifulSoup = lambda html, parser: SimpleNamespace(get_text=lambda separator="": html)
+fake_bs4.BeautifulSoup = lambda html, parser: SimpleNamespace(
+    get_text=lambda separator="": html
+)
 sys.modules.setdefault("bs4", fake_bs4)
 
 fake_langchain_anthropic = types.ModuleType("langchain_anthropic")
@@ -78,7 +80,9 @@ async def test_writer_low_corpus_approve_continues_generation(monkeypatch):
     monkeypatch.setattr(writer, "get_draft_llm", lambda **kwargs: FakeDraftModel())
     monkeypatch.setattr(writer, "_fetch_rag_exemplars", lambda topic, n=5: [])
     monkeypatch.setattr(writer, "build_context_block", lambda context: "")
-    monkeypatch.setattr(writer, "_validate_draft", lambda draft, keyword, min_words: {"seo": True})
+    monkeypatch.setattr(
+        writer, "_validate_draft", lambda draft, keyword, min_words: {"seo": True}
+    )
     monkeypatch.setattr(writer, "estimate_cost_usd", lambda *args, **kwargs: 0.25)
 
     result = await writer.writer_node(

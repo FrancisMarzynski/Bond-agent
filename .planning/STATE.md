@@ -5,12 +5,12 @@
 See: .planning/PROJECT.md (updated 2026-04-28)
 
 **Core value:** Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksymalnie 4 godzin — przy zachowaniu stylu nieodróżnialnego od ludzkiego, z human-in-the-loop przed każdą publikacją.
-**Current focus:** v1 formalnie signed off 2026-04-28 po domknięciu Shadow HITL, detached runtime, recovery sesji, responsive remediation oraz potwierdzeniu istniejącej ochrony SSRF dla URL ingest. Następna decyzja dotyczy już backlogu post-v1.
+**Current focus:** v1 formalnie signed off 2026-04-28 po domknięciu Shadow HITL, detached runtime, recovery sesji, responsive remediation oraz potwierdzeniu istniejącej ochrony SSRF dla URL ingest. Domknięto też token-aware carry-through `research_report` do `structure_node` i `writer_node`; następny najwyższy-ROI temat post-v1 to formalna live walidacja Exa dla polskich zapytań researchowych.
 
 ## Current Position
 
 Phase: Post-Phase 4 — v1 SIGNED OFF
-Last activity: 2026-04-28 — zsynchronizowano planning docs do stanu repo i potwierdzono, że URL ingest ma już aktywną walidację publicznych URL-i wraz z testami jednostkowymi; wcześniej tego samego dnia domknięto responsive remediation oraz detached runtime end-to-end dla Shadow i Author
+Last activity: 2026-04-28 — domknięto token-aware budgeting research context dla `structure_node` i `writer_node`, dodano regresyjne testy helper/node oraz potwierdzono brak regresji w graph/API unit suite; wcześniej tego samego dnia zsynchronizowano planning docs i potwierdzono istniejącą walidację publicznych URL-i dla URL ingest
 Status: v1 formalnie signed off; brak otwartych blockerów dla Author, Shadow, recovery/HITL, layoutów mobile/tablet ani hardeningu `/api/corpus/ingest/url`
 
 Progress: [██████████] 100% dla v1 + transport hardening / REC-01/02/03 + responsive remediation
@@ -34,6 +34,7 @@ Progress: [██████████] 100% dla v1 + transport hardening / R
 15. **Author layout reflow** — główny workspace pozostaje stacked do `lg`; chat, checkpoint i toolbar edytora nie wymagają już poziomego scrolla na `375x812` i `768x1024`.
 16. **Shadow layout reflow** — poniżej `lg` adnotacje są promowane do pełnej górnej sekcji, a panele `Tekst oryginalny` / `Wersja poprawiona` stackują się pionowo bez ścisku szerokości.
 17. **URL ingest SSRF hardening już obecny w kodzie** — `/api/corpus/ingest/url` waliduje publiczne hosty przed scrapingiem, a testy pokrywają loopback, localhost, link-local, schematy inne niż HTTP(S) oraz skipowanie niebezpiecznych URL-i odkrytych przez sitemap.
+18. **Token-aware research carry-through** — `structure_node` i fresh-draft path w `writer_node` nie tną już ślepo `research_report` po znakach; pełny raport przechodzi bez zmian, gdy mieści się w budżecie modelu, a przy ciasnym budżecie prompt degraduje się sekcyjnie przez `research_data` (fakty/statystyki najpierw, potem redukcja źródeł).
 
 ## Browser Validation Notes
 
@@ -146,7 +147,6 @@ Artefakty lokalne:
 
 ### Post-v1 Candidates
 
-- Ograniczyć lub usunąć obcinanie `research_report` przed `structure_node` i `writer_node`.
 - Wykonać formalną live walidację Exa na polskich zapytaniach researchowych.
 - Skalibrować progi jakości korpusu i duplicate similarity na realnych danych.
 
@@ -158,6 +158,6 @@ Artefakty lokalne:
 ## Session Continuity
 
 Last session: 2026-04-28
-Stopped at: planning docs zsynchronizowane do faktycznego stanu repo; v1 signed off po potwierdzeniu Shadow/transport/responsive i istniejącej walidacji SSRF dla URL ingest
+Stopped at: domknięto token-aware budgeting `research_report` w `structure_node` i `writer_node`, dodano testy regresyjne prompt-budget i poprawiono centralny setup `tests/conftest.py`, żeby pełne wskazane suite'y pytest kolekcjonowały się poprawnie
 Resume file: None
-Next task: post-v1 priorytetyzacja — quality improvements vs formalne walidacje vs pierwszy feature v2
+Next task: wykonać formalną live walidację Exa dla polskich zapytań researchowych, a potem skalibrować progi jakości korpusu i duplicate similarity na realnych danych

@@ -14,6 +14,7 @@ from bond.config import settings
 from bond.graph.state import AuthorState
 from bond.llm import estimate_cost_usd, get_draft_llm
 from bond.prompts.context import build_context_block
+from bond.prompts.research_context import select_research_context
 from bond.prompts.writer import FORBIDDEN_WORD_STEMS, WRITER_SYSTEM_PROMPT
 from bond.schemas import CheckpointResponse
 from bond.store.chroma import get_corpus_collection
@@ -22,6 +23,7 @@ log = logging.getLogger(__name__)
 
 LOW_CORPUS_THRESHOLD = 10
 _RERANK_FETCH_N = 15  # Candidates fetched before reranking
+_WRITER_MAX_OUTPUT_TOKENS = 4096
 
 # Module-level singleton — model loaded once per process
 _ranker = None
@@ -31,8 +33,11 @@ def _get_ranker():
     global _ranker
     if _ranker is None:
         from flashrank import Ranker
+
         # ms-marco-MultiBERT-L-12 supports multilingual text (incl. Polish)
-        _ranker = Ranker(model_name="ms-marco-MultiBERT-L-12", cache_dir="/tmp/flashrank")
+        _ranker = Ranker(
+            model_name="ms-marco-MultiBERT-L-12", cache_dir="/tmp/flashrank"
+        )
     return _ranker
 
 
@@ -43,6 +48,7 @@ def _rerank(query: str, candidates: list[dict], top_n: int) -> list[dict]:
     returned (with all metadata preserved), sorted by cross-encoder score.
     """
     from flashrank import RerankRequest
+
     passages = [{"id": i, "text": c["text"]} for i, c in enumerate(candidates)]
     request = RerankRequest(query=query, passages=passages)
     ranked = _get_ranker().rerank(request)
@@ -52,6 +58,7 @@ def _rerank(query: str, candidates: list[dict], top_n: int) -> list[dict]:
 # ---------------------------------------------------------------------------
 # RAG exemplar retrieval
 # ---------------------------------------------------------------------------
+
 
 def _fetch_rag_exemplars(topic: str, n: int = 5) -> list[dict]:
     """
@@ -129,6 +136,7 @@ def _fetch_rag_exemplars(topic: str, n: int = 5) -> list[dict]:
 # Output cleanup
 # ---------------------------------------------------------------------------
 
+
 def _strip_thinking_tags(text: str) -> str:
     """Remove <thinking>...</thinking> blocks emitted by the LLM's reasoning step."""
     return re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL).strip()
@@ -138,7 +146,7 @@ def _strip_markdown_wrapper(text: str) -> str:
     """Strip ```markdown ... ``` or ``` ... ``` wrappers the LLM may add despite instructions."""
     text = text.strip()
     if text.startswith("```markdown"):
-        text = text[len("```markdown"):].lstrip("\n")
+        text = text[len("```markdown") :].lstrip("\n")
     elif text.startswith("```"):
         text = text[3:].lstrip("\n")
     if text.endswith("```"):
@@ -154,6 +162,7 @@ def _clean_output(text: str) -> str:
 # ---------------------------------------------------------------------------
 # SEO + tone constraint validation
 # ---------------------------------------------------------------------------
+
 
 def _parse_draft_to_soup(draft: str) -> BeautifulSoup:
     """Parse Markdown draft to BeautifulSoup tree (understands fenced code blocks)."""
@@ -178,7 +187,9 @@ def _check_forbidden_words(draft: str) -> list[str]:
     return [stem for stem in FORBIDDEN_WORD_STEMS if stem in draft_lower]
 
 
-def _validate_draft(draft: str, primary_keyword: str, min_words: int) -> dict[str, bool]:
+def _validate_draft(
+    draft: str, primary_keyword: str, min_words: int
+) -> dict[str, bool]:
     """Check all hard constraints. Returns dict of constraint_name -> passed."""
     soup = _parse_draft_to_soup(draft)
 
@@ -186,13 +197,14 @@ def _validate_draft(draft: str, primary_keyword: str, min_words: int) -> dict[st
     h1_text = h1.get_text() if h1 else ""
 
     first_para = next(
-        (p.get_text().strip() for p in soup.find_all("p") if p.get_text().strip()),
-        ""
+        (p.get_text().strip() for p in soup.find_all("p") if p.get_text().strip()), ""
     )
 
     meta_desc = ""
     for p in soup.find_all("p"):
-        m = re.match(r"^Meta[- ]?[Dd]escription[:\s]+(.+)", p.get_text().strip(), re.IGNORECASE)
+        m = re.match(
+            r"^Meta[- ]?[Dd]escription[:\s]+(.+)", p.get_text().strip(), re.IGNORECASE
+        )
         if m:
             meta_desc = m.group(1).strip()
             break
@@ -212,6 +224,7 @@ def _validate_draft(draft: str, primary_keyword: str, min_words: int) -> dict[st
 # Prompt builder (user message only — system prompt is in bond/prompts/writer.py)
 # ---------------------------------------------------------------------------
 
+
 def _format_exemplar(ex: dict) -> str:
     """Render a single exemplar dict as a labelled few-shot block."""
     article_type = ex.get("article_type") or "?"
@@ -224,7 +237,7 @@ def _build_writer_user_prompt(
     topic: str,
     keywords: list[str],
     heading_structure: str,
-    research_report: str,
+    research_context: str,
     exemplars: list[dict],
     min_words: int,
     context_block: str = "",
@@ -286,7 +299,7 @@ Poboczne: {other_keywords}
 {heading_structure}
 
 ## RAPORT BADAWCZY
-{research_report[:3000]}
+{research_context}
 {exemplar_section}
 ## WYMAGANIA SEO (wszystkie obowiązkowe)
 1. Główne słowo kluczowe "{primary_keyword}" musi być w H1 i w pierwszym akapicie
@@ -299,6 +312,7 @@ Poboczne: {other_keywords}
 # ---------------------------------------------------------------------------
 # Writer node
 # ---------------------------------------------------------------------------
+
 
 async def writer_node(state: AuthorState) -> dict:
     """
@@ -329,17 +343,19 @@ async def writer_node(state: AuthorState) -> dict:
             f"Korpus zawiera tylko {corpus_count} artykułów "
             f"(minimum: {LOW_CORPUS_THRESHOLD}). Styl draftu może być niespójny."
         )
-        user_response = interrupt({
-            "checkpoint": "low_corpus",
-            "type": "approve_reject",
-            "warning": warning_message,
-            "corpus_count": corpus_count,
-            "threshold": LOW_CORPUS_THRESHOLD,
-            "instructions": (
-                'Wyślij {"action": "approve"}, {"action": "reject"} '
-                'lub {"action": "abort"} aby zdecydować o kontynuacji.'
-            ),
-        })
+        user_response = interrupt(
+            {
+                "checkpoint": "low_corpus",
+                "type": "approve_reject",
+                "warning": warning_message,
+                "corpus_count": corpus_count,
+                "threshold": LOW_CORPUS_THRESHOLD,
+                "instructions": (
+                    'Wyślij {"action": "approve"}, {"action": "reject"} '
+                    'lub {"action": "abort"} aby zdecydować o kontynuacji.'
+                ),
+            }
+        )
         try:
             response = CheckpointResponse(**user_response)
         except ValidationError as exc:
@@ -352,11 +368,39 @@ async def writer_node(state: AuthorState) -> dict:
             )
 
     # Select DRAFT_MODEL LLM (temperature 0.5–0.7 per COMMUNICATION_STYLE.md §3)
-    llm = get_draft_llm(max_tokens=4096, temperature=0.7)
+    llm = get_draft_llm(max_tokens=_WRITER_MAX_OUTPUT_TOKENS, temperature=0.7)
 
     # Fetch RAG exemplars from Phase 1 corpus
     exemplars = _fetch_rag_exemplars(topic, n=5)
     context_block = build_context_block(state.get("context_dynamic"))
+    research_context_selection = select_research_context(
+        llm=llm,
+        research_report=research_report,
+        research_data=state.get("research_data"),
+        build_prompt_payload=lambda research_context: [
+            SystemMessage(content=WRITER_SYSTEM_PROMPT),
+            HumanMessage(
+                content=_build_writer_user_prompt(
+                    topic=topic,
+                    keywords=keywords,
+                    heading_structure=heading_structure,
+                    research_context=research_context,
+                    exemplars=exemplars,
+                    min_words=min_words,
+                    context_block=context_block,
+                )
+            ),
+        ],
+        reserved_output_tokens=_WRITER_MAX_OUTPUT_TOKENS,
+    )
+    research_context = research_context_selection.variant.content
+    if not research_context_selection.fit_found:
+        log.warning(
+            "Writer prompt exceeded available input budget even after compaction: %s > %s (variant=%s)",
+            research_context_selection.estimated_prompt_tokens,
+            research_context_selection.available_input_tokens,
+            research_context_selection.variant.kind,
+        )
 
     # Generate draft with silent auto-retry (max 2 additional attempts = 3 total)
     draft = ""
@@ -369,7 +413,7 @@ async def writer_node(state: AuthorState) -> dict:
             topic=topic,
             keywords=keywords,
             heading_structure=heading_structure,
-            research_report=research_report,
+            research_context=research_context,
             exemplars=exemplars,
             min_words=min_words,
             context_block=context_block,
@@ -395,12 +439,21 @@ async def writer_node(state: AuthorState) -> dict:
 
         if attempt < max_attempts - 1:
             failed = [k for k, v in validation.items() if not v]
-            log.warning("Writer auto-retry %d/%d: failed constraints: %s", attempt + 1, max_attempts - 1, failed)
+            log.warning(
+                "Writer auto-retry %d/%d: failed constraints: %s",
+                attempt + 1,
+                max_attempts - 1,
+                failed,
+            )
 
     # All retries exhausted (or succeeded above)
     if not all(validation.values()):
         failed_constraints = [k for k, v in validation.items() if not v]
-        log.warning("Draft failed validation after %d attempts. Failed: %s", max_attempts, failed_constraints)
+        log.warning(
+            "Draft failed validation after %d attempts. Failed: %s",
+            max_attempts,
+            failed_constraints,
+        )
 
     call_cost = estimate_cost_usd(
         settings.draft_model, total_draft_input_tokens, total_draft_output_tokens
@@ -411,6 +464,8 @@ async def writer_node(state: AuthorState) -> dict:
     return {
         "draft": draft,
         "draft_validated": all(validation.values()),
-        "tokens_used_draft": existing_draft_tokens + total_draft_input_tokens + total_draft_output_tokens,
+        "tokens_used_draft": existing_draft_tokens
+        + total_draft_input_tokens
+        + total_draft_output_tokens,
         "estimated_cost_usd": existing_cost + call_cost,
     }
