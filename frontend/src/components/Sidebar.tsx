@@ -5,16 +5,38 @@ import { PlusCircle, MessageSquare } from "lucide-react";
 import { useSession } from "@/hooks/useSession";
 import { CorpusStatusPanel } from "@/components/CorpusStatusPanel";
 
-export function Sidebar() {
+interface SidebarContentProps {
+    onNavigate?: () => void;
+    renderHeaderActions?: (actions: { handleNewSession: () => void }) => React.ReactNode;
+}
+
+export function SidebarContent({
+    onNavigate,
+    renderHeaderActions,
+}: SidebarContentProps) {
     const { threadId, sessions, newSession, switchSession } = useSession();
 
+    const handleNewSession = () => {
+        newSession();
+        onNavigate?.();
+    };
+
+    const handleSwitchSession = (id: string) => {
+        switchSession(id);
+        onNavigate?.();
+    };
+
     return (
-        <aside className="w-64 h-full flex flex-col border-r bg-muted/30 shrink-0">
+        <>
             <div className="p-4 flex items-center justify-between">
                 <span className="font-semibold text-sm">Bond Agent</span>
-                <Button variant="ghost" size="sm" onClick={newSession} title="Nowa sesja">
-                    <PlusCircle className="h-4 w-4" />
-                </Button>
+                {renderHeaderActions ? (
+                    renderHeaderActions({ handleNewSession })
+                ) : (
+                    <Button variant="ghost" size="sm" onClick={handleNewSession} title="Nowa sesja">
+                        <PlusCircle className="h-4 w-4" />
+                    </Button>
+                )}
             </div>
             <Separator />
             <nav className="flex-1 overflow-y-auto p-2 space-y-1">
@@ -25,7 +47,7 @@ export function Sidebar() {
                     sessions.map((session) => (
                         <button
                             key={session.id}
-                            onClick={() => switchSession(session.id)}
+                            onClick={() => handleSwitchSession(session.id)}
                             className={`w-full text-left flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors ${
                                 threadId === session.id
                                     ? "bg-accent text-accent-foreground"
@@ -42,7 +64,15 @@ export function Sidebar() {
                     </p>
                 )}
             </nav>
-        <CorpusStatusPanel />
+            <CorpusStatusPanel />
+        </>
+    );
+}
+
+export function Sidebar() {
+    return (
+        <aside className="hidden h-full w-64 shrink-0 flex-col border-r bg-muted/30 lg:flex">
+            <SidebarContent />
         </aside>
     );
 }

@@ -7,13 +7,11 @@ export default function Home() {
   return (
     <div className="flex flex-col h-full bg-background overflow-hidden">
       <StageProgress />
-      <div className="flex flex-1 min-h-0 overflow-hidden flex-col md:flex-row">
-        {/* Kolumna Czatu — responsywna z ograniczoną szerokością */}
-        <div className="w-full md:w-[45%] lg:w-[40%] lg:max-w-2xl min-w-0 flex flex-col border-r overflow-hidden shrink-0">
+      <div className="flex flex-1 min-h-0 flex-col overflow-hidden lg:flex-row">
+        <div className="flex min-h-[18rem] min-w-0 flex-1 flex-col overflow-hidden border-b lg:w-[40%] lg:max-w-2xl lg:flex-none lg:shrink-0 lg:border-b-0 lg:border-r">
           <ChatInterface />
         </div>
-        {/* Kolumna Edytora — reszta przestrzeni */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-muted/10">
+        <div className="flex flex-1 min-w-0 flex-col overflow-hidden bg-muted/10">
           <CheckpointPanel />
           <EditorPane />
         </div>

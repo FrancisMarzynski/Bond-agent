@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
+import { SidebarDrawer } from "@/components/SidebarDrawer";
 import { ModeToggle } from "@/components/ModeToggle";
 import { SessionProvider } from "@/components/SessionProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -19,17 +20,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pl">
       <body className={`${inter.className} flex h-screen overflow-hidden bg-background`}>
         <Sidebar />
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          <header className="h-14 border-b flex items-center px-4 justify-between shrink-0">
-            <span className="font-medium text-sm text-muted-foreground">Panel sterowania</span>
-            <ModeToggle />
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          <header className="shrink-0 border-b">
+            <div className="flex min-h-14 items-center justify-between gap-3 px-3 sm:px-4">
+              <div className="flex min-w-0 items-center gap-2">
+                <SidebarDrawer />
+                <span className="font-medium text-sm text-muted-foreground">Panel sterowania</span>
+              </div>
+              <ModeToggle />
+            </div>
           </header>
-          <main className="flex-1 overflow-hidden flex flex-col">
-            <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+          <main className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
               <ErrorBoundary>
-                <SessionProvider>
-                  {children}
-                </SessionProvider>
+                <SessionProvider>{children}</SessionProvider>
               </ErrorBoundary>
             </div>
           </main>

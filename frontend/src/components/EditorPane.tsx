@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import "@uiw/react-md-editor/markdown-editor.css";
 import { useChatStore } from "@/store/chatStore";
@@ -53,18 +53,24 @@ export function EditorPane() {
   }
 
   return (
-    <div className="flex-1 overflow-hidden flex flex-col">
+    <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
       {draft && !isStreaming && (
-        <div className="flex items-center gap-2 px-3 py-2 border-b bg-background shrink-0">
-          <Button variant="outline" size="sm" onClick={handleCopyMd}>
-            {copyLabel}
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleDownloadMd}>
-            Pobierz .md
-          </Button>
+        <div className="shrink-0 border-b bg-background px-3 py-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleCopyMd}>
+              {copyLabel}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDownloadMd}>
+              Pobierz .md
+            </Button>
+          </div>
         </div>
       )}
-      <div ref={containerRef} className="flex-1 overflow-hidden flex flex-col" data-color-mode="light">
+      <div
+        ref={containerRef}
+        className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        data-color-mode="light"
+      >
         <MDEditor
           value={draft}
           onChange={(val) => setDraft(val ?? "")}

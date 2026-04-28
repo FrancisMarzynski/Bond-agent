@@ -68,7 +68,7 @@ export function CheckpointPanel() {
       : "Niski stan korpusu";
 
     return (
-      <div className="border border-amber-500/40 rounded-lg p-3 bg-amber-500/5 mx-4 mt-3 mb-3 flex flex-col gap-3 shrink-0">
+      <div className="mx-3 mb-3 mt-3 flex shrink-0 flex-col gap-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 sm:mx-4">
         <div className="flex items-start gap-2">
           <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
           <div className="flex flex-col gap-1 flex-1 min-w-0">
@@ -112,13 +112,13 @@ export function CheckpointPanel() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2 justify-end">
+        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
           <Button
             variant="outline"
             size="sm"
             onClick={handleDuplicateAbort}
             disabled={controlsDisabled}
-            className="gap-1.5 text-destructive border-destructive/40 hover:bg-destructive/10"
+            className="w-full gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10 sm:w-auto"
           >
             <XCircle className="h-3.5 w-3.5" />
             {isLowCorpus ? "Przerwij" : "Anuluj"}
@@ -128,7 +128,7 @@ export function CheckpointPanel() {
             size="sm"
             onClick={handleDuplicateContinue}
             disabled={controlsDisabled}
-            className="gap-1.5 bg-amber-600 hover:bg-amber-700"
+            className="w-full gap-1.5 bg-amber-600 hover:bg-amber-700 sm:w-auto"
           >
             <CheckCircle2 className="h-3.5 w-3.5" />
             {isLowCorpus ? "Kontynuuj mimo ryzyka" : "Kontynuuj mimo to"}
@@ -143,7 +143,7 @@ export function CheckpointPanel() {
 
   // --- Standard checkpoint UI (cp1 / cp2) ---
   return (
-    <div className="border rounded-lg p-3 bg-muted/30 mx-4 mt-3 mb-3 flex flex-col gap-3 shrink-0">
+    <div className="mx-3 mb-3 mt-3 flex shrink-0 flex-col gap-3 rounded-lg border bg-muted/30 p-3 sm:mx-4">
       {/* Collapsible research report — shown only at checkpoint_1 */}
       {isCheckpoint1 && researchReport && (
         <div className="flex flex-col gap-1.5">
@@ -169,47 +169,43 @@ export function CheckpointPanel() {
       )}
 
       {/* Header row */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-muted-foreground mr-auto">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+        <span className="text-xs text-muted-foreground lg:mr-auto">
           {isCheckpoint2
             ? "Wygenerowano finalną wersję — zapisz do bazy lub odrzuć z poprawkami"
             : "Przejrzyj i zatwierdź, by kontynuować"}
         </span>
-
-        {/* Approve button — checkpoint_1: "Zatwierdź", checkpoint_2: "Zapisz do bazy" */}
-        {isCheckpoint2 ? (
-          <Button
-            variant="default"
-            size="sm"
-            onClick={handleApprove}
-            disabled={controlsDisabled}
-            className="gap-1.5 bg-green-600 hover:bg-green-700"
-          >
-            <Database className="h-3.5 w-3.5" />
-            Zapisz do bazy
-          </Button>
-        ) : (
-          <Button
-            variant="default"
-            size="sm"
-            onClick={handleApprove}
-            disabled={controlsDisabled}
-            className="gap-1.5"
-          >
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            Zatwierdź
-          </Button>
-        )}
-
-        {/* Reject button (or cancel when feedback field is open) */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap lg:justify-end">
+          {isCheckpoint2 ? (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleApprove}
+              disabled={controlsDisabled}
+              className="w-full gap-1.5 bg-green-600 hover:bg-green-700 sm:w-auto"
+            >
+              <Database className="h-3.5 w-3.5" />
+              Zapisz do bazy
+            </Button>
+          ) : (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleApprove}
+              disabled={controlsDisabled}
+              className="w-full gap-1.5 sm:w-auto"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Zatwierdź
+            </Button>
+          )}
           {showFeedbackField ? (
             <Button
               variant="ghost"
               size="sm"
               onClick={handleRejectCancel}
               disabled={controlsDisabled}
-              className="gap-1.5 text-muted-foreground"
+              className="w-full gap-1.5 text-muted-foreground sm:w-auto"
             >
               <X className="h-3.5 w-3.5" />
               Anuluj
@@ -220,14 +216,14 @@ export function CheckpointPanel() {
               size="sm"
               onClick={handleRejectClick}
               disabled={controlsDisabled}
-              className="gap-1.5 text-destructive border-destructive/40 hover:bg-destructive/10"
+              className="w-full gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10 sm:w-auto"
             >
               <XCircle className="h-3.5 w-3.5" />
               Odrzuć
             </Button>
           )}
           {isCheckpoint2 && iterationsRemaining !== undefined && (
-            <span className="text-xs text-muted-foreground">
+            <span className="self-start text-xs text-muted-foreground sm:self-center">
               Pozostało {iterationsRemaining} z 3 prób poprawek
             </span>
           )}
@@ -248,13 +244,13 @@ export function CheckpointPanel() {
             disabled={controlsDisabled}
             autoFocus
           />
-          <div className="flex justify-end">
+          <div className="flex justify-stretch sm:justify-end">
             <Button
               variant="destructive"
               size="sm"
               onClick={handleRejectSubmit}
               disabled={controlsDisabled}
-              className="gap-1.5"
+              className="w-full gap-1.5 sm:w-auto"
             >
               <XCircle className="h-3.5 w-3.5" />
               Wyślij poprawki

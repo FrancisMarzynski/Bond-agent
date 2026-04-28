@@ -50,16 +50,16 @@ export function StageProgress() {
         <div className="border-b bg-muted/20">
             {/* Reconnecting banner */}
             {isReconnecting && (
-                <div className="flex items-center gap-2 px-4 py-1.5 text-xs text-amber-700 bg-amber-50 border-b border-amber-200">
+                <div className="flex items-start gap-2 border-b border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 sm:px-4">
                     <RefreshCw className="h-3 w-3 animate-spin shrink-0" />
-                    <span>Ponawiam połączenie przed potwierdzeniem komendy...</span>
+                    <span className="break-words">Ponawiam połączenie przed potwierdzeniem komendy...</span>
                 </div>
             )}
 
             {isRecoveringSession && (
-                <div className="flex items-center gap-2 px-4 py-1.5 text-xs text-sky-800 bg-sky-50 border-b border-sky-200">
+                <div className="flex items-start gap-2 border-b border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-800 sm:px-4">
                     <Loader2 className="h-3 w-3 animate-spin shrink-0" />
-                    <span>
+                    <span className="break-words">
                         {pendingAction === "resume"
                             ? "Przywracam stan sesji z historii po wysłaniu decyzji HITL..."
                             : "Przywracam stan sesji z historii po przerwanym starcie streamu..."}
@@ -69,9 +69,9 @@ export function StageProgress() {
 
             {/* System alert banner (hard-cap, critical errors) */}
             {systemAlert && !isReconnecting && !isRecoveringSession && (
-                <div className="flex items-start gap-2 px-4 py-1.5 text-xs text-amber-800 bg-amber-50 border-b border-amber-200">
+                <div className="flex items-start gap-2 border-b border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 sm:px-4">
                     <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />
-                    <span className="flex-1">{systemAlert}</span>
+                    <span className="flex-1 break-words">{systemAlert}</span>
                     <button
                         onClick={() => setSystemAlert(undefined)}
                         className="shrink-0 text-amber-600 hover:text-amber-900 leading-none"
@@ -82,8 +82,9 @@ export function StageProgress() {
                 </div>
             )}
 
-            <div className="px-4 py-3">
-                <ol className="flex items-center gap-0">
+            <div className="px-3 py-3 sm:px-4">
+                <div className="-mx-1 overflow-x-auto px-1 pb-1">
+                    <ol className="flex min-w-max items-center gap-2">
                     {STEPS.map((step, idx) => {
                         const status = stageStatus[step.id];
                         const isActive = idx === activeIdx;
@@ -92,7 +93,7 @@ export function StageProgress() {
                         const isRunning = isActive && !isError && (status === "running" || isStreaming) && stage !== "done";
 
                         return (
-                            <li key={step.id} className="flex items-center">
+                            <li key={step.id} className="flex shrink-0 items-center">
                                 <span className="flex items-center gap-1.5">
                                     {isComplete ? (
                                         <CheckCircle2 className="h-4 w-4 text-primary" />
@@ -104,7 +105,7 @@ export function StageProgress() {
                                         <Circle className={cn("h-4 w-4", isActive ? "text-primary" : "text-muted-foreground/50")} />
                                     )}
                                     <span className={cn(
-                                        "text-xs font-medium",
+                                        "whitespace-nowrap text-xs font-medium",
                                         isActive && !isError ? "text-foreground" : isError ? "text-destructive" : isComplete ? "text-foreground/70" : "text-muted-foreground/50"
                                     )}>
                                         {step.label}
@@ -112,14 +113,15 @@ export function StageProgress() {
                                 </span>
                                 {idx < STEPS.length - 1 && (
                                     <span className={cn(
-                                        "mx-2 h-px w-8",
+                                        "mx-1 h-px w-6 shrink-0 sm:mx-2 sm:w-8",
                                         isComplete ? "bg-primary" : "bg-muted-foreground/20"
                                     )} />
                                 )}
                             </li>
                         );
                     })}
-                </ol>
+                    </ol>
+                </div>
             </div>
         </div>
     );

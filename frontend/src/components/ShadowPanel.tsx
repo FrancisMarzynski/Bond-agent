@@ -5,6 +5,7 @@ import { useChatStore } from "@/store/chatStore";
 import { useSession } from "@/hooks/useSession";
 import { useStream } from "@/hooks/useStream";
 import { AnnotationList } from "@/components/AnnotationList";
+import { ShadowAnnotationsSection } from "@/components/ShadowAnnotationsSection";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, RotateCcw, FileText, Pencil } from "lucide-react";
@@ -49,7 +50,7 @@ function buildSegments(text: string, annotations: Annotation[]): Segment[] {
 // ---------------------------------------------------------------------------
 // ShadowPanel — two-phase UI:
 //   1. Input view  — user submits text for style analysis
-//   2. Comparison  — annotation sidebar | original (highlighted) | corrected (editable)
+//   2. Comparison  — responsive annotations + original (highlighted) + corrected (editable)
 // ---------------------------------------------------------------------------
 export function ShadowPanel() {
   const [inputText, setInputText] = useState("");
@@ -140,10 +141,9 @@ export function ShadowPanel() {
       threadId;
 
     return (
-      <div className="flex flex-col h-full bg-background overflow-hidden">
-        {/* Status bar */}
-        <div className="border-b shrink-0 bg-muted/20">
-          <div className="h-10 flex items-center px-4 gap-2">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
+        <div className="shrink-0 border-b bg-muted/20">
+          <div className="flex min-h-10 flex-wrap items-center gap-2 px-3 py-2 sm:px-4">
             {isStreaming ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
@@ -179,7 +179,7 @@ export function ShadowPanel() {
               size="sm"
               onClick={handleReset}
               disabled={isStreaming}
-              className="ml-auto h-7 text-xs gap-1.5"
+              className="h-7 gap-1.5 text-xs sm:ml-auto"
             >
               <RotateCcw className="h-3 w-3" />
               Nowy tekst
@@ -187,7 +187,7 @@ export function ShadowPanel() {
           </div>
 
           {showHitlPanel && (
-            <div className="border-t px-4 py-3 space-y-2 bg-background">
+            <div className="space-y-3 border-t bg-background px-3 py-3 sm:px-4">
               <p className="text-xs font-medium text-foreground">
                 Zatwierdzasz adnotacje?
                 {hitlPause?.iteration_count !== undefined &&
@@ -198,8 +198,13 @@ export function ShadowPanel() {
                   Decyzja została już wysłana. Panel pozostaje widoczny do czasu odzyskania stanu z historii.
                 </p>
               )}
-              <div className="flex gap-2">
-                <Button size="sm" onClick={handleApprove} disabled={isResumeRecovery}>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button
+                  size="sm"
+                  onClick={handleApprove}
+                  disabled={isResumeRecovery}
+                  className="w-full sm:w-auto"
+                >
                   Zatwierdź
                 </Button>
                 <Button
@@ -207,6 +212,7 @@ export function ShadowPanel() {
                   size="sm"
                   onClick={handleReject}
                   disabled={!feedbackText.trim() || isResumeRecovery}
+                  className="w-full sm:w-auto"
                 >
                   Odrzuć
                 </Button>
@@ -222,88 +228,100 @@ export function ShadowPanel() {
           )}
         </div>
 
-        {/* Three-column layout */}
-        <div className="flex flex-1 min-h-0 overflow-hidden">
-          {/* Column 1: Annotation list sidebar */}
-          <AnnotationList
-            annotations={annotations}
-            activeId={activeAnnotationId}
-            onAnnotationClick={handleAnnotationClick}
-            onApplyAll={handleApplyAll}
-            isStreaming={isStreaming}
-          />
-
-          {/* Column 2: Original text with highlighted annotation spans */}
-          <div className="flex-1 flex flex-col border-r overflow-hidden min-w-0">
-            <div className="flex items-center gap-2 px-4 py-2 border-b bg-muted/10 shrink-0">
-              <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Tekst oryginalny
-              </span>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-                {annotations.length > 0
-                  ? segments.map((seg, i) => {
-                      if (seg.type === "text") {
-                        return <span key={i}>{seg.content}</span>;
-                      }
-                      const isActive = activeAnnotationId === seg.annotation.id;
-                      return (
-                        <mark
-                          key={i}
-                          ref={(el) => {
-                            spanRefs.current[seg.annotation.id] = el;
-                          }}
-                          onClick={() => handleAnnotationClick(seg.annotation)}
-                          title={seg.annotation.reason}
-                          className={[
-                            "rounded cursor-pointer transition-colors duration-150",
-                            isActive
-                              ? "bg-amber-300 dark:bg-amber-600"
-                              : "bg-amber-100 dark:bg-amber-900/40 hover:bg-amber-200 dark:hover:bg-amber-800/60",
-                          ].join(" ")}
-                        >
-                          {seg.content}
-                        </mark>
-                      );
-                    })
-                  : originalText}
-              </p>
-            </div>
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="lg:hidden">
+            <ShadowAnnotationsSection
+              annotations={annotations}
+              activeId={activeAnnotationId}
+              onAnnotationClick={handleAnnotationClick}
+              onApplyAll={handleApplyAll}
+              isStreaming={isStreaming}
+            />
           </div>
 
-          {/* Column 3: Corrected text — editable after streaming */}
-          <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-muted/10">
-            <div className="flex items-center gap-2 px-4 py-2 border-b bg-muted/10 shrink-0">
-              <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Wersja poprawiona
-              </span>
-              {isStreaming && (
-                <span className="ml-auto text-xs text-muted-foreground italic">
-                  Trwa generowanie...
-                </span>
-              )}
-            </div>
-            <div className="flex-1 overflow-hidden p-4">
-              {isStreaming && !draft ? (
-                /* Skeleton while waiting for corrected text */
-                <div className="space-y-2.5">
-                  <div className="h-3.5 bg-muted/50 rounded animate-pulse w-3/4" />
-                  <div className="h-3.5 bg-muted/50 rounded animate-pulse w-full" />
-                  <div className="h-3.5 bg-muted/50 rounded animate-pulse w-5/6" />
-                  <div className="h-3.5 bg-muted/50 rounded animate-pulse w-2/3" />
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
+            <AnnotationList
+              annotations={annotations}
+              activeId={activeAnnotationId}
+              onAnnotationClick={handleAnnotationClick}
+              onApplyAll={handleApplyAll}
+              isStreaming={isStreaming}
+              className="hidden lg:flex"
+            />
+
+            <div className="flex min-h-[16rem] min-w-0 flex-1 flex-col overflow-hidden border-b lg:min-h-0 lg:border-b-0 lg:border-r">
+              <div className="shrink-0 border-b bg-muted/10 px-3 py-2 sm:px-4">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Tekst oryginalny
+                  </span>
                 </div>
-              ) : (
-                <textarea
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  readOnly={isStreaming}
-                  className="w-full h-full resize-none bg-transparent text-sm text-foreground leading-relaxed focus:outline-none placeholder:text-muted-foreground"
-                  placeholder={isStreaming ? "" : "Poprawiona wersja pojawi się tutaj..."}
-                />
-              )}
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto p-4">
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+                  {annotations.length > 0
+                    ? segments.map((seg, i) => {
+                        if (seg.type === "text") {
+                          return <span key={i}>{seg.content}</span>;
+                        }
+                        const isActive = activeAnnotationId === seg.annotation.id;
+                        return (
+                          <mark
+                            key={i}
+                            ref={(el) => {
+                              spanRefs.current[seg.annotation.id] = el;
+                            }}
+                            onClick={() => handleAnnotationClick(seg.annotation)}
+                            title={seg.annotation.reason}
+                            className={[
+                              "cursor-pointer rounded transition-colors duration-150",
+                              isActive
+                                ? "bg-amber-300 dark:bg-amber-600"
+                                : "bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/40 dark:hover:bg-amber-800/60",
+                            ].join(" ")}
+                          >
+                            {seg.content}
+                          </mark>
+                        );
+                      })
+                    : originalText}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex min-h-[16rem] min-w-0 flex-1 flex-col overflow-hidden bg-muted/10 lg:min-h-0">
+              <div className="shrink-0 border-b bg-muted/10 px-3 py-2 sm:px-4">
+                <div className="flex items-center gap-2">
+                  <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Wersja poprawiona
+                  </span>
+                  {isStreaming && (
+                    <span className="ml-auto text-xs italic text-muted-foreground">
+                      Trwa generowanie...
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex-1 overflow-hidden p-4">
+                {isStreaming && !draft ? (
+                  <div className="space-y-2.5">
+                    <div className="h-3.5 w-3/4 animate-pulse rounded bg-muted/50" />
+                    <div className="h-3.5 w-full animate-pulse rounded bg-muted/50" />
+                    <div className="h-3.5 w-5/6 animate-pulse rounded bg-muted/50" />
+                    <div className="h-3.5 w-2/3 animate-pulse rounded bg-muted/50" />
+                  </div>
+                ) : (
+                  <textarea
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    readOnly={isStreaming}
+                    className="h-full min-h-[12rem] w-full resize-none bg-transparent text-sm leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none lg:min-h-0"
+                    placeholder={isStreaming ? "" : "Poprawiona wersja pojawi się tutaj..."}
+                  />
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -313,7 +331,7 @@ export function ShadowPanel() {
 
   // ── Input view (initial state) ───────────────────────────────────────────
   return (
-    <div className="flex flex-col h-full bg-background overflow-hidden items-center justify-center p-8">
+    <div className="flex h-full items-center justify-center overflow-hidden bg-background p-4 sm:p-8">
       <div className="w-full max-w-2xl space-y-4">
         <div className="space-y-1.5">
           <h2 className="text-lg font-semibold text-foreground">Tryb Cień</h2>
@@ -330,12 +348,13 @@ export function ShadowPanel() {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit();
           }}
         />
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <span className="text-xs text-muted-foreground">⌘+Enter aby wysłać</span>
           <Button
             onClick={handleSubmit}
             disabled={!inputText.trim() || isStreaming}
             size="sm"
+            className="w-full sm:w-auto"
           >
             {isStreaming ? (
               <>
