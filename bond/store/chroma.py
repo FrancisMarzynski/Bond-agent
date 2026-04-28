@@ -65,14 +65,34 @@ def get_or_create_metadata_collection():
     return _metadata_collection
 
 
+def upsert_topic_in_metadata_collection(
+    thread_id: str,
+    topic: str,
+    published_date: str,
+    mode: str | None = None,
+    *,
+    collection: Any | None = None,
+) -> None:
+    """Create or update a published topic embedding by thread_id."""
+    target_collection = collection or get_or_create_metadata_collection()
+    metadata = {"title": topic, "published_date": published_date}
+    if mode:
+        metadata["mode"] = mode
+
+    target_collection.upsert(
+        ids=[thread_id],
+        documents=[topic],
+        metadatas=[metadata],
+    )
+
+
 def add_topic_to_metadata_collection(thread_id: str, topic: str, published_date: str) -> None:
     """Add a published topic embedding to the metadata_log collection.
     Called by save_metadata_node after article approval."""
-    collection = get_or_create_metadata_collection()
-    collection.add(
-        ids=[thread_id],
-        documents=[topic],
-        metadatas=[{"title": topic, "published_date": published_date}],
+    upsert_topic_in_metadata_collection(
+        thread_id=thread_id,
+        topic=topic,
+        published_date=published_date,
     )
 
 

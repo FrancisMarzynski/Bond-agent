@@ -15,6 +15,7 @@ Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksym
 - [x] **v1 signed off — 2026-04-28.** Author i Shadow przeszły end-to-end walidację po domknięciu detached runtime, recovery sesji oraz responsive remediation.
 - [x] **Post-v1 Exa baseline — 2026-04-28.** Formalna live walidacja Exa dla 4 kuratorowanych polskich case'ów researchowych zakończona powodzeniem; artefakty: `.planning/artifacts/exa-polish-20260428-142434/summary.{md,json}`.
 - [x] **Post-v1 threshold calibration — 2026-04-28.** Dodano harness `scripts/calibrate_thresholds.py` + `bond/validation/threshold_calibration.py`, przeanalizowano lokalne `articles.db` / `bond_metadata.db` / Chroma i zapisano artefakty `.planning/artifacts/threshold-calibration-20260428-175144/summary.{md,json}`; defaulty `low_corpus_threshold=10` i `duplicate_threshold=0.85` pozostawiono bez zmian, bo próba nie uzasadnia ich przesunięcia.
+- [x] **Post-v1 integrity/session hardening — 2026-04-28.** Dodano `bond/validation/duplicate_metadata_reconciliation.py` + `scripts/reconcile_duplicate_metadata.py`, wyzerowano lokalny drift duplicate metadata (`6` rekordów SQLite vs `6` rekordów Chroma, `missing=0`), rozszerzono `/api/chat/history` o `mode`, utrwalono `mode` w sesjach frontendu, zakończono zwykłe HTTP 4xx/5xx błędem zamiast recovery i poprawiono UX file-ingest dla `chunks_added=0`.
 - [x] **Corpus onboarding**: text, file, Google Drive i blog URL działają; corpus pokazuje status i low-corpus warning.
 - [x] **Author mode**: topic → research → checkpoint 1 → draft → checkpoint 2 → save metadata działa w UI z pełnym HITL.
 - [x] **Shadow mode**: użytkownik widzi anotacje i wersję poprawioną oraz może approve/reject z pętlą regeneracji.
@@ -23,7 +24,6 @@ Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksym
 
 ### Active
 
-- [ ] **Post-v1 duplicate-store reconciliation**: wyrównać `metadata_log` SQLite i Chroma duplicate collection; lokalna kalibracja 2026-04-28 wykryła drift `4` rekordy vs `3` embeddingi.
 - [ ] **V2 — Repurposing**: blog → Facebook / LinkedIn / Instagram / X.
 - [ ] **V2 — YouTube → Artykuł**: generowanie artykułu lub streszczenia z napisów.
 
@@ -67,4 +67,4 @@ Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksym
 | Kaskadowy dobór modelu LLM | Mini dla research (koszt), Frontier dla draft (jakość); konfiguracja przez env vars | ✓ Good |
 
 ---
-*Last updated: 2026-04-28 after threshold calibration, low-corpus gate alignment, and post-v1 docs sync*
+*Last updated: 2026-04-28 after post-v1 integrity/session hardening, duplicate-store reconciliation, and docs sync*

@@ -10,7 +10,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from bond.api.runtime import ActiveRun, CommandRuntime
 from bond.api.stream import parse_stream_events
-from bond.schemas import StreamEvent
+from bond.schemas import ChatHistoryResponse, StreamEvent
 from langgraph.types import Command
 from langgraph.errors import GraphRecursionError
 
@@ -427,7 +427,7 @@ async def chat_resume(req: ResumeRequest, request: Request):
     return EventSourceResponse(_consume_run(run, request), headers=headers, ping=None)
 
 
-@router.get("/history/{thread_id}")
+@router.get("/history/{thread_id}", response_model=ChatHistoryResponse)
 async def get_chat_history(thread_id: str, request: Request, state_snapshot=None):
     """
     GET /api/chat/history/{thread_id}
@@ -452,6 +452,7 @@ async def get_chat_history(thread_id: str, request: Request, state_snapshot=None
             "session_status": "idle",
             "pending_node": None,
             "can_resume": False,
+            "mode": "author",
             "originalText": "",
             "annotations": [],
             "shadowCorrectedText": "",
@@ -462,6 +463,8 @@ async def get_chat_history(thread_id: str, request: Request, state_snapshot=None
     st = state_snapshot.values
     next_nodes = list(getattr(state_snapshot, "next", []) or [])
     pending_node = next_nodes[0] if next_nodes else None
+    raw_mode = st.get("mode")
+    mode = raw_mode if raw_mode in {"author", "shadow"} else "author"
 
     messages = []
     for msg in st.get("messages", []):
@@ -541,6 +544,7 @@ async def get_chat_history(thread_id: str, request: Request, state_snapshot=None
         "session_status": session_status,
         "pending_node": pending_node,
         "can_resume": session_status == "paused" and hitl_pause is not None,
+        "mode": mode,
         "originalText": st.get("original_text", "") or "",
         "annotations": st.get("annotations", []) or [],
         "shadowCorrectedText": st.get("shadow_corrected_text", "") or "",

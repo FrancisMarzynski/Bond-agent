@@ -12,7 +12,7 @@ AgentOutput — co agent zwraca po zakończeniu wszystkich węzłów
 from __future__ import annotations
 
 import logging
-from typing import Annotated, Literal, Optional
+from typing import Annotated, Any, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -59,6 +59,37 @@ class CheckpointResponse(BaseModel):
 
     # cp2 only — ignorowane przez checkpoint_1
     feedback: Optional[str] = None
+
+
+class ChatHistoryResponse(BaseModel):
+    """Publiczny kontrakt historii sesji używany do restore/recovery."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    messages: list[dict[str, Any]] = Field(default_factory=list)
+    stage: Literal[
+        "idle",
+        "checking",
+        "research",
+        "structure",
+        "writing",
+        "shadow_analysis",
+        "shadow_annotation",
+        "done",
+        "error",
+    ]
+    draft: str
+    hitlPause: dict[str, Any] | None = None
+    stageStatus: dict[str, str] = Field(default_factory=dict)
+    session_status: Literal["idle", "running", "paused", "completed", "error"]
+    pending_node: str | None = None
+    can_resume: bool
+    mode: Literal["author", "shadow"]
+    originalText: str = ""
+    annotations: list[dict[str, Any]] = Field(default_factory=list)
+    shadowCorrectedText: str = ""
+    active_command: Literal["stream", "resume"] | None = None
+    error_message: str | None = None
 
 
 class AgentInput(BaseModel):

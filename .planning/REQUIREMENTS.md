@@ -155,4 +155,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 ---
 
 *Requirements defined: 2026-02-20*
-*Last updated: 2026-04-28 — REC-01/02/03 domknięte po pełnym browser journey Shadow + Author na detached runtime; dodatkowo poprawiono limit recovery pollingu dla dłuższych reload-recovery w Author*
+*Last updated: 2026-04-28 — REC-01/02/03 pozostają domknięte, a post-v1 integrity/session hardening dodało reconcile duplicate metadata, `mode` w `/history`, mode-aware restore sesji i poprawny UX dla file-ingest z `chunks_added=0`*

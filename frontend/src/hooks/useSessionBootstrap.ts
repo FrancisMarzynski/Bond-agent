@@ -1,8 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { useChatStore } from "@/store/chatStore";
 import { useShadowStore } from "@/store/shadowStore";
 import { loadSessionHistory, SessionHistoryNotFoundError } from "@/hooks/useSession";
+import { normalizeSessionMode, sessionModeToPath } from "@/lib/streamRecovery";
 
 const STORAGE_KEY = "bond_thread_id";
 const MODE_KEY = "bond_mode";
@@ -28,19 +30,20 @@ function sleep(ms: number): Promise<void> {
  */
 export function useSessionBootstrap(): { isRestoring: boolean } {
     const [isRestoring, setIsRestoring] = useState(true);
+    const router = useRouter();
+    const pathname = usePathname();
 
     useEffect(() => {
         let cancelled = false;
+        const isCancelled = () => cancelled;
 
         async function bootstrap() {
             const storedThread = sessionStorage.getItem(STORAGE_KEY);
-            const storedMode = sessionStorage.getItem(MODE_KEY);
-
-            if (storedMode === "author" || storedMode === "shadow") {
-                useChatStore.getState().setMode(storedMode);
-            }
 
             if (!storedThread) {
+                const routeMode = pathname === "/shadow" ? "shadow" : "author";
+                sessionStorage.setItem(MODE_KEY, routeMode);
+                useChatStore.getState().setMode(routeMode);
                 setIsRestoring(false);
                 return;
             }
@@ -50,16 +53,23 @@ export function useSessionBootstrap(): { isRestoring: boolean } {
             try {
                 const history = await loadSessionHistory(storedThread, { mode: "restore" });
 
-                if (cancelled) return;
+                if (isCancelled()) return;
+                const resolvedMode = normalizeSessionMode(history.mode);
+                sessionStorage.setItem(MODE_KEY, resolvedMode);
+                useChatStore.getState().setMode(resolvedMode);
+                const targetPath = sessionModeToPath(resolvedMode);
+                if (pathname !== targetPath) {
+                    router.replace(targetPath);
+                }
                 setIsRestoring(false);
 
                 // If the backend is still executing a committed command, poll
                 // until the session reaches a durable state.
                 if (history.session_status === "running") {
-                    await pollUntilSettled(storedThread, cancelled);
+                    await pollUntilSettled(storedThread, isCancelled);
                 }
             } catch (err) {
-                if (cancelled) return;
+                if (isCancelled()) return;
                 setIsRestoring(false);
 
                 if (err instanceof SessionHistoryNotFoundError) {
@@ -77,12 +87,15 @@ export function useSessionBootstrap(): { isRestoring: boolean } {
         return () => {
             cancelled = true;
         };
-    }, []); // Intentionally empty — runs exactly once on mount
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     return { isRestoring };
 }
 
-async function pollUntilSettled(threadId: string, cancelled: boolean): Promise<void> {
+async function pollUntilSettled(
+    threadId: string,
+    isCancelled: () => boolean,
+): Promise<void> {
     const store = useChatStore.getState();
     store.setRecoveringSession(true);
 
@@ -90,9 +103,9 @@ async function pollUntilSettled(threadId: string, cancelled: boolean): Promise<v
         const deadline = Date.now() + MAX_RECOVERY_DURATION_MS;
 
         while (Date.now() < deadline) {
-            if (cancelled) return;
+            if (isCancelled()) return;
             await sleep(RECOVERY_POLL_DELAY_MS);
-            if (cancelled) return;
+            if (isCancelled()) return;
 
             try {
                 const history = await loadSessionHistory(threadId, { mode: "recovery" });

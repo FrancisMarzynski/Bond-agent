@@ -47,6 +47,7 @@ def test_get_chat_history_returns_completed_author_session():
     assert payload["stageStatus"] == {"done": "complete"}
     assert payload["draft"] == "Finalny draft"
     assert payload["hitlPause"] is None
+    assert payload["mode"] == "author"
 
 
 def test_get_chat_history_returns_paused_shadow_checkpoint_history():
@@ -68,6 +69,7 @@ def test_get_chat_history_returns_paused_shadow_checkpoint_history():
                 "annotations": annotations,
                 "shadow_corrected_text": "Tekst poprawiony",
                 "iteration_count": 1,
+                "mode": "shadow",
             },
             next_nodes=["shadow_checkpoint"],
         )
@@ -83,6 +85,7 @@ def test_get_chat_history_returns_paused_shadow_checkpoint_history():
     assert payload["draft"] == "Tekst poprawiony"
     assert payload["shadowCorrectedText"] == "Tekst poprawiony"
     assert payload["annotations"] == annotations
+    assert payload["mode"] == "shadow"
     assert payload["hitlPause"] == {
         "checkpoint_id": "shadow_checkpoint",
         "type": "approve_reject",
@@ -266,3 +269,4 @@ def test_get_chat_history_includes_null_active_command_when_no_runtime():
     payload = response.json()
     assert payload["active_command"] is None
     assert payload["error_message"] is None
+    assert payload["mode"] == "author"

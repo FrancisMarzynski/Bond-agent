@@ -7,8 +7,8 @@ import type {
 } from "@/store/chatStore";
 import type { Annotation } from "@/store/shadowStore";
 
+export type SessionMode = "author" | "shadow";
 export type SessionStatus = "idle" | "running" | "paused" | "completed" | "error";
-export type DisconnectDisposition = "retry" | "recover";
 export type RecoveryDisposition = "resume" | "stop" | "poll";
 export type HydrationMode = "restore" | "recovery";
 
@@ -21,11 +21,20 @@ export interface SessionHistoryResponse {
   session_status: SessionStatus;
   pending_node: string | null;
   can_resume: boolean;
+  mode?: SessionMode;
   originalText: string;
   annotations: Annotation[];
   shadowCorrectedText: string;
   active_command: "stream" | "resume" | null;
   error_message: string | null;
+}
+
+export function normalizeSessionMode(mode: unknown): SessionMode {
+  return mode === "shadow" ? "shadow" : "author";
+}
+
+export function sessionModeToPath(mode: SessionMode): "/" | "/shadow" {
+  return mode === "shadow" ? "/shadow" : "/";
 }
 
 export interface SessionHydrationSnapshot {
@@ -61,10 +70,6 @@ export interface SessionHydrationResult {
     annotations: Annotation[];
     shadowCorrectedText: string;
   };
-}
-
-export function classifyDisconnect(hasCommittedResponse: boolean): DisconnectDisposition {
-  return hasCommittedResponse ? "recover" : "retry";
 }
 
 export function getRecoveryDisposition(

@@ -1,13 +1,17 @@
 "use client";
-import { useEffect, useState, useCallback } from "react"; // useState still needed for sessions list
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useChatStore, type ChatMessage } from "@/store/chatStore";
 import { useShadowStore } from "@/store/shadowStore";
 import { API_URL } from "@/config";
 import {
     buildSessionHydration,
     type HydrationMode,
+    normalizeSessionMode,
+    sessionModeToPath,
     type SessionHistoryResponse,
     type SessionHydrationSnapshot,
+    type SessionMode,
 } from "@/lib/streamRecovery";
 
 const STORAGE_KEY = "bond_thread_id";
@@ -18,6 +22,7 @@ export interface SessionMeta {
     id: string;
     title: string;
     updatedAt: number;
+    mode?: SessionMode;
 }
 
 export class SessionHistoryNotFoundError extends Error {
@@ -45,6 +50,68 @@ function getSessionSnapshot(): SessionHydrationSnapshot {
             shadowCorrectedText: shadow.shadowCorrectedText,
         },
     };
+}
+
+function readStoredSessions(): SessionMeta[] {
+    const storedSessions = localStorage.getItem(SESSIONS_KEY);
+    if (!storedSessions) {
+        return [];
+    }
+
+    try {
+        const parsed = JSON.parse(storedSessions) as unknown;
+        if (!Array.isArray(parsed)) {
+            return [];
+        }
+
+        return parsed.flatMap((entry) => {
+            if (!entry || typeof entry !== "object") {
+                return [];
+            }
+
+            const candidate = entry as Record<string, unknown>;
+            const id = typeof candidate.id === "string" ? candidate.id : "";
+            const title = typeof candidate.title === "string" ? candidate.title : "";
+            const updatedAt =
+                typeof candidate.updatedAt === "number" ? candidate.updatedAt : Date.now();
+            const mode =
+                candidate.mode === "author" || candidate.mode === "shadow"
+                    ? candidate.mode
+                    : undefined;
+
+            if (!id || !title) {
+                return [];
+            }
+
+            return [{ id, title, updatedAt, mode }];
+        });
+    } catch (error) {
+        console.error("Failed to parse sessions", error);
+        return [];
+    }
+}
+
+function writeStoredSessions(sessions: SessionMeta[]): void {
+    localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
+    window.dispatchEvent(new Event("bond_sessions_changed"));
+}
+
+function syncStoredSessionMode(threadId: string, mode: SessionMode): void {
+    const sessions = readStoredSessions();
+    const sessionIndex = sessions.findIndex((session) => session.id === threadId);
+    if (sessionIndex === -1) {
+        return;
+    }
+
+    if (sessions[sessionIndex].mode === mode) {
+        return;
+    }
+
+    sessions[sessionIndex] = {
+        ...sessions[sessionIndex],
+        mode,
+    };
+    writeStoredSessions(sessions);
 }
 
 function hydrateSessionStores(
@@ -86,25 +153,26 @@ export async function loadSessionHistory(
         throw new Error(`Nie udało się pobrać historii sesji (${res.status}).`);
     }
 
-    const data = (await res.json()) as SessionHistoryResponse;
+    const rawData = (await res.json()) as SessionHistoryResponse;
+    const resolvedMode = normalizeSessionMode(rawData.mode);
+    const data = {
+        ...rawData,
+        mode: resolvedMode,
+    };
+    useChatStore.getState().setMode(resolvedMode);
+    syncStoredSessionMode(id, resolvedMode);
     return hydrateSessionStores(data, options);
 }
 
 export function useSession() {
     const { threadId, setThreadId, mode, setMode, resetSession } = useChatStore();
+    const router = useRouter();
 
     const [sessions, setSessions] = useState<SessionMeta[]>([]);
 
     useEffect(() => {
         const loadSessions = () => {
-            const storedSessions = localStorage.getItem(SESSIONS_KEY);
-            if (storedSessions) {
-                try {
-                    setSessions(JSON.parse(storedSessions));
-                } catch (e) {
-                    console.error("Failed to parse sessions", e);
-                }
-            }
+            setSessions(readStoredSessions());
         };
 
         loadSessions();
@@ -125,25 +193,19 @@ export function useSession() {
     // Used by switchSession only — not called on every mount.
     const restoreSessionHistory = useCallback(async (id: string) => {
         try {
-            await loadSessionHistory(id, { mode: "restore" });
+            return await loadSessionHistory(id, { mode: "restore" });
         } catch (err) {
             console.error("Przywracanie sesji przerwane:", err);
             if (err instanceof SessionHistoryNotFoundError) {
                 sessionStorage.removeItem(STORAGE_KEY);
                 setThreadId(null);
             }
+            return null;
         }
     }, [setThreadId]);
 
-    const saveSessionMeta = (id: string, messages: ChatMessage[]) => {
-        const storedSessions = localStorage.getItem(SESSIONS_KEY);
-        let updated: SessionMeta[] = [];
-        try {
-            if (storedSessions) updated = JSON.parse(storedSessions);
-        } catch (e) {
-            console.error("Failed to parse sessions", e);
-        }
-
+    const saveSessionMeta = (id: string, messages: ChatMessage[], sessionMode: SessionMode) => {
+        const updated = readStoredSessions();
         const idx = updated.findIndex((s) => s.id === id);
         
         const userMsg = messages.find((m) => m.role === "user");
@@ -153,14 +215,14 @@ export function useSession() {
         if (idx > -1) {
             updated[idx].updatedAt = Date.now();
             updated[idx].title = title;
+            updated[idx].mode = sessionMode;
         } else {
-            updated.unshift({ id, title, updatedAt: Date.now() });
+            updated.unshift({ id, title, updatedAt: Date.now(), mode: sessionMode });
         }
         
         const limited = updated.slice(0, 20); // Keep last 20
-        localStorage.setItem(SESSIONS_KEY, JSON.stringify(limited));
+        writeStoredSessions(limited);
         setSessions(limited);
-        window.dispatchEvent(new Event("bond_sessions_changed"));
     };
 
     const persistThreadId = (id: string) => {
@@ -169,7 +231,8 @@ export function useSession() {
         
         setTimeout(() => {
             const msgs = useChatStore.getState().messages;
-            saveSessionMeta(id, msgs);
+            const currentMode = useChatStore.getState().mode;
+            saveSessionMeta(id, msgs, currentMode);
         }, 100);
     };
 
@@ -184,12 +247,29 @@ export function useSession() {
         resetSession();
     };
 
-    const switchSession = (id: string) => {
-        sessionStorage.setItem(STORAGE_KEY, id);
+    const switchSession = (session: SessionMeta) => {
+        sessionStorage.setItem(STORAGE_KEY, session.id);
         useShadowStore.getState().resetShadow();
         resetSession();
-        setThreadId(id);
-        restoreSessionHistory(id);
+        setThreadId(session.id);
+
+        if (session.mode) {
+            persistMode(session.mode);
+            router.replace(sessionModeToPath(session.mode));
+        }
+
+        void restoreSessionHistory(session.id).then((history) => {
+            if (!history) {
+                return;
+            }
+
+            const resolvedMode = normalizeSessionMode(history.mode);
+            persistMode(resolvedMode);
+            const targetPath = sessionModeToPath(resolvedMode);
+            if (typeof window !== "undefined" && window.location.pathname !== targetPath) {
+                router.replace(targetPath);
+            }
+        });
     };
 
     return {

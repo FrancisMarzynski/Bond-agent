@@ -92,3 +92,20 @@ async def get_recent_articles(limit: int = 50) -> list[dict]:
         )
         rows = await cursor.fetchall()
         return [dict(r) for r in rows]
+
+
+async def get_all_article_metadata() -> list[dict]:
+    """Zwraca wszystkie rekordy metadanych potrzebne do walidacji/backfillu duplicate store."""
+    os.makedirs(os.path.dirname(os.path.abspath(settings.metadata_db_path)), exist_ok=True)
+    async with aiosqlite.connect(
+        settings.metadata_db_path,
+        check_same_thread=False,
+    ) as conn:
+        conn.row_factory = aiosqlite.Row
+        await _ensure_schema(conn)
+        cursor = await conn.execute(
+            "SELECT id, thread_id, topic, published_date, mode "
+            "FROM metadata_log ORDER BY id ASC"
+        )
+        rows = await cursor.fetchall()
+        return [dict(r) for r in rows]

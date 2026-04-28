@@ -21,8 +21,8 @@ export function SidebarContent({
         onNavigate?.();
     };
 
-    const handleSwitchSession = (id: string) => {
-        switchSession(id);
+    const handleSwitchSession = (session: (typeof sessions)[number]) => {
+        switchSession(session);
         onNavigate?.();
     };
 
@@ -47,7 +47,7 @@ export function SidebarContent({
                     sessions.map((session) => (
                         <button
                             key={session.id}
-                            onClick={() => handleSwitchSession(session.id)}
+                            onClick={() => handleSwitchSession(session)}
                             className={`w-full text-left flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors ${
                                 threadId === session.id
                                     ? "bg-accent text-accent-foreground"

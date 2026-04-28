@@ -6,7 +6,6 @@ import { API_URL } from "@/config";
 import { loadSessionHistory, SessionHistoryNotFoundError } from "@/hooks/useSession";
 import { SSEParser } from "@/lib/sse";
 import {
-  classifyDisconnect,
   getRecoveryDisposition,
 } from "@/lib/streamRecovery";
 import {
@@ -482,6 +481,19 @@ async function recoverCommittedSession(
 
 async function readErrorResponse(response: Response): Promise<string> {
   try {
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const payload = (await response.json()) as
+        | { detail?: unknown; message?: unknown }
+        | null;
+      if (typeof payload?.detail === "string" && payload.detail) {
+        return payload.detail;
+      }
+      if (typeof payload?.message === "string" && payload.message) {
+        return payload.message;
+      }
+    }
+
     const text = await response.text();
     return text || `HTTP ${response.status}`;
   } catch {
@@ -510,10 +522,6 @@ async function runCommandStream(
 
   if (!response.ok) {
     const message = await readErrorResponse(response);
-    if (classifyDisconnect(true) === "recover" && activeThreadId) {
-      await recoverCommittedSession(activeThreadId, pendingAction, signal);
-      return;
-    }
     setTerminalError(`[Błąd krytyczny]: ${message}`);
     return;
   }
@@ -535,7 +543,7 @@ async function runCommandStream(
     return;
   }
 
-  if (classifyDisconnect(true) === "recover" && activeThreadId) {
+  if (activeThreadId) {
     await recoverCommittedSession(activeThreadId, pendingAction, signal);
     return;
   }

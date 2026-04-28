@@ -23,6 +23,14 @@ interface CorpusAddFormProps {
   onClose: () => void;
 }
 
+interface FileIngestResponse {
+  article_id: string;
+  title: string;
+  chunks_added: number;
+  source_type: string;
+  warnings: string[];
+}
+
 function getHttpFallbackError(status: number): string {
   return `Błąd serwera (HTTP ${status})`;
 }
@@ -232,7 +240,14 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
         const detail = await res.json().catch(() => null);
         throw new Error(detail?.detail ?? getHttpFallbackError(res.status));
       }
-      await res.json();
+      const data = (await res.json()) as FileIngestResponse;
+      if (data.chunks_added === 0) {
+        setJustSucceeded(false);
+        setSuccessMsg("");
+        setError(data.warnings[0] ?? "Plik nie został zaindeksowany.");
+        return;
+      }
+
       setFile(null);
       setFileTitle("");
       setSuccessMsg("Plik zaindeksowany");

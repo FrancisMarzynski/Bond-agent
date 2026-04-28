@@ -5,15 +5,15 @@
 See: .planning/PROJECT.md (updated 2026-04-28)
 
 **Core value:** Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksymalnie 4 godzin — przy zachowaniu stylu nieodróżnialnego od ludzkiego, z human-in-the-loop przed każdą publikacją.
-**Current focus:** v1 formalnie signed off 2026-04-28 po domknięciu Shadow HITL, detached runtime, recovery sesji, responsive remediation, potwierdzeniu istniejącej ochrony SSRF dla URL ingest, formalnej live walidacji Exa dla kuratorowanych polskich zapytań researchowych oraz kalibracji progów `low_corpus_threshold` / `duplicate_threshold` na lokalnych danych repo. Najbliższy follow-up post-v1 to wyrównanie driftu SQLite↔Chroma wykrytego w duplicate metadata.
+**Current focus:** v1 formalnie signed off 2026-04-28 po domknięciu Shadow HITL, detached runtime, recovery sesji, responsive remediation, potwierdzeniu istniejącej ochrony SSRF dla URL ingest, formalnej live walidacji Exa dla kuratorowanych polskich zapytań researchowych, kalibracji progów `low_corpus_threshold` / `duplicate_threshold` oraz post-v1 integrity/session hardening (reconciliation SQLite↔Chroma, typed `mode` w `/history`, route-aware restore sesji, uczciwa klasyfikacja błędów HTTP streamu, zero-chunk file-ingest UX). Najbliższy follow-up to zebranie większej próbki opublikowanych tematów przed ewentualnym ruszaniem defaultów duplicate/low-corpus.
 
 ## Current Position
 
 Phase: Post-Phase 4 — v1 SIGNED OFF
-Last activity: 2026-04-28 — po pełnym lokalnym passie E2E (`agent-browser`) dla corpus/author/shadow/responsive domknięto też sweep lokalizacji user-facing komunikatów w frontendzie i backendzie (Shadow annotations `reason`, stepper, błędy streamingu, URL ingest/Drive/Corpus warnings, fallback Shadow error, accessible labels), potwierdzony dodatkowym browser pass; drift `metadata_log` SQLite ↔ Chroma pozostaje najbliższym follow-upem
+Last activity: 2026-04-28 — wykonano post-v1 integrity/session hardening: dodano CLI `scripts/reconcile_duplicate_metadata.py`, backfillowano historyczny brak `test-thread-001` tak, że lokalny drift duplicate metadata wynosi już `6` rekordów SQLite vs `6` rekordów Chroma (`missing=0`, `orphaned=0`), rozszerzono `/api/chat/history` o `mode`, utrwalono `mode` w sesjach frontendu, rozróżniono HTTP 4xx/5xx od committed-disconnect recovery i poprawiono UX file-ingest przy `chunks_added=0`; walidacja: `uv run ruff check .`, `cd frontend && npm run lint`, `cd frontend && npm run build`, `uv run pytest`
 Status: v1 formalnie signed off; brak otwartych blockerów dla Author, Shadow, recovery/HITL, layoutów mobile/tablet ani hardeningu `/api/corpus/ingest/url`
 
-Progress: [██████████] 100% dla v1 + transport hardening / REC-01/02/03 + responsive remediation
+Progress: [██████████] 100% dla v1 + post-v1 integrity/session hardening
 
 **Niedawno domknięte:**
 
@@ -40,6 +40,7 @@ Progress: [██████████] 100% dla v1 + transport hardening / R
 21. **Author draft streaming cleanup** — edytor dopisuje tokeny tylko podczas aktywnego node’a `writer`, a przy `checkpoint_2` nadpisuje bufor finalnym draftem z historii zamiast zostawiać zlepione próby / `<thinking>`.
 22. **Mobile live editor remediation** — `@uiw/react-md-editor` w trybie `live` poniżej `640px` stackuje input i preview pionowo zamiast nakładać je lub ściskać w dwie kolumny.
 23. **Polish-only UI/message sweep** — user-facing teksty w Shadow/Author/Corpus są już spójnie po polsku, włącznie z `shadow_annotate.reason`, SSRF/Drive warnings, fallbackami błędów i `ModeToggle` accessible label `Przełącz tryb`.
+24. **Post-v1 integrity/session hardening** — duplicate metadata ma jawny CLI diff/backfill (`scripts/reconcile_duplicate_metadata.py`), lokalny drift wyzerowano (`6` SQLite vs `6` Chroma, `missing=0`), `/api/chat/history` zwraca `mode`, zapisane sesje przywracają właściwą trasę `/` / `/shadow`, `!response.ok` kończy stream błędem zamiast recovery, a upload pliku nie pokazuje już sukcesu przy `chunks_added=0`.
 
 ## Browser Validation Notes
 
@@ -167,18 +168,17 @@ Potwierdzone zachowania:
 
 ### Post-v1 Candidates
 
-- Wyrównać drift `metadata_log` SQLite ↔ Chroma duplicate collection i dodać/backfillować brakujące embeddingi tematów.
 - Zebrać większą próbę realnych opublikowanych tematów przed ewentualnym ponownym ruszaniem defaultów `low_corpus_threshold` / `duplicate_threshold`.
+- Rozważyć telemetryczny feedback dla realnych tematów użytkowników, zanim wróci temat ewentualnego A/B Exa vs Tavily.
 
 ### Blockers/Concerns
 
-- Kalibracja progów została wykonana 2026-04-28, ale confidence pozostaje ograniczone: lokalny corpus ma tylko 12 artykułów, a kolekcja duplicate w Chroma tylko 3 tematy.
-- Lokalnie wykryto drift `metadata_log` SQLite (`4` rekordy) vs Chroma duplicate collection (`3` embeddingi), co może zaniżać coverage duplicate check dla starszych tematów.
+- Kalibracja progów została wykonana 2026-04-28, ale confidence pozostaje ograniczone: lokalny corpus ma tylko 12 artykułów, a kolekcja duplicate w Chroma ma po reconcile nadal zaledwie 6 tematów.
 - Baseline Exa jest zwalidowany tylko na 4 kuratorowanych case'ach; brak jeszcze porównania A/B vs Tavily i brak telemetrycznego feedbacku z produkcyjnych tematów użytkowników
 
 ## Session Continuity
 
 Last session: 2026-04-28
-Stopped at: domknięto pełny lokalny E2E dla corpus/author/shadow/responsive, sweep lokalizacji user-facing komunikatów oraz browserowe potwierdzenie polskiego UI; jako follow-up pozostaje drift SQLite↔Chroma w duplicate metadata
+Stopped at: domknięto post-v1 integrity/session hardening, pełną walidację repo oraz jawny reconcile duplicate metadata do stanu `missing=0`
 Resume file: None
-Next task: zbadać i naprawić drift `metadata_log` SQLite ↔ Chroma duplicate collection, tak aby duplicate check miał pełny coverage opublikowanych tematów
+Next task: zebrać większą próbkę realnych opublikowanych tematów i telemetryczny feedback przed ewentualnym ruszaniem defaultów `low_corpus_threshold` / `duplicate_threshold`

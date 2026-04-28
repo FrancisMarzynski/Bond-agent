@@ -150,6 +150,142 @@ Backend dostępny pod `http://localhost:8000/docs`, frontend pod `http://localho
 
 ---
 
+## Jak korzystać z aplikacji
+
+Ta sekcja uzupełnia wcześniejsze części `Instalacja`, `Uruchamianie` i `Konfiguracja`. Jeśli chcesz przejść od zera do pierwszego użycia interfejsu, wykonaj poniższy workflow.
+
+### 1. Przygotowanie środowiska
+
+1. Zainstaluj zależności backendu i frontendu:
+
+```bash
+uv sync
+cp .env.example .env
+cd frontend && npm install
+```
+
+2. Uzupełnij plik `.env`:
+   `OPENAI_API_KEY` jest wymagany do trybów `Autor` i `Cień`.
+   `GOOGLE_AUTH_METHOD` i `GOOGLE_CREDENTIALS_PATH` ustaw tylko wtedy, gdy chcesz importować treści z Google Drive.
+
+3. Przy pierwszym uruchomieniu przygotuj lokalne bazy danych i cache modelu:
+
+```bash
+uv run python setup_db.py
+```
+
+4. Uruchom aplikację lokalnie:
+
+```bash
+# terminal 1
+uv run uvicorn bond.api.main:app --reload --port 8000
+
+# terminal 2
+cd frontend && npm run dev
+```
+
+5. Otwórz `http://localhost:3000`.
+   Dokumentacja API jest dostępna pod `http://localhost:8000/docs`.
+
+6. Jeśli wolisz uruchomienie kontenerowe zamiast lokalnego setupu, użyj:
+
+```bash
+docker compose up --build
+```
+
+### 2. Dodanie materiałów do bazy wiedzy
+
+Tryb `Autor` działa najlepiej wtedy, gdy korpus zawiera kilka własnych tekstów. To one uczą Bonda stylu, tonu i preferowanej struktury artykułów.
+
+1. Rozwiń sekcję `Baza wiedzy` w lewym dolnym rogu.
+2. Kliknij `+`, aby otworzyć formularz dodawania treści.
+3. Wybierz źródło importu:
+   `Tekst` dla ręcznego wklejenia treści,
+   `Link` dla publicznego adresu URL,
+   `Plik` dla `PDF`, `DOCX` albo `TXT`,
+   `Drive` dla folderu Google Drive.
+4. Ustaw typ źródła:
+   `własne` dla materiałów uczących stylu,
+   `zewn.` dla materiałów referencyjnych i researchowych.
+5. Po udanym imporcie sprawdź zielone potwierdzenie i wzrost liczników dokumentów oraz fragmentów.
+
+![Dodawanie treści do bazy wiedzy](docs/screenshots/how-to-use/01-baza-wiedzy-import.png)
+
+### 3. Generowanie nowego szkicu w trybie `Autor`
+
+Tryb `Autor` prowadzi przez pełen workflow: temat -> research -> propozycja struktury -> szkic -> decyzja człowieka.
+
+1. Upewnij się, że w prawym górnym rogu aktywny jest tryb `Autor`.
+2. Wpisz temat, słowa kluczowe i wymagania redakcyjne w polu wiadomości.
+
+Przykładowy prompt:
+
+```text
+Temat: Jak BIM skraca czas projektowania instalacji elektrycznych
+Słowa kluczowe: BIM, projektowanie instalacji, automatyzacja, efektywność
+Wymagania: styl ekspercki, prosty język, konkretne przykłady, długość 900-1100 słów
+```
+
+3. Wyślij wiadomość i poczekaj, aż Bond przejdzie etap `Research`.
+4. Na pierwszym checkpointcie przeczytaj raport badawczy i oceń zaproponowaną strukturę.
+5. Kliknij `Zatwierdź`, aby przejść dalej, albo `Odrzuć`, aby wrócić z uwagami do kolejnej iteracji.
+
+![Tryb Autor: checkpoint struktury](docs/screenshots/how-to-use/02-author-checkpoint-struktury.png)
+
+6. Po wygenerowaniu szkicu przejdziesz do drugiego checkpointu.
+7. Przejrzyj treść w edytorze po prawej stronie.
+8. Jeśli szkic jest gotowy, kliknij `Zapisz do bazy`.
+9. Jeśli potrzebne są poprawki, kliknij `Odrzuć` i wpisz konkretne uwagi.
+10. W każdej chwili możesz użyć `Kopiuj MD` albo `Pobierz .md`, aby wyeksportować wynik poza aplikację.
+
+![Tryb Autor: finalny szkic przed zapisem](docs/screenshots/how-to-use/03-author-finalny-szkic.png)
+
+### 4. Poprawianie gotowego tekstu w trybie `Cień`
+
+Tryb `Cień` służy do przepisywania istniejącej treści tak, aby lepiej pasowała do stylu autora lub marki.
+
+1. Przełącz aplikację na tryb `Cień`.
+2. Wklej tekst do analizy.
+3. Kliknij `Analizuj styl` albo użyj skrótu `Cmd/Ctrl + Enter`.
+
+![Tryb Cień: rozpoczęcie analizy](docs/screenshots/how-to-use/04-shadow-start.png)
+
+4. Po analizie zobaczysz trzy główne obszary:
+   listę adnotacji po lewej,
+   tekst oryginalny z podświetleniami pośrodku,
+   poprawioną wersję po prawej.
+5. Klikaj adnotacje, aby szybko przechodzić do konkretnych zmian.
+6. Jeśli poprawki są trafne, kliknij `Zatwierdź`.
+7. Jeśli chcesz wymusić nową iterację, wpisz komentarz i kliknij `Odrzuć`.
+
+![Tryb Cień: przegląd adnotacji i decyzja](docs/screenshots/how-to-use/05-shadow-checkpoint.png)
+
+8. Po zatwierdzeniu otrzymasz finalną wersję poprawionego tekstu, gotową do dalszej ręcznej edycji albo skopiowania.
+
+![Tryb Cień: gotowa wersja poprawiona](docs/screenshots/how-to-use/06-shadow-wynik.png)
+
+### 5. Najczęstsze scenariusze użycia
+
+1. Szybki draft nowego artykułu:
+   dodaj kilka własnych materiałów do `Bazy wiedzy`, uruchom tryb `Autor` i przejdź przez dwa checkpointy HITL.
+
+2. Ujednolicenie tonu istniejącego tekstu:
+   wklej roboczą treść do trybu `Cień`, przejrzyj adnotacje i zaakceptuj wersję poprawioną.
+
+3. Rozbudowa korpusu przed nową kampanią:
+   zaimportuj wcześniejsze artykuły, briefy, PDF-y lub folder z Drive, a dopiero potem generuj nowe teksty.
+
+4. Iteracyjna współpraca redakcyjna:
+   odrzucaj strukturę lub szkic z konkretnym komentarzem zamiast poprawiać wszystko ręcznie poza aplikacją.
+
+### 6. Dobre praktyki
+
+1. Najlepsze wyniki w trybie `Autor` uzyskasz, gdy korpus zawiera kilka własnych tekstów, a nie tylko źródła zewnętrzne.
+2. Przy odrzucaniu checkpointów dawaj konkretne uwagi, na przykład: `skrót wstępu`, `dodaj przykłady z rynku`, `mniej marketingowego tonu`.
+3. Jeśli widzisz ostrzeżenie o niskim stanie korpusu, potraktuj je jako sygnał do dodania kolejnych materiałów przed generowaniem.
+4. Panel `Historia sesji` po lewej stronie pozwala wracać do wcześniejszych przebiegów bez zaczynania od zera.
+5. Przy lokalnym developmentcie korzystaj z `http://localhost:3000`, żeby uniknąć problemów z mieszaniem originów podczas debugowania SSE.
+
 ## Troubleshooting SSE
 
 Strumień SSE (`/api/chat/stream`, `/api/chat/resume`) używa `text/event-stream`. Poniżej typowe problemy i rozwiązania.
