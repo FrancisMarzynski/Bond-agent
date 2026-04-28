@@ -5,13 +5,13 @@
 See: .planning/PROJECT.md (updated 2026-04-28)
 
 **Core value:** Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksymalnie 4 godzin — przy zachowaniu stylu nieodróżnialnego od ludzkiego, z human-in-the-loop przed każdą publikacją.
-**Current focus:** v1 formalnie signed off 2026-04-28 po domknięciu Shadow HITL, detached runtime, recovery sesji, responsive remediation, potwierdzeniu istniejącej ochrony SSRF dla URL ingest, formalnej live walidacji Exa dla kuratorowanych polskich zapytań researchowych, kalibracji progów `low_corpus_threshold` / `duplicate_threshold` oraz post-v1 integrity/session hardening (reconciliation SQLite↔Chroma, typed `mode` w `/history`, route-aware restore sesji, uczciwa klasyfikacja błędów HTTP streamu, zero-chunk file-ingest UX). Aktywny follow-up to internal deployment hardening w `.agents/plans/`; Plan 01 (backend contract) jest już wdrożony i zwalidowany, a bezpośrednim następnym krokiem jest Plan 02 (frontend gateway/auth). Threshold/telemetry sampling pozostaje kandydatem odroczonym.
+**Current focus:** v1 formalnie signed off 2026-04-28 po domknięciu Shadow HITL, detached runtime, recovery sesji, responsive remediation, potwierdzeniu istniejącej ochrony SSRF dla URL ingest, formalnej live walidacji Exa dla kuratorowanych polskich zapytań researchowych, kalibracji progów `low_corpus_threshold` / `duplicate_threshold` oraz post-v1 integrity/session hardening (reconciliation SQLite↔Chroma, typed `mode` w `/history`, route-aware restore sesji, uczciwa klasyfikacja błędów HTTP streamu, zero-chunk file-ingest UX). Aktywny follow-up to internal deployment hardening w `.agents/plans/`; Plans 01-02 (backend contract + frontend gateway/auth) są już wdrożone i zwalidowane, a bezpośrednim następnym krokiem jest Plan 03 (deployment hardening/docs). Threshold/telemetry sampling pozostaje kandydatem odroczonym.
 
 ## Current Position
 
 Phase: Post-Phase 4 — v1 SIGNED OFF
-Last activity: 2026-04-28 — wykonano `internal-deployment-hardening-01-security-contract-and-backend-baseline.md`: dodano env contract dla internal auth, backend middleware trusted-proxy z `X-Request-Id`, endpointy `/health`, `/health/live`, `/health/ready` oraz testy kontraktowe; walidacja `pytest` i `ruff` przeszła.
-Status: v1 formalnie signed off; brak otwartych blockerów dla Author, Shadow, recovery/HITL, layoutów mobile/tablet ani hardeningu `/api/corpus/ingest/url`, a internal deployment hardening jest w toku: Plan 01 backend baseline jest zamknięty, Plans 02-03 pozostają do wdrożenia zanim repo będzie można opisywać jako „internal production ready”
+Last activity: 2026-04-28 — wykonano `internal-deployment-hardening-02-frontend-gateway-and-auth.md`: usunięto konkurencyjny rewrite z `next.config.ts`, dodano centralny gateway auth/proxy (`frontend/src/proxy.ts` + kompatybilny shim `frontend/src/middleware.ts` dla Next 15), publiczne `/healthz` i skrypt walidacyjny `frontend/scripts/test-proxy-auth.mjs`; walidacja `npm run build`, `npm run lint`, test proxy/auth oraz przeglądarkowy smoke test `/`, `/shadow` i uploadu pliku przez same-origin `/api/corpus/ingest/file` przeszły.
+Status: v1 formalnie signed off; brak otwartych blockerów dla Author, Shadow, recovery/HITL, layoutów mobile/tablet ani hardeningu `/api/corpus/ingest/url`, a internal deployment hardening jest w toku: Plans 01-02 są zamknięte, Plan 03 pozostaje do wdrożenia zanim repo będzie można opisywać jako „internal production ready”
 
 Progress: [██████████] 100% dla v1 + post-v1 integrity/session hardening
 
@@ -42,6 +42,7 @@ Progress: [██████████] 100% dla v1 + post-v1 integrity/sessi
 23. **Polish-only UI/message sweep** — user-facing teksty w Shadow/Author/Corpus są już spójnie po polsku, włącznie z `shadow_annotate.reason`, SSRF/Drive warnings, fallbackami błędów i `ModeToggle` accessible label `Przełącz tryb`.
 24. **Post-v1 integrity/session hardening** — duplicate metadata ma jawny CLI diff/backfill (`scripts/reconcile_duplicate_metadata.py`), lokalny drift wyzerowano (`6` SQLite vs `6` Chroma, `missing=0`), `/api/chat/history` zwraca `mode`, zapisane sesje przywracają właściwą trasę `/` / `/shadow`, `!response.ok` kończy stream błędem zamiast recovery, a upload pliku nie pokazuje już sukcesu przy `chunks_added=0`.
 25. **Internal deployment hardening — Plan 01 backend contract** — `bond/config.py` ma już flagi/secrety internal auth, `bond/api/security.py` zamyka finalny kontrakt trusted header (`X-Bond-Internal-Proxy-Token`) i bypass health routes, `bond/api/main.py` dodaje middleware fail-closed z `X-Request-Id` oraz `/health`, `/health/live`, `/health/ready`, a `tests/unit/api/test_internal_security.py` waliduje 401/200, bypass probe routes i CORS expose headers.
+26. **Internal deployment hardening — Plan 02 frontend gateway/auth** — `frontend/src/proxy.ts` centralizuje Basic Auth challenge + rewrite `/api/*` z nagłówkiem `X-Bond-Internal-Proxy-Token`, `frontend/src/middleware.ts` aktywuje ten sam gateway na obecnym Next 15 bez rozgałęziania logiki, `frontend/src/app/healthz/route.ts` zostawia probe publiczny, a `frontend/scripts/test-proxy-auth.mjs` wraz z lokalną walidacją `curl`, SSE przez `/api/chat/stream`, wejścia do `/` i `/shadow` po auth oraz uploadu pliku przez same-origin `/api/corpus/ingest/file` potwierdza 401 na `/`, 200 na `/healthz` i poprawne proxy do backendu dla JSON/SSE/FormData.
 
 ## Browser Validation Notes
 
@@ -165,9 +166,8 @@ Potwierdzone zachowania:
 
 ### Pending Todos
 
-- Wykonać `internal-deployment-hardening-02-frontend-gateway-and-auth.md`, konsumując bez zmian kontrakt z Planu 01 (`X-Bond-Internal-Proxy-Token`, bypass `/health*`, `X-Request-Id`).
-- Następnie domknąć `internal-deployment-hardening-03-deployment-hardening-and-docs.md` wraz z walidacją deployment profile.
-- Po wdrożeniu Plans 02-03 dopiero zaktualizować status repo na „internal production ready”, jeśli pełna walidacja deployment profile potwierdzi brak regresji.
+- Domknąć `internal-deployment-hardening-03-deployment-hardening-and-docs.md` wraz z walidacją deployment profile i opisem stabilnego flow uruchomienia (`standalone` frontend + proxy auth + trusted backend header).
+- Po wdrożeniu Planu 03 dopiero zaktualizować status repo na „internal production ready”, jeśli pełna walidacja deployment profile potwierdzi brak regresji.
 
 ### Post-v1 Candidates
 
@@ -176,13 +176,13 @@ Potwierdzone zachowania:
 
 ### Blockers/Concerns
 
-- Internal deployment hardening jest dopiero częściowo wdrożony; dopóki Plans 02-03 nie zostaną zaimplementowane i zwalidowane, repo nie powinno być opisywane jako „internal production ready”.
+- Internal deployment hardening jest nadal częściowo wdrożony; mimo domknięcia Plans 01-02, dopóki Plan 03 nie zostanie zaimplementowany i zwalidowany, repo nie powinno być opisywane jako „internal production ready”.
 - Kalibracja progów została wykonana 2026-04-28, ale confidence pozostaje ograniczone: lokalny corpus ma tylko 12 artykułów, a kolekcja duplicate w Chroma ma po reconcile nadal zaledwie 6 tematów.
 - Baseline Exa jest zwalidowany tylko na 4 kuratorowanych case'ach; brak jeszcze porównania A/B vs Tavily i brak telemetrycznego feedbacku z produkcyjnych tematów użytkowników
 
 ## Session Continuity
 
 Last session: 2026-04-28
-Stopped at: wdrożono i zwalidowano `internal-deployment-hardening-01-security-contract-and-backend-baseline.md`
+Stopped at: wdrożono i zwalidowano `internal-deployment-hardening-02-frontend-gateway-and-auth.md`
 Resume file: None
-Next task: wykonać `internal-deployment-hardening-02-frontend-gateway-and-auth.md`
+Next task: wykonać `internal-deployment-hardening-03-deployment-hardening-and-docs.md`

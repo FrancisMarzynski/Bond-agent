@@ -24,9 +24,9 @@ Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksym
 
 ### Active Post-v1 Work
 
-- [ ] **Internal deployment hardening.** To jest obecnie wybrany follow-up operacyjny po v1: repo ma dostać prosty gateway auth, backend trusted-proxy enforcement, health/readiness, non-root backend i wewnętrzny profil Compose. Wykonanie jest rozbite na 3 plany, z których pierwszy backendowy kontrakt jest już zamknięty:
+- [ ] **Internal deployment hardening.** To jest obecnie wybrany follow-up operacyjny po v1: repo ma dostać prosty gateway auth, backend trusted-proxy enforcement, health/readiness, non-root backend i wewnętrzny profil Compose. Wykonanie jest rozbite na 3 plany, z których dwa pierwsze są już zamknięte:
   - `[x]` `.agents/plans/internal-deployment-hardening-01-security-contract-and-backend-baseline.md` — env contract (`internal_auth_enabled`, `internal_proxy_token`, credentials pod frontend auth), trusted header `X-Bond-Internal-Proxy-Token`, middleware fail-closed z `X-Request-Id`, `/health`, `/health/live`, `/health/ready`, testy kontraktowe backendu
-  - `[ ]` `.agents/plans/internal-deployment-hardening-02-frontend-gateway-and-auth.md`
+  - `[x]` `.agents/plans/internal-deployment-hardening-02-frontend-gateway-and-auth.md` — centralny gateway `Basic Auth` + rewrite `/api/*` z trusted headerem, publiczne `/healthz`, walidacja `build`/`lint`/`test-proxy-auth`, kompatybilność z aktualnym Next 15 przez cienki shim `src/middleware.ts` delegujący do `src/proxy.ts`
   - `[ ]` `.agents/plans/internal-deployment-hardening-03-deployment-hardening-and-docs.md`
 - [ ] **Threshold/telemetry follow-up pozostaje odroczony.** Większa próbka opublikowanych tematów i telemetryczny feedback wracają dopiero po domknięciu deployment hardening lub gdy priorytet produktu zmieni się świadomie.
 
@@ -75,4 +75,4 @@ Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksym
 | Kaskadowy dobór modelu LLM | Mini dla research (koszt), Frontier dla draft (jakość); konfiguracja przez env vars | ✓ Good |
 
 ---
-*Last updated: 2026-04-28 after landing internal deployment hardening Plan 01 backend contract and moving the active next task to Plan 02*
+*Last updated: 2026-04-28 after landing internal deployment hardening Plan 02 frontend gateway/auth and moving the active next task to Plan 03*
