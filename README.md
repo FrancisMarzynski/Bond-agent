@@ -261,17 +261,14 @@ Tryb `Autor` działa najlepiej wtedy, gdy korpus zawiera kilka własnych tekstó
 
 1. Rozwiń sekcję `Baza wiedzy` w lewym dolnym rogu.
 2. Kliknij `+`, aby otworzyć formularz dodawania treści.
-3. Wybierz źródło importu:
-   `Tekst` dla ręcznego wklejenia treści,
-   `Link` dla publicznego adresu URL,
-   `Plik` dla `PDF`, `DOCX` albo `TXT`,
-   `Drive` dla folderu Google Drive.
+3. W pokazanym przykładzie wybrana jest zakładka `Tekst`, czyli ręczne wklejenie treści do korpusu.
+   Jeśli chcesz dodać materiał z innego źródła, użyj zakładek `Link`, `Plik` albo `Drive`.
 4. Ustaw typ źródła:
    `własne` dla materiałów uczących stylu,
    `zewn.` dla materiałów referencyjnych i researchowych.
-5. Po udanym imporcie sprawdź zielone potwierdzenie i wzrost liczników dokumentów oraz fragmentów.
+5. Po udanym imporcie sprawdź zielone potwierdzenie `Tekst dodany do korpusu` oraz wzrost liczników dokumentów i fragmentów.
 
-![Dodawanie treści do bazy wiedzy](docs/screenshots/how-to-use/01-baza-wiedzy-import.png)
+![Dodawanie treści do bazy wiedzy: formularz Tekst po udanym imporcie](docs/screenshots/how-to-use/01-baza-wiedzy-import.png)
 
 ### 3. Generowanie nowego szkicu w trybie `Autor`
 
@@ -289,42 +286,42 @@ Wymagania: styl ekspercki, prosty język, konkretne przykłady, długość 900-1
 ```
 
 3. Wyślij wiadomość i poczekaj, aż Bond przejdzie etap `Research`.
-4. Na pierwszym checkpointcie przeczytaj raport badawczy i oceń zaproponowaną strukturę.
+4. Na pierwszym checkpointcie stepper pokaże zakończony etap `Research`, a po prawej zobaczysz `Raport Badawczy` do przeglądu.
 5. Kliknij `Zatwierdź`, aby przejść dalej, albo `Odrzuć`, aby wrócić z uwagami do kolejnej iteracji.
 
-![Tryb Autor: checkpoint struktury](docs/screenshots/how-to-use/02-author-checkpoint-struktury.png)
+![Tryb Autor: checkpoint struktury z raportem badawczym](docs/screenshots/how-to-use/02-author-checkpoint-struktury.png)
 
-6. Po wygenerowaniu szkicu przejdziesz do drugiego checkpointu.
-7. Przejrzyj treść w edytorze po prawej stronie.
+6. Po wygenerowaniu szkicu przejdziesz do drugiego checkpointu i zobaczysz gotowy draft w edytorze po prawej stronie.
+7. Jeśli Bond pokaże ostrzeżenie walidacyjne, potraktuj je jako sygnał do szybkiego sprawdzenia draftu przed decyzją.
 8. Jeśli szkic jest gotowy, kliknij `Zapisz do bazy`.
 9. Jeśli potrzebne są poprawki, kliknij `Odrzuć` i wpisz konkretne uwagi.
 10. W każdej chwili możesz użyć `Kopiuj MD` albo `Pobierz .md`, aby wyeksportować wynik poza aplikację.
 
-![Tryb Autor: finalny szkic przed zapisem](docs/screenshots/how-to-use/03-author-finalny-szkic.png)
+![Tryb Autor: drugi checkpoint z draftem, warningiem i akcją zapisu](docs/screenshots/how-to-use/03-author-finalny-szkic.png)
 
 ### 4. Poprawianie gotowego tekstu w trybie `Cień`
 
 Tryb `Cień` służy do przepisywania istniejącej treści tak, aby lepiej pasowała do stylu autora lub marki.
 
 1. Przełącz aplikację na tryb `Cień`.
-2. Wklej tekst do analizy.
+2. Wklej tekst do pola `Wklej tekst do analizy...`.
 3. Kliknij `Analizuj styl` albo użyj skrótu `Cmd/Ctrl + Enter`.
 
-![Tryb Cień: rozpoczęcie analizy](docs/screenshots/how-to-use/04-shadow-start.png)
+![Tryb Cień: ekran startowy z polem wklejania tekstu](docs/screenshots/how-to-use/04-shadow-start.png)
 
-4. Po analizie zobaczysz trzy główne obszary:
+4. Po analizie Bond zatrzyma się na checkpointcie `Adnotacje` i pokaże przyciski `Zatwierdź` oraz `Odrzuć`.
+5. Zobaczysz trzy główne obszary:
    listę adnotacji po lewej,
    tekst oryginalny z podświetleniami pośrodku,
    poprawioną wersję po prawej.
-5. Klikaj adnotacje, aby szybko przechodzić do konkretnych zmian.
-6. Jeśli poprawki są trafne, kliknij `Zatwierdź`.
-7. Jeśli chcesz wymusić nową iterację, wpisz komentarz i kliknij `Odrzuć`.
+6. Klikaj adnotacje, aby szybko przechodzić do konkretnych zmian.
+7. Jeśli chcesz wymusić nową iterację, wpisz komentarz i kliknij `Odrzuć`. Jeśli poprawki są trafne, kliknij `Zatwierdź`.
 
-![Tryb Cień: przegląd adnotacji i decyzja](docs/screenshots/how-to-use/05-shadow-checkpoint.png)
+![Tryb Cień: checkpoint adnotacji z porównaniem wersji](docs/screenshots/how-to-use/05-shadow-checkpoint.png)
 
-8. Po zatwierdzeniu otrzymasz finalną wersję poprawionego tekstu, gotową do dalszej ręcznej edycji albo skopiowania.
+8. Po zakończeniu analizy poprawiona wersja pozostaje widoczna po prawej stronie, a lista adnotacji nadal pozwala szybko uzasadnić każdą zmianę.
 
-![Tryb Cień: gotowa wersja poprawiona](docs/screenshots/how-to-use/06-shadow-wynik.png)
+![Tryb Cień: poprawiona wersja tekstu z zachowaną listą adnotacji](docs/screenshots/how-to-use/06-shadow-wynik.png)
 
 ### 5. Najczęstsze scenariusze użycia
 
