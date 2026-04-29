@@ -2,7 +2,7 @@
 
 **Defined:** 2026-02-20
 **Core Value:** Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksymalnie 4 godzin — przy zachowaniu stylu nieodróżnialnego od ludzkiego, z human-in-the-loop przed każdą publikacją.
-**Status:** v1 signed off historycznie na 2026-04-28; follow-up regresyjny otwarty po sweepie E2E z 2026-04-29 został zamknięty i ponownie zwalidowany (`pytest`, frontend `lint/build`, detached-runtime harness, post-signoff harness), więc bieżący branch znowu może być traktowany jako świeżo rewalidowany sign-off candidate.
+**Status:** v1 signed off historycznie na 2026-04-28; follow-up regresyjny po sweepie E2E z 2026-04-29 jest zamknięty i ponownie zwalidowany, a dodatkowy follow-up z 2026-04-29 dołożył normalizację briefów Author, szczegółowe `checkpoint_2` validation details oraz browser proof dla reload + reject recovery. Mapping wymagań v1 pozostaje kompletny, ale kuratorowany eval jakości Author nadal kończy się `pass_with_warnings`, więc jakość pełnej zgodności draftu z walidatorem pozostaje otwartym follow-upem poza samym mappingiem wymagań.
 
 ---
 
@@ -155,4 +155,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 ---
 
 *Requirements defined: 2026-02-20*
-*Last updated: 2026-04-29 — wymagania v1 pozostają mapped complete; dodatkowy sweep E2E zamknął CP1 structure visibility, CP2 validation-warning visibility i mode-switch leak, ale odsłonił otwarte follow-upy regresyjne poza samym mappingiem wymagań*
+*Last updated: 2026-04-29 — wymagania v1 pozostają mapped complete; po sweepie E2E zamknięto recovery/regression follow-up i dodano structured-brief normalization oraz szczegółowy payload walidacji `checkpoint_2`, ale curated Author-quality eval pozostaje otwartym follow-upem poza samym mappingiem wymagań*

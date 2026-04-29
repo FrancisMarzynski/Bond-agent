@@ -79,6 +79,8 @@ def checkpoint_2_node(state: AuthorState) -> dict | Command:
             "Draft nie spełnia wszystkich wymogów SEO po automatycznych poprawkach. "
             "Rozważ zatwierdzenie i ręczną edycję lub odrzuć z feedbackiem."
         )
+        if state.get("draft_validation_details") is not None:
+            interrupt_payload["draft_validation_details"] = state["draft_validation_details"]
 
     user_response = interrupt(interrupt_payload)
 

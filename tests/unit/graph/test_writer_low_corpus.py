@@ -31,6 +31,30 @@ sys.modules.setdefault("bond.store.chroma", fake_chroma)
 writer = importlib.import_module("bond.graph.nodes.writer")
 
 
+def _valid_report(primary_keyword: str = "Temat", min_words: int = 800) -> dict:
+    return {
+        "passed": True,
+        "checks": {
+            "keyword_in_h1": True,
+            "keyword_in_first_para": True,
+            "meta_desc_length_ok": True,
+            "word_count_ok": True,
+            "no_forbidden_words": True,
+        },
+        "failure_codes": [],
+        "failures": [],
+        "primary_keyword": primary_keyword,
+        "body_word_count": min_words + 50,
+        "min_words": min_words,
+        "meta_description_length": 155,
+        "meta_description_min_length": 150,
+        "meta_description_max_length": 160,
+        "forbidden_stems": [],
+        "attempt_count": 0,
+        "attempts": [],
+    }
+
+
 class LowCorpusInterrupt(Exception):
     def __init__(self, payload):
         super().__init__("interrupt")
@@ -89,7 +113,7 @@ async def test_writer_low_corpus_approve_continues_generation(monkeypatch):
     monkeypatch.setattr(writer, "_fetch_rag_exemplars", lambda topic, n=5: [])
     monkeypatch.setattr(writer, "build_context_block", lambda context: "")
     monkeypatch.setattr(
-        writer, "_validate_draft", lambda draft, keyword, min_words: {"seo": True}
+        writer, "_validate_draft", lambda draft, keyword, min_words: _valid_report(keyword, min_words)
     )
     monkeypatch.setattr(writer, "estimate_cost_usd", lambda *args, **kwargs: 0.25)
 
@@ -104,6 +128,7 @@ async def test_writer_low_corpus_approve_continues_generation(monkeypatch):
 
     assert result["draft"].startswith("# Tytul")
     assert result["draft_validated"] is True
+    assert result["draft_validation_details"]["attempt_count"] == 1
     assert result["tokens_used_draft"] == 30
     assert result["estimated_cost_usd"] == 0.25
 
@@ -117,4 +142,8 @@ async def test_writer_low_corpus_reject_and_abort_terminate_safely(monkeypatch, 
     result = await writer.writer_node({"topic": "Temat", "keywords": []})
 
     assert result.goto == END
-    assert result.update == {"draft": "", "draft_validated": False}
+    assert result.update == {
+        "draft": "",
+        "draft_validated": False,
+        "draft_validation_details": None,
+    }

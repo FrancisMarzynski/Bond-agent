@@ -1,0 +1,136 @@
+{
+  "generated_at": "2026-04-29T09:45:24.258899+00:00",
+  "overall_status": "pass_with_warnings",
+  "cases": [
+    {
+      "case_id": "labeled-brief-e2e-shape",
+      "status": "pass_with_warnings",
+      "thread_id": "9b413e4f-aeb1-479b-81ec-26cb6b1ea19f",
+      "duration_seconds": 86.82132279104553,
+      "normalized_topic": "AI w marketingu B2B dla firm przemysłowych",
+      "normalized_keywords": [
+        "AI w marketingu B2B",
+        "lead generation",
+        "automatyzacja marketingu"
+      ],
+      "normalized_context_dynamic": "Ton ekspercki.\nBez list wypunktowanych.\nDodaj 2 przykłady z polskiego rynku.",
+      "normalization_errors": [],
+      "checkpoint_id": "checkpoint_2",
+      "draft_validated": false,
+      "attempt_count": 3,
+      "first_attempt_passed": false,
+      "first_attempt_failed_codes": [
+        "keyword_in_first_para",
+        "meta_desc_length_ok",
+        "word_count_ok"
+      ],
+      "final_failure_codes": [
+        "word_count_ok"
+      ],
+      "final_failure_messages": [
+        "Treść artykułu ma 465 słów; wymagane minimum to 800."
+      ],
+      "draft_path": ".planning/artifacts/author-quality-20260429-113845/drafts/labeled-brief-e2e-shape.md",
+      "error": null
+    },
+    {
+      "case_id": "plain-topic-only",
+      "status": "pass_with_warnings",
+      "thread_id": "33c60713-c959-42ba-ab55-f6ca546ff1e3",
+      "duration_seconds": 130.23365308297798,
+      "normalized_topic": "Jak cyfrowe bliźniaki wspierają utrzymanie ruchu w zakładach przemysłowych?",
+      "normalized_keywords": [],
+      "normalized_context_dynamic": null,
+      "normalization_errors": [],
+      "checkpoint_id": "checkpoint_2",
+      "draft_validated": false,
+      "attempt_count": 3,
+      "first_attempt_passed": false,
+      "first_attempt_failed_codes": [
+        "keyword_in_first_para",
+        "meta_desc_length_ok",
+        "word_count_ok"
+      ],
+      "final_failure_codes": [
+        "keyword_in_first_para",
+        "meta_desc_length_ok",
+        "word_count_ok"
+      ],
+      "final_failure_messages": [
+        "Pierwszy akapit musi zawierać główne słowo kluczowe \"Jak cyfrowe bliźniaki wspierają utrzymanie ruchu w zakładach przemysłowych?\".",
+        "Meta-description musi mieć 150-160 znaków; obecnie ma 132.",
+        "Treść artykułu ma 543 słów; wymagane minimum to 800."
+      ],
+      "draft_path": ".planning/artifacts/author-quality-20260429-113845/drafts/plain-topic-only.md",
+      "error": null
+    },
+    {
+      "case_id": "explicit-keywords-api-fields",
+      "status": "pass_with_warnings",
+      "thread_id": "071e4db9-1992-4042-9088-eca6eee0c7a2",
+      "duration_seconds": 85.35657400009222,
+      "normalized_topic": "Strategia content marketingowa dla firm BIM pozyskujących leady B2B",
+      "normalized_keywords": [
+        "content marketing BIM",
+        "lead generation B2B",
+        "BIM marketing"
+      ],
+      "normalized_context_dynamic": "Pisz konkretnie, po polsku, z naciskiem na proces wdrożenia i mierzalne efekty.",
+      "normalization_errors": [],
+      "checkpoint_id": "checkpoint_2",
+      "draft_validated": false,
+      "attempt_count": 3,
+      "first_attempt_passed": false,
+      "first_attempt_failed_codes": [
+        "meta_desc_length_ok",
+        "word_count_ok"
+      ],
+      "final_failure_codes": [
+        "keyword_in_first_para",
+        "meta_desc_length_ok",
+        "word_count_ok",
+        "no_forbidden_words"
+      ],
+      "final_failure_messages": [
+        "Pierwszy akapit musi zawierać główne słowo kluczowe \"content marketing BIM\".",
+        "Meta-description musi mieć 150-160 znaków; obecnie ma 138.",
+        "Treść artykułu ma 631 słów; wymagane minimum to 800.",
+        "Usuń niedozwolone rdzenie słów: nowoczesn."
+      ],
+      "draft_path": ".planning/artifacts/author-quality-20260429-113845/drafts/explicit-keywords-api-fields.md",
+      "error": null
+    },
+    {
+      "case_id": "style-heavy-brief",
+      "status": "pass_with_warnings",
+      "thread_id": "0f5cb302-aff9-446e-9f40-318d07741745",
+      "duration_seconds": 96.40654487488791,
+      "normalized_topic": "Jak firmy projektowe wdrażają AI bez utraty kontroli nad jakością",
+      "normalized_keywords": [
+        "AI w firmie projektowej",
+        "governance AI"
+      ],
+      "normalized_context_dynamic": "Ton krytyczny, bez obietnic sprzedażowych.\nPokaż ryzyka, proces wdrożenia i checklistę decyzyjną.",
+      "normalization_errors": [],
+      "checkpoint_id": "checkpoint_2",
+      "draft_validated": false,
+      "attempt_count": 3,
+      "first_attempt_passed": false,
+      "first_attempt_failed_codes": [
+        "keyword_in_first_para",
+        "meta_desc_length_ok",
+        "word_count_ok"
+      ],
+      "final_failure_codes": [
+        "meta_desc_length_ok",
+        "word_count_ok"
+      ],
+      "final_failure_messages": [
+        "Meta-description musi mieć 150-160 znaków; obecnie ma 146.",
+        "Treść artykułu ma 545 słów; wymagane minimum to 800."
+      ],
+      "draft_path": ".planning/artifacts/author-quality-20260429-113845/drafts/style-heavy-brief.md",
+      "error": null
+    }
+  ]
+}

@@ -68,6 +68,42 @@ const AnnotationSchema = z.object({
   start_index: z.number(),
   end_index: z.number(),
 });
+const DraftValidationFailureSchema = z.object({
+  code: z.enum([
+    "keyword_in_h1",
+    "keyword_in_first_para",
+    "meta_desc_length_ok",
+    "word_count_ok",
+    "no_forbidden_words",
+  ]),
+  message: z.string(),
+});
+const DraftValidationAttemptSchema = z.object({
+  attempt_number: z.number(),
+  passed: z.boolean(),
+  failed_codes: z.array(z.string()),
+});
+const DraftValidationDetailsSchema = z.object({
+  passed: z.boolean(),
+  checks: z.object({
+    keyword_in_h1: z.boolean(),
+    keyword_in_first_para: z.boolean(),
+    meta_desc_length_ok: z.boolean(),
+    word_count_ok: z.boolean(),
+    no_forbidden_words: z.boolean(),
+  }),
+  failure_codes: z.array(z.string()),
+  failures: z.array(DraftValidationFailureSchema),
+  primary_keyword: z.string(),
+  body_word_count: z.number(),
+  min_words: z.number(),
+  meta_description_length: z.number(),
+  meta_description_min_length: z.number(),
+  meta_description_max_length: z.number(),
+  forbidden_stems: z.array(z.string()),
+  attempt_count: z.number(),
+  attempts: z.array(DraftValidationAttemptSchema),
+});
 const HitlPauseSchema = z.object({
   checkpoint_id: z.string(),
   type: z.string(),
@@ -83,6 +119,7 @@ const HitlPauseSchema = z.object({
   draft_validated: z.boolean().optional(),
   cp2_iterations: z.number().optional(),
   validation_warning: z.string().optional(),
+  draft_validation_details: DraftValidationDetailsSchema.optional(),
   corpus_count: z.number().optional(),
   threshold: z.number().optional(),
   annotations: z.array(AnnotationSchema).optional(),
@@ -228,6 +265,7 @@ async function consumeStream(
                 draft_validated: result.data.draft_validated,
                 cp2_iterations: result.data.cp2_iterations,
                 validation_warning: result.data.validation_warning,
+                draft_validation_details: result.data.draft_validation_details,
                 corpus_count: result.data.corpus_count,
                 threshold: result.data.threshold,
                 annotations: result.data.annotations,

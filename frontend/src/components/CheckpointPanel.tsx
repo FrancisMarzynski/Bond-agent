@@ -149,6 +149,7 @@ export function CheckpointPanel() {
   const researchReport = hitlPause.research_report;
   const headingStructure = hitlPause.heading_structure;
   const validationWarning = hitlPause.validation_warning;
+  const validationFailures = hitlPause.draft_validation_details?.failures ?? [];
 
   // --- Standard checkpoint UI (cp1 / cp2) ---
   return (
@@ -200,11 +201,22 @@ export function CheckpointPanel() {
         </div>
       )}
 
-      {isCheckpoint2 && validationWarning && (
+      {isCheckpoint2 && (validationWarning || validationFailures.length > 0) && (
         <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/5 px-3 py-2">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
-          <div className="min-w-0 text-xs text-muted-foreground whitespace-pre-wrap">
-            {validationWarning}
+          <div className="min-w-0 text-xs text-muted-foreground">
+            {validationWarning && (
+              <div className="whitespace-pre-wrap">{validationWarning}</div>
+            )}
+            {validationFailures.length > 0 && (
+              <div className="mt-2 flex flex-col gap-1">
+                {validationFailures.map((failure) => (
+                  <div key={failure.code} className="whitespace-pre-wrap">
+                    - {failure.message}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

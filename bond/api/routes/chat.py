@@ -8,6 +8,7 @@ from fastapi import APIRouter, Request
 from pydantic import BaseModel, field_validator
 from sse_starlette.sse import EventSourceResponse
 
+from bond.api.author_input import normalize_author_input
 from bond.api.runtime import ActiveRun, CommandRuntime
 from bond.api.stream import parse_stream_events
 from bond.schemas import ChatHistoryResponse, StreamEvent
@@ -51,6 +52,10 @@ _STAGE_MAP = {
     "shadow_annotate": "shadow_annotation",
     "shadow_checkpoint": "shadow_annotation",
 }
+_CHECKPOINT_2_VALIDATION_WARNING = (
+    "Draft nie spełnia wszystkich wymogów SEO po automatycznych poprawkach. "
+    "Rozważ zatwierdzenie i ręczną edycję lub odrzuć z feedbackiem."
+)
 
 
 def _build_hitl_pause_from_state(next_node: str, st: dict[str, Any]) -> dict[str, Any] | None:
@@ -76,7 +81,7 @@ def _build_hitl_pause_from_state(next_node: str, st: dict[str, Any]) -> dict[str
         }
 
     if next_node == "checkpoint_2":
-        return {
+        payload = {
             "checkpoint_id": "checkpoint_2",
             "type": "approve_reject",
             "draft": st.get("draft", ""),
@@ -84,6 +89,11 @@ def _build_hitl_pause_from_state(next_node: str, st: dict[str, Any]) -> dict[str
             "cp2_iterations": st.get("cp2_iterations", 0),
             "iterations_remaining": 3 - st.get("cp2_iterations", 0),
         }
+        if not st.get("draft_validated", True):
+            payload["validation_warning"] = _CHECKPOINT_2_VALIDATION_WARNING
+            if st.get("draft_validation_details") is not None:
+                payload["draft_validation_details"] = st["draft_validation_details"]
+        return payload
 
     if next_node == "shadow_checkpoint":
         return {
@@ -123,6 +133,19 @@ def _build_hitl_pause_from_snapshot(state_snapshot) -> dict[str, Any] | None:
                                 hitl_pause[k] = v
                         if task.name == "checkpoint_2" and "iterations_remaining" not in hitl_pause:
                             hitl_pause["iterations_remaining"] = 3 - st.get("cp2_iterations", 0)
+                        if (
+                            task.name == "checkpoint_2"
+                            and not st.get("draft_validated", True)
+                            and "validation_warning" not in hitl_pause
+                        ):
+                            hitl_pause["validation_warning"] = _CHECKPOINT_2_VALIDATION_WARNING
+                        if (
+                            task.name == "checkpoint_2"
+                            and not st.get("draft_validated", True)
+                            and "draft_validation_details" not in hitl_pause
+                            and st.get("draft_validation_details") is not None
+                        ):
+                            hitl_pause["draft_validation_details"] = st["draft_validation_details"]
                         break
                 if hitl_pause:
                     break
@@ -157,6 +180,8 @@ class ChatRequest(BaseModel):
     message: str
     thread_id: Optional[str] = None
     mode: str = "author"
+    keywords: Optional[list[str]] = None
+    context_dynamic: Optional[str] = None
 
     @field_validator("message")
     @classmethod
@@ -334,14 +359,23 @@ async def chat_stream(req: ChatRequest, request: Request):
     runtime: CommandRuntime = request.app.state.runtime
 
     initial_state: dict = {
-        "topic": req.message,
-        "keywords": [],
         "messages": [{"role": "user", "content": req.message}],
         "mode": req.mode,
         "thread_id": thread_id,
     }
     if req.mode == "shadow":
+        initial_state["topic"] = req.message
+        initial_state["keywords"] = []
         initial_state["original_text"] = req.message
+    else:
+        normalized_input = normalize_author_input(
+            req.message,
+            keywords=req.keywords,
+            context_dynamic=req.context_dynamic,
+        )
+        initial_state["topic"] = normalized_input["topic"]
+        initial_state["keywords"] = normalized_input["keywords"]
+        initial_state["context_dynamic"] = normalized_input["context_dynamic"]
 
     async def producer(run: ActiveRun) -> None:
         run.publish(
@@ -504,6 +538,19 @@ async def get_chat_history(thread_id: str, request: Request, state_snapshot=None
                                 hitl_pause[k] = v
                         if task.name == "checkpoint_2" and "iterations_remaining" not in hitl_pause:
                             hitl_pause["iterations_remaining"] = 3 - st.get("cp2_iterations", 0)
+                        if (
+                            task.name == "checkpoint_2"
+                            and not st.get("draft_validated", True)
+                            and "validation_warning" not in hitl_pause
+                        ):
+                            hitl_pause["validation_warning"] = _CHECKPOINT_2_VALIDATION_WARNING
+                        if (
+                            task.name == "checkpoint_2"
+                            and not st.get("draft_validated", True)
+                            and "draft_validation_details" not in hitl_pause
+                            and st.get("draft_validation_details") is not None
+                        ):
+                            hitl_pause["draft_validation_details"] = st["draft_validation_details"]
                         break
                 if hitl_pause:
                     break

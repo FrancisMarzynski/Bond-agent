@@ -99,6 +99,10 @@ def screenshot(page: Page, path: Path) -> None:
     page.screenshot(path=str(path), full_page=True)
 
 
+def author_input_locator(page: Page):
+    return page.locator("textarea").first
+
+
 def editor_locator(page: Page):
     return page.locator(EDITOR_SELECTOR).first
 
@@ -190,7 +194,7 @@ def reach_checkpoint_2(
     topic: str,
     screenshot_path: Path,
 ) -> str:
-    page.get_by_placeholder("Wpisz temat i wymagania...").fill(topic)
+    author_input_locator(page).fill(topic)
     page.get_by_role("button", name="Wyślij").click()
 
     thread_id = wait_for_session_thread_id(page, timeout_ms=15_000)

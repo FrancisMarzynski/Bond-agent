@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Optional
+from typing import Literal, Optional
 
 import markdown as _md
 from bs4 import BeautifulSoup
@@ -11,7 +11,13 @@ from langgraph.graph import END
 from langgraph.types import Command, interrupt
 
 from bond.config import settings
-from bond.graph.state import AuthorState
+from bond.graph.state import (
+    AuthorState,
+    DraftValidationAttempt,
+    DraftValidationChecks,
+    DraftValidationDetails,
+    DraftValidationFailure,
+)
 from bond.llm import estimate_cost_usd, get_draft_llm
 from bond.prompts.context import build_context_block
 from bond.prompts.research_context import select_research_context
@@ -24,6 +30,8 @@ log = logging.getLogger(__name__)
 
 _RERANK_FETCH_N = 15  # Candidates fetched before reranking
 _WRITER_MAX_OUTPUT_TOKENS = 4096
+_META_DESCRIPTION_MIN_LENGTH = 150
+_META_DESCRIPTION_MAX_LENGTH = 160
 
 # Module-level singleton — model loaded once per process
 _ranker = None
@@ -189,12 +197,12 @@ def _check_forbidden_words(draft: str) -> list[str]:
 
 def _validate_draft(
     draft: str, primary_keyword: str, min_words: int
-) -> dict[str, bool]:
-    """Check all hard constraints. Returns dict of constraint_name -> passed."""
+) -> DraftValidationDetails:
+    """Check hard constraints and return a structured validation report."""
     soup = _parse_draft_to_soup(draft)
 
     h1 = soup.find("h1")
-    h1_text = h1.get_text() if h1 else ""
+    h1_text = h1.get_text().strip() if h1 else ""
 
     first_para = next(
         (p.get_text().strip() for p in soup.find_all("p") if p.get_text().strip()), ""
@@ -210,14 +218,113 @@ def _validate_draft(
             break
 
     pk_lower = primary_keyword.lower()
+    body_word_count = _count_body_words(soup)
+    forbidden_stems = _check_forbidden_words(draft)
+    meta_description_length = len(meta_desc)
 
-    return {
+    checks: DraftValidationChecks = {
         "keyword_in_h1": bool(h1_text and pk_lower in h1_text.lower()),
         "keyword_in_first_para": pk_lower in first_para.lower(),
-        "meta_desc_length_ok": 150 <= len(meta_desc) <= 160,
-        "word_count_ok": _count_body_words(soup) >= min_words,
-        "no_forbidden_words": len(_check_forbidden_words(draft)) == 0,
+        "meta_desc_length_ok": (
+            _META_DESCRIPTION_MIN_LENGTH
+            <= meta_description_length
+            <= _META_DESCRIPTION_MAX_LENGTH
+        ),
+        "word_count_ok": body_word_count >= min_words,
+        "no_forbidden_words": len(forbidden_stems) == 0,
     }
+    failure_codes = [code for code, passed in checks.items() if not passed]
+    failures: list[DraftValidationFailure] = []
+
+    if not checks["keyword_in_h1"]:
+        failures.append(
+            {
+                "code": "keyword_in_h1",
+                "message": (
+                    f'H1 musi zawierać główne słowo kluczowe "{primary_keyword}".'
+                ),
+            }
+        )
+    if not checks["keyword_in_first_para"]:
+        failures.append(
+            {
+                "code": "keyword_in_first_para",
+                "message": (
+                    f'Pierwszy akapit musi zawierać główne słowo kluczowe "{primary_keyword}".'
+                ),
+            }
+        )
+    if not checks["meta_desc_length_ok"]:
+        failures.append(
+            {
+                "code": "meta_desc_length_ok",
+                "message": (
+                    "Meta-description musi mieć 150-160 znaków; "
+                    f"obecnie ma {meta_description_length}."
+                ),
+            }
+        )
+    if not checks["word_count_ok"]:
+        failures.append(
+            {
+                "code": "word_count_ok",
+                "message": (
+                    f"Treść artykułu ma {body_word_count} słów; wymagane minimum to {min_words}."
+                ),
+            }
+        )
+    if not checks["no_forbidden_words"]:
+        failures.append(
+            {
+                "code": "no_forbidden_words",
+                "message": (
+                    "Usuń niedozwolone rdzenie słów: "
+                    + ", ".join(forbidden_stems)
+                    + "."
+                ),
+            }
+        )
+
+    return {
+        "passed": len(failure_codes) == 0,
+        "checks": checks,
+        "failure_codes": failure_codes,
+        "failures": failures,
+        "primary_keyword": primary_keyword,
+        "body_word_count": body_word_count,
+        "min_words": min_words,
+        "meta_description_length": meta_description_length,
+        "meta_description_min_length": _META_DESCRIPTION_MIN_LENGTH,
+        "meta_description_max_length": _META_DESCRIPTION_MAX_LENGTH,
+        "forbidden_stems": forbidden_stems,
+        "attempt_count": 0,
+        "attempts": [],
+    }
+
+
+def _build_revision_instructions(
+    validation: DraftValidationDetails,
+    cp2_feedback: str | None,
+) -> tuple[str, Literal["validation", "user_and_validation"]]:
+    failure_list = "\n".join(
+        f"- {failure['message']}" for failure in validation.get("failures", [])
+    )
+
+    if cp2_feedback:
+        return (
+            f"""Priorytet 1 — uwzględnij feedback użytkownika:
+{cp2_feedback}
+
+Priorytet 2 — finalny artykuł musi też spełnić wszystkie poniższe wymagania SEO:
+{failure_list}""",
+            "user_and_validation",
+        )
+
+    return (
+        f"""Napraw obecny draft tak, aby spełnił wszystkie poniższe wymagania SEO:
+{failure_list}""",
+        "validation",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -241,8 +348,9 @@ def _build_writer_user_prompt(
     exemplars: list[dict],
     min_words: int,
     context_block: str = "",
-    cp2_feedback: Optional[str] = None,
+    revision_instructions: Optional[str] = None,
     current_draft: Optional[str] = None,
+    revision_source: Literal["user", "validation", "user_and_validation"] | None = None,
 ) -> str:
     """Build the user message for the writer LLM. System directives live in WRITER_SYSTEM_PROMPT."""
     primary_keyword = keywords[0] if keywords else topic
@@ -266,13 +374,32 @@ Przejmij ton, rytm zdań i sposób argumentacji — szczególnie z fragmentów "
 
     context_section = f"\n{context_block}\n" if context_block else ""
 
-    if cp2_feedback and current_draft:
+    if revision_instructions and current_draft:
+        feedback_heading = "FEEDBACK UŻYTKOWNIKA"
+        task_description = (
+            "Popraw TYLKO wskazane sekcje artykułu. Zachowaj pozostałe sekcje bez zmian."
+        )
+
+        if revision_source == "validation":
+            feedback_heading = "WYMAGANE POPRAWKI SEO"
+            task_description = (
+                "Popraw obecny draft tak, aby usunąć konkretne błędy walidacji SEO. "
+                "Zachowaj poprawne sekcje i nie przepisuj całości bez potrzeby."
+            )
+        elif revision_source == "user_and_validation":
+            feedback_heading = "FEEDBACK I WYMAGANE POPRAWKI"
+            task_description = (
+                "Popraw obecny draft zgodnie z feedbackiem użytkownika oraz dodatkowymi "
+                "wymaganiami SEO. Feedback użytkownika ma pierwszeństwo, ale finalny "
+                "tekst musi spełnić wszystkie twarde wymagania."
+            )
+
         return f"""## ZADANIE
-Popraw TYLKO wskazane sekcje artykułu. Zachowaj pozostałe sekcje bez zmian.
+{task_description}
 {context_section}
 
-## FEEDBACK UŻYTKOWNIKA
-{cp2_feedback}
+## {feedback_heading}
+{revision_instructions}
 
 ## OBECNY DRAFT (do poprawki)
 {current_draft}
@@ -363,7 +490,11 @@ async def writer_node(state: AuthorState) -> dict:
         if response.action != "approve":
             return Command(
                 goto=END,
-                update={"draft": "", "draft_validated": False},
+                update={
+                    "draft": "",
+                    "draft_validated": False,
+                    "draft_validation_details": None,
+                },
             )
 
     # Select DRAFT_MODEL LLM (temperature 0.5–0.7 per COMMUNICATION_STYLE.md §3)
@@ -403,11 +534,47 @@ async def writer_node(state: AuthorState) -> dict:
 
     # Generate draft with silent auto-retry (max 2 additional attempts = 3 total)
     draft = ""
-    validation = {}
+    validation: DraftValidationDetails = {
+        "passed": False,
+        "checks": {
+            "keyword_in_h1": False,
+            "keyword_in_first_para": False,
+            "meta_desc_length_ok": False,
+            "word_count_ok": False,
+            "no_forbidden_words": False,
+        },
+        "failure_codes": [],
+        "failures": [],
+        "primary_keyword": primary_keyword,
+        "body_word_count": 0,
+        "min_words": min_words,
+        "meta_description_length": 0,
+        "meta_description_min_length": _META_DESCRIPTION_MIN_LENGTH,
+        "meta_description_max_length": _META_DESCRIPTION_MAX_LENGTH,
+        "forbidden_stems": [],
+        "attempt_count": 0,
+        "attempts": [],
+    }
     max_attempts = 3
     total_draft_input_tokens = 0
     total_draft_output_tokens = 0
+    attempt_summaries: list[DraftValidationAttempt] = []
     for attempt in range(max_attempts):
+        revision_instructions = None
+        revision_source: Literal["user", "validation", "user_and_validation"] | None = None
+        revision_draft = None
+
+        if attempt == 0 and cp2_feedback and current_draft:
+            revision_instructions = cp2_feedback
+            revision_source = "user"
+            revision_draft = current_draft
+        elif attempt > 0 and draft:
+            revision_instructions, revision_source = _build_revision_instructions(
+                validation,
+                cp2_feedback,
+            )
+            revision_draft = draft
+
         user_prompt = _build_writer_user_prompt(
             topic=topic,
             keywords=keywords,
@@ -416,8 +583,9 @@ async def writer_node(state: AuthorState) -> dict:
             exemplars=exemplars,
             min_words=min_words,
             context_block=context_block,
-            cp2_feedback=cp2_feedback if attempt == 0 else None,
-            current_draft=current_draft if attempt == 0 else None,
+            revision_instructions=revision_instructions,
+            current_draft=revision_draft,
+            revision_source=revision_source,
         )
         messages = [
             SystemMessage(content=WRITER_SYSTEM_PROMPT),
@@ -431,27 +599,33 @@ async def writer_node(state: AuthorState) -> dict:
         total_draft_output_tokens += usage.get("output_tokens", 0)
 
         validation = _validate_draft(draft, primary_keyword, min_words)
+        attempt_summaries.append(
+            {
+                "attempt_number": attempt + 1,
+                "passed": validation["passed"],
+                "failed_codes": list(validation["failure_codes"]),
+            }
+        )
+        validation["attempt_count"] = len(attempt_summaries)
+        validation["attempts"] = list(attempt_summaries)
 
-        all_passed = all(validation.values())
-        if all_passed:
+        if validation["passed"]:
             break
 
         if attempt < max_attempts - 1:
-            failed = [k for k, v in validation.items() if not v]
             log.warning(
                 "Writer auto-retry %d/%d: failed constraints: %s",
                 attempt + 1,
                 max_attempts - 1,
-                failed,
+                validation["failure_codes"],
             )
 
     # All retries exhausted (or succeeded above)
-    if not all(validation.values()):
-        failed_constraints = [k for k, v in validation.items() if not v]
+    if not validation["passed"]:
         log.warning(
             "Draft failed validation after %d attempts. Failed: %s",
             max_attempts,
-            failed_constraints,
+            validation["failure_codes"],
         )
 
     call_cost = estimate_cost_usd(
@@ -462,7 +636,8 @@ async def writer_node(state: AuthorState) -> dict:
 
     return {
         "draft": draft,
-        "draft_validated": all(validation.values()),
+        "draft_validated": validation["passed"],
+        "draft_validation_details": validation,
         "tokens_used_draft": existing_draft_tokens
         + total_draft_input_tokens
         + total_draft_output_tokens,

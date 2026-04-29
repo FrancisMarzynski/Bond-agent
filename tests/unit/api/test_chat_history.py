@@ -14,6 +14,47 @@ class MockStateSnapshot:
         self.tasks = tasks or []
 
 
+def _draft_validation_details() -> dict:
+    return {
+        "passed": False,
+        "checks": {
+            "keyword_in_h1": False,
+            "keyword_in_first_para": True,
+            "meta_desc_length_ok": False,
+            "word_count_ok": True,
+            "no_forbidden_words": True,
+        },
+        "failure_codes": ["keyword_in_h1", "meta_desc_length_ok"],
+        "failures": [
+            {
+                "code": "keyword_in_h1",
+                "message": 'H1 musi zawierać główne słowo kluczowe "AI marketing".',
+            },
+            {
+                "code": "meta_desc_length_ok",
+                "message": "Meta-description musi mieć 150-160 znaków; obecnie ma 121.",
+            },
+        ],
+        "primary_keyword": "AI marketing",
+        "body_word_count": 920,
+        "min_words": 800,
+        "meta_description_length": 121,
+        "meta_description_min_length": 150,
+        "meta_description_max_length": 160,
+        "forbidden_stems": [],
+        "attempt_count": 3,
+        "attempts": [
+            {"attempt_number": 1, "passed": False, "failed_codes": ["keyword_in_h1"]},
+            {"attempt_number": 2, "passed": False, "failed_codes": ["meta_desc_length_ok"]},
+            {
+                "attempt_number": 3,
+                "passed": False,
+                "failed_codes": ["keyword_in_h1", "meta_desc_length_ok"],
+            },
+        ],
+    }
+
+
 def _build_client(state_snapshot: MockStateSnapshot, runtime: CommandRuntime = None) -> TestClient:
     app = FastAPI()
     mock_graph = AsyncMock()
@@ -93,6 +134,35 @@ def test_get_chat_history_returns_paused_shadow_checkpoint_history():
         "shadow_corrected_text": "Tekst poprawiony",
         "iteration_count": 1,
     }
+
+
+def test_get_chat_history_surfaces_checkpoint_2_validation_details():
+    validation_details = _draft_validation_details()
+    client = _build_client(
+        MockStateSnapshot(
+            values={
+                "messages": [{"role": "user", "content": "Temat"}],
+                "draft": "Draft testowy",
+                "draft_validated": False,
+                "draft_validation_details": validation_details,
+                "cp2_iterations": 2,
+            },
+            next_nodes=["checkpoint_2"],
+        )
+    )
+
+    response = client.get("/api/chat/history/thread-cp2")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["session_status"] == "paused"
+    assert payload["pending_node"] == "checkpoint_2"
+    assert payload["can_resume"] is True
+    assert payload["hitlPause"]["checkpoint_id"] == "checkpoint_2"
+    assert payload["hitlPause"]["draft_validated"] is False
+    assert payload["hitlPause"]["iterations_remaining"] == 1
+    assert payload["hitlPause"]["validation_warning"].startswith("Draft nie spełnia")
+    assert payload["hitlPause"]["draft_validation_details"] == validation_details
 
 
 def test_get_chat_history_does_not_fabricate_hitl_pause_for_running_session():

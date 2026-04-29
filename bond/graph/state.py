@@ -11,6 +11,47 @@ class Annotation(TypedDict):
     end_index: int              # character end index of original_span in text (exclusive)
 
 
+class DraftValidationFailure(TypedDict):
+    code: Literal[
+        "keyword_in_h1",
+        "keyword_in_first_para",
+        "meta_desc_length_ok",
+        "word_count_ok",
+        "no_forbidden_words",
+    ]
+    message: str
+
+
+class DraftValidationAttempt(TypedDict):
+    attempt_number: int
+    passed: bool
+    failed_codes: list[str]
+
+
+class DraftValidationChecks(TypedDict):
+    keyword_in_h1: bool
+    keyword_in_first_para: bool
+    meta_desc_length_ok: bool
+    word_count_ok: bool
+    no_forbidden_words: bool
+
+
+class DraftValidationDetails(TypedDict):
+    passed: bool
+    checks: DraftValidationChecks
+    failure_codes: list[str]
+    failures: list[DraftValidationFailure]
+    primary_keyword: str
+    body_word_count: int
+    min_words: int
+    meta_description_length: int
+    meta_description_min_length: int
+    meta_description_max_length: int
+    forbidden_stems: list[str]
+    attempt_count: int
+    attempts: list[DraftValidationAttempt]
+
+
 class BondState(TypedDict):
     # --- Routing ---
     mode: NotRequired[Literal["author", "shadow"]]  # omit → defaults to "author" branch
@@ -43,6 +84,7 @@ class BondState(TypedDict):
     # --- Draft ---
     draft: Optional[str]                # full Markdown draft
     draft_validated: Optional[bool]     # True = passed all SEO constraint checks
+    draft_validation_details: NotRequired[Optional[DraftValidationDetails]]
 
     # --- Checkpoint 2 ---
     cp2_approved: Optional[bool]

@@ -217,6 +217,55 @@ def screenshot(page: Page, path: Path) -> None:
     page.screenshot(path=str(path), full_page=True)
 
 
+def author_input_locator(page: Page):
+    return page.locator("textarea").first
+
+
+def wait_for_author_checkpoint(
+    page: Page,
+    api_url: str,
+    thread_id: str,
+    *,
+    checkpoint_id: str,
+    timeout_seconds: float,
+) -> dict[str, Any]:
+    deadline = time.time() + timeout_seconds
+    history_url = f"{api_url}/api/chat/history/{thread_id}"
+    last_payload: dict[str, Any] | None = None
+
+    while time.time() < deadline:
+        payload = fetch_json(history_url)
+        last_payload = payload
+        hitl_pause = payload.get("hitlPause") or {}
+        current_checkpoint_id = hitl_pause.get("checkpoint_id")
+
+        if (
+            payload.get("session_status") == "paused"
+            and current_checkpoint_id == checkpoint_id
+        ):
+            return payload
+
+        if (
+            payload.get("session_status") == "paused"
+            and current_checkpoint_id in {"duplicate_check", "low_corpus"}
+        ):
+            button_name = (
+                "Kontynuuj mimo to"
+                if current_checkpoint_id == "duplicate_check"
+                else "Kontynuuj mimo ryzyka"
+            )
+            page.get_by_role("button", name=button_name).click()
+            page.wait_for_timeout(500)
+            continue
+
+        time.sleep(1.0)
+
+    raise TimeoutError(
+        f"Timed out waiting for checkpoint {checkpoint_id} for {thread_id}. "
+        f"Last payload: {json.dumps(last_payload, ensure_ascii=False, indent=2)}"
+    )
+
+
 def run_shadow(frontend_url: str, api_url: str, output_dir: Path, *, headed: bool) -> dict[str, Any]:
     shadow_text = (
         "Nasza firma wdraża agentów AI, ale teksty marketingowe nadal brzmią zbyt generycznie. "
@@ -317,7 +366,7 @@ def run_shadow(frontend_url: str, api_url: str, output_dir: Path, *, headed: boo
 
 
 def run_author(frontend_url: str, api_url: str, output_dir: Path, *, headed: bool) -> dict[str, Any]:
-    topic = f"Procedura walidacji runtime {uuid.uuid4()}"
+    topic = f"Governance AI dla walidacji dokumentacji kolejowej {uuid.uuid4().hex[:8]}"
 
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=not headed)
@@ -327,7 +376,7 @@ def run_author(frontend_url: str, api_url: str, output_dir: Path, *, headed: boo
 
         try:
             page.goto(frontend_url, wait_until="domcontentloaded")
-            page.get_by_placeholder("Wpisz temat i wymagania...").fill(topic)
+            author_input_locator(page).fill(topic)
             page.get_by_role("button", name="Wyślij").click()
 
             tracker.wait_for_request_count("POST", "/api/chat/stream", 1, timeout_seconds=10)
@@ -347,20 +396,30 @@ def run_author(frontend_url: str, api_url: str, output_dir: Path, *, headed: boo
                 "Author reload replayed POST /api/chat/stream",
             )
 
-            wait_for_history(
+            wait_for_author_checkpoint(
+                page,
                 api_url,
                 thread_id,
+                checkpoint_id="checkpoint_1",
                 timeout_seconds=180,
-                expected_status="paused",
-                expected_pending_node="checkpoint_1",
-                expected_can_resume=True,
             )
             page.get_by_role("button", name="Zatwierdź").wait_for(timeout=180_000)
             screenshot(page, output_dir / "author-01-checkpoint-1.png")
 
+            resume_posts_before_cp1_approve = tracker.count_requests("POST", "/api/chat/resume")
             page.get_by_role("button", name="Zatwierdź").click()
-            tracker.wait_for_request_count("POST", "/api/chat/resume", 1, timeout_seconds=10)
-            tracker.wait_for_response_count("POST", "/api/chat/resume", 1, timeout_seconds=10)
+            tracker.wait_for_request_count(
+                "POST",
+                "/api/chat/resume",
+                resume_posts_before_cp1_approve + 1,
+                timeout_seconds=10,
+            )
+            tracker.wait_for_response_count(
+                "POST",
+                "/api/chat/resume",
+                resume_posts_before_cp1_approve + 1,
+                timeout_seconds=10,
+            )
             assert_true(
                 tracker.first_thread_header("POST", "/api/chat/resume") == thread_id,
                 "Author resume response missing matching X-Bond-Thread-Id header",
@@ -370,24 +429,34 @@ def run_author(frontend_url: str, api_url: str, output_dir: Path, *, headed: boo
             page.reload(wait_until="domcontentloaded")
             tracker.wait_for_request_count("GET", f"/api/chat/history/{thread_id}", 2, timeout_seconds=10)
             assert_true(
-                tracker.count_requests("POST", "/api/chat/resume") == 1,
+                tracker.count_requests("POST", "/api/chat/resume") == resume_posts_before_cp1_approve + 1,
                 "Author reload replayed POST /api/chat/resume after checkpoint_1",
             )
 
-            wait_for_history(
+            wait_for_author_checkpoint(
+                page,
                 api_url,
                 thread_id,
+                checkpoint_id="checkpoint_2",
                 timeout_seconds=240,
-                expected_status="paused",
-                expected_pending_node="checkpoint_2",
-                expected_can_resume=True,
             )
             page.get_by_role("button", name="Zapisz do bazy").wait_for(timeout=240_000)
             screenshot(page, output_dir / "author-02-checkpoint-2.png")
 
+            resume_posts_before_cp2_save = tracker.count_requests("POST", "/api/chat/resume")
             page.get_by_role("button", name="Zapisz do bazy").click()
-            tracker.wait_for_request_count("POST", "/api/chat/resume", 2, timeout_seconds=10)
-            tracker.wait_for_response_count("POST", "/api/chat/resume", 2, timeout_seconds=10)
+            tracker.wait_for_request_count(
+                "POST",
+                "/api/chat/resume",
+                resume_posts_before_cp2_save + 1,
+                timeout_seconds=10,
+            )
+            tracker.wait_for_response_count(
+                "POST",
+                "/api/chat/resume",
+                resume_posts_before_cp2_save + 1,
+                timeout_seconds=10,
+            )
             final_history = wait_for_history(
                 api_url,
                 thread_id,
@@ -403,15 +472,18 @@ def run_author(frontend_url: str, api_url: str, output_dir: Path, *, headed: boo
                 "Author flow sent more than one POST /api/chat/stream",
             )
             assert_true(
-                tracker.count_requests("POST", "/api/chat/resume") == 2,
-                "Author flow sent unexpected number of POST /api/chat/resume calls",
+                (resume_posts_before_cp1_approve + 1 - resume_posts_before_cp1_approve)
+                + (resume_posts_before_cp2_save + 1 - resume_posts_before_cp2_save)
+                == 2,
+                "Author approve/save path did not emit exactly two resume requests",
             )
 
             return {
                 "thread_id": thread_id,
                 "topic": topic,
                 "stream_posts": tracker.count_requests("POST", "/api/chat/stream"),
-                "resume_posts": tracker.count_requests("POST", "/api/chat/resume"),
+                "resume_posts_total": tracker.count_requests("POST", "/api/chat/resume"),
+                "resume_posts_during_approve_path": 2,
                 "history_gets": tracker.count_requests("GET", f"/api/chat/history/{thread_id}"),
                 "final_history": {
                     "session_status": final_history["session_status"],

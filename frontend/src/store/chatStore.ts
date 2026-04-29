@@ -14,6 +14,41 @@ export type Stage =
   | "error";
 export type StageStatus = "pending" | "running" | "complete" | "error";
 export type PendingAction = "stream" | "resume" | null;
+export type DraftValidationFailure = {
+    code:
+      | "keyword_in_h1"
+      | "keyword_in_first_para"
+      | "meta_desc_length_ok"
+      | "word_count_ok"
+      | "no_forbidden_words";
+    message: string;
+};
+export type DraftValidationAttempt = {
+    attempt_number: number;
+    passed: boolean;
+    failed_codes: string[];
+};
+export type DraftValidationDetails = {
+    passed: boolean;
+    checks: {
+        keyword_in_h1: boolean;
+        keyword_in_first_para: boolean;
+        meta_desc_length_ok: boolean;
+        word_count_ok: boolean;
+        no_forbidden_words: boolean;
+    };
+    failure_codes: string[];
+    failures: DraftValidationFailure[];
+    primary_keyword: string;
+    body_word_count: number;
+    min_words: number;
+    meta_description_length: number;
+    meta_description_min_length: number;
+    meta_description_max_length: number;
+    forbidden_stems: string[];
+    attempt_count: number;
+    attempts: DraftValidationAttempt[];
+};
 export type HitlPause = {
     checkpoint_id: string;
     type: string;
@@ -32,6 +67,7 @@ export type HitlPause = {
     draft_validated?: boolean;
     cp2_iterations?: number;
     validation_warning?: string;
+    draft_validation_details?: DraftValidationDetails;
     corpus_count?: number;
     threshold?: number;
     // Shadow mode fields

@@ -15,6 +15,7 @@ export function ChatInterface() {
   const [input, setInput] = useState("");
   const [lastMessage, setLastMessage] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const authorPlaceholder = "Np.\nTemat: Jak wdrożyć AI w marketingu B2B\nSłowa kluczowe: AI w marketingu B2B, lead generation\nWymagania: Ton ekspercki, bez list wypunktowanych.";
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -75,15 +76,25 @@ export function ChatInterface() {
       {/* Input area */}
       <div className="shrink-0 border-t p-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-        <Textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Wpisz temat i wymagania..."
-          rows={2}
-          disabled={isStreaming}
-          className="min-h-[88px] flex-1 resize-none bg-background text-sm sm:min-h-[72px]"
-        />
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={authorPlaceholder}
+              rows={2}
+              disabled={isStreaming}
+              className="min-h-[88px] flex-1 resize-none bg-background text-sm sm:min-h-[72px]"
+            />
+            {mode === "author" && (
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Obsługiwany format briefu: <span className="font-medium">Temat:</span>,{" "}
+                <span className="font-medium">Słowa kluczowe:</span>,{" "}
+                <span className="font-medium">Wymagania:</span>. Możesz też wkleić sam temat,
+                jeśli nie potrzebujesz dodatkowych pól.
+              </p>
+            )}
+          </div>
           <div className="flex justify-end sm:shrink-0">
             <Button
               onClick={() => handleSend()}

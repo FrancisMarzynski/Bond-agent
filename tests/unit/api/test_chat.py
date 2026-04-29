@@ -104,3 +104,26 @@ def test_chat_stream_injects_thread_id_into_initial_state(app, client):
     assert initial_state["thread_id"] == thread_id
     assert initial_state["topic"] == "Hello Bond"
     assert initial_state["mode"] == "author"
+
+
+def test_chat_stream_normalizes_structured_author_brief_into_initial_state(app, client):
+    brief = (
+        "Temat: AI w marketingu B2B\n"
+        "Słowa kluczowe: AI marketing, lead generation; AI marketing\n"
+        "Wymagania: Ton ekspercki.\n"
+        "Dodaj case study z Polski."
+    )
+
+    with client.stream(
+        "POST",
+        "/api/chat/stream",
+        json={"message": brief, "mode": "author"},
+    ) as response:
+        assert response.status_code == 200
+        list(response.iter_lines())
+
+    initial_state = app.state.captured_stream_input["input"]
+    assert initial_state["topic"] == "AI w marketingu B2B"
+    assert initial_state["keywords"] == ["AI marketing", "lead generation"]
+    assert initial_state["context_dynamic"] == "Ton ekspercki.\nDodaj case study z Polski."
+    assert initial_state["messages"] == [{"role": "user", "content": brief}]

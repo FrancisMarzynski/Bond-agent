@@ -1,0 +1,44 @@
+[
+  {
+    "id": "labeled-brief-e2e-shape",
+    "message": "Temat: AI w marketingu B2B dla firm przemysłowych\nSłowa kluczowe: AI w marketingu B2B, lead generation, automatyzacja marketingu\nWymagania: Ton ekspercki.\nBez list wypunktowanych.\nDodaj 2 przykłady z polskiego rynku.",
+    "expected_topic": "AI w marketingu B2B dla firm przemysłowych",
+    "expected_keywords": [
+      "AI w marketingu B2B",
+      "lead generation",
+      "automatyzacja marketingu"
+    ],
+    "expected_context_dynamic": "Ton ekspercki.\nBez list wypunktowanych.\nDodaj 2 przykłady z polskiego rynku."
+  },
+  {
+    "id": "plain-topic-only",
+    "message": "Jak cyfrowe bliźniaki wspierają utrzymanie ruchu w zakładach przemysłowych?"
+  },
+  {
+    "id": "explicit-keywords-api-fields",
+    "message": "Strategia content marketingowa dla firm BIM pozyskujących leady B2B",
+    "keywords": [
+      "content marketing BIM",
+      "lead generation B2B",
+      "BIM marketing"
+    ],
+    "context_dynamic": "Pisz konkretnie, po polsku, z naciskiem na proces wdrożenia i mierzalne efekty.",
+    "expected_topic": "Strategia content marketingowa dla firm BIM pozyskujących leady B2B",
+    "expected_keywords": [
+      "content marketing BIM",
+      "lead generation B2B",
+      "BIM marketing"
+    ],
+    "expected_context_dynamic": "Pisz konkretnie, po polsku, z naciskiem na proces wdrożenia i mierzalne efekty."
+  },
+  {
+    "id": "style-heavy-brief",
+    "message": "Temat: Jak firmy projektowe wdrażają AI bez utraty kontroli nad jakością\nSłowa kluczowe: AI w firmie projektowej, governance AI\nWymagania: Ton krytyczny, bez obietnic sprzedażowych.\nPokaż ryzyka, proces wdrożenia i checklistę decyzyjną.",
+    "expected_topic": "Jak firmy projektowe wdrażają AI bez utraty kontroli nad jakością",
+    "expected_keywords": [
+      "AI w firmie projektowej",
+      "governance AI"
+    ],
+    "expected_context_dynamic": "Ton krytyczny, bez obietnic sprzedażowych.\nPokaż ryzyka, proces wdrożenia i checklistę decyzyjną."
+  }
+]
