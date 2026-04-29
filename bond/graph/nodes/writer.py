@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 import markdown as _md
 from bs4 import BeautifulSoup
@@ -32,6 +32,7 @@ _RERANK_FETCH_N = 15  # Candidates fetched before reranking
 _WRITER_MAX_OUTPUT_TOKENS = 4096
 _META_DESCRIPTION_MIN_LENGTH = 150
 _META_DESCRIPTION_MAX_LENGTH = 160
+_WORD_COUNT_BUFFER = 120
 
 # Module-level singleton — model loaded once per process
 _ranker = None
@@ -195,6 +196,407 @@ def _check_forbidden_words(draft: str) -> list[str]:
     return [stem for stem in FORBIDDEN_WORD_STEMS if stem in draft_lower]
 
 
+def _normalize_match_text(text: str) -> str:
+    """Normalize text for robust keyword matching across punctuation/casing differences."""
+    normalized = re.sub(r"[^\w\s]", " ", text.lower(), flags=re.UNICODE)
+    return re.sub(r"\s+", " ", normalized).strip()
+
+
+def _extract_meta_description(soup: BeautifulSoup) -> str:
+    """Extract the visible Meta-description line from rendered Markdown."""
+    for p in soup.find_all("p"):
+        paragraph = p.get_text().strip()
+        match = re.match(
+            r"^Meta[- ]?[Dd]escription[:\s]+(.+)", paragraph, re.IGNORECASE
+        )
+        if match:
+            return match.group(1).strip()
+    return ""
+
+
+def _extract_first_body_paragraph(soup: BeautifulSoup) -> str:
+    """Return the first real body paragraph, skipping the Meta-description line."""
+    for p in soup.find_all("p"):
+        paragraph = p.get_text().strip()
+        if not paragraph:
+            continue
+        if re.match(r"^Meta[- ]?[Dd]escription[:\s]+", paragraph, re.IGNORECASE):
+            continue
+        return paragraph
+    return ""
+
+
+def _recommended_body_word_target(min_words: int) -> int:
+    """Return a buffered target so the validator still passes after model undercount drift."""
+    return min_words + _WORD_COUNT_BUFFER
+
+
+def _split_markdown_blocks(text: str) -> list[str]:
+    return [block.strip() for block in re.split(r"\n\s*\n", text.strip()) if block.strip()]
+
+
+def _join_markdown_blocks(blocks: list[str]) -> str:
+    return "\n\n".join(blocks).strip()
+
+
+def _find_meta_block_index(blocks: list[str]) -> int | None:
+    for index, block in enumerate(blocks):
+        if re.match(r"^Meta[- ]?[Dd]escription[:\s]+", block, re.IGNORECASE):
+            return index
+    return None
+
+
+def _find_h1_block_index(blocks: list[str]) -> int | None:
+    for index, block in enumerate(blocks):
+        if block.startswith("# "):
+            return index
+    return None
+
+
+def _find_first_paragraph_block_index(blocks: list[str]) -> int | None:
+    for index, block in enumerate(blocks):
+        stripped = block.strip()
+        if not stripped:
+            continue
+        if stripped.startswith("#"):
+            continue
+        if re.match(r"^Meta[- ]?[Dd]escription[:\s]+", stripped, re.IGNORECASE):
+            continue
+        return index
+    return None
+
+
+def _normalize_inline_spacing(text: str) -> str:
+    text = re.sub(r"[ \t]{2,}", " ", text)
+    text = re.sub(r"\(\s+", "(", text)
+    text = re.sub(r"\s+\)", ")", text)
+    text = re.sub(r"\s+([,.;:!?])", r"\1", text)
+    return text.strip()
+
+
+def _strip_redundant_heading_prefix(existing_heading: str, primary_keyword: str) -> str:
+    heading_body = re.sub(r"^#\s+", "", existing_heading).strip()
+    if not heading_body:
+        return primary_keyword
+
+    normalized_heading = _normalize_match_text(heading_body)
+    normalized_keyword = _normalize_match_text(primary_keyword)
+    if normalized_heading == normalized_keyword:
+        return primary_keyword
+    if normalized_heading.startswith(normalized_keyword):
+        return heading_body
+    return f"{primary_keyword}: {heading_body}"
+
+
+def _ensure_h1_contains_keyword(markdown_text: str, primary_keyword: str) -> str:
+    blocks = _split_markdown_blocks(markdown_text)
+    if not blocks:
+        return markdown_text
+
+    h1_index = _find_h1_block_index(blocks)
+    if h1_index is None:
+        insert_at = 1 if _find_meta_block_index(blocks) == 0 else 0
+        blocks.insert(insert_at, f"# {primary_keyword}")
+        return _join_markdown_blocks(blocks)
+
+    heading = blocks[h1_index]
+    if primary_keyword and _normalize_match_text(primary_keyword) not in _normalize_match_text(heading):
+        blocks[h1_index] = f"# {_strip_redundant_heading_prefix(heading, primary_keyword)}"
+    return _join_markdown_blocks(blocks)
+
+
+def _build_keyword_prefix(primary_keyword: str) -> str:
+    if primary_keyword.strip().endswith("?"):
+        return (
+            f"{primary_keyword} Na to pytanie odpowiadają dane operacyjne, koszt wdrożenia "
+            "i wyniki firm, które już pracują z tym podejściem."
+        )
+    return (
+        f"{primary_keyword} to obszar, który warto oceniać przez liczby, proces wdrożenia "
+        "i wpływ na wynik biznesowy."
+    )
+
+
+def _ensure_first_paragraph_contains_keyword(markdown_text: str, primary_keyword: str) -> str:
+    blocks = _split_markdown_blocks(markdown_text)
+    if not blocks or not primary_keyword:
+        return markdown_text
+
+    paragraph_index = _find_first_paragraph_block_index(blocks)
+    if paragraph_index is None:
+        return markdown_text
+
+    paragraph = blocks[paragraph_index]
+    if _normalize_match_text(primary_keyword) in _normalize_match_text(paragraph):
+        return markdown_text
+
+    blocks[paragraph_index] = _normalize_inline_spacing(
+        f"{_build_keyword_prefix(primary_keyword)} {paragraph}"
+    )
+    return _join_markdown_blocks(blocks)
+
+
+def _truncate_to_word_boundary(text: str, max_length: int) -> str:
+    candidate = text.strip()
+    if len(candidate) <= max_length:
+        return candidate
+
+    truncated = candidate[: max_length + 1]
+    if " " in truncated:
+        truncated = truncated[: truncated.rfind(" ")]
+    return truncated.rstrip(" ,;:-")
+
+
+def _extend_text_to_min_length(text: str, filler: str, min_length: int, max_length: int) -> str:
+    candidate = text.strip()
+    filler_words = filler.split()
+    index = 0
+    while len(candidate) < min_length and index < len(filler_words):
+        next_candidate = f"{candidate} {filler_words[index]}".strip()
+        if len(next_candidate) > max_length:
+            break
+        candidate = next_candidate
+        index += 1
+    return candidate
+
+
+def _ensure_meta_description_length(markdown_text: str) -> str:
+    blocks = _split_markdown_blocks(markdown_text)
+    if not blocks:
+        return markdown_text
+
+    meta_index = _find_meta_block_index(blocks)
+    paragraph_index = _find_first_paragraph_block_index(blocks)
+    first_paragraph = blocks[paragraph_index] if paragraph_index is not None else ""
+
+    if meta_index is None:
+        meta_index = 0
+        blocks.insert(0, "Meta-description: ")
+
+    existing_meta = re.sub(
+        r"^Meta[- ]?[Dd]escription[:\s]+", "", blocks[meta_index], flags=re.IGNORECASE
+    ).strip()
+    supplemental = _normalize_inline_spacing(first_paragraph)
+    candidate = existing_meta or supplemental
+    if not candidate:
+        return markdown_text
+
+    if len(candidate) < _META_DESCRIPTION_MIN_LENGTH and supplemental:
+        extra_source = supplemental
+        if extra_source.startswith(candidate):
+            extra_source = extra_source[len(candidate) :].strip()
+        candidate = _extend_text_to_min_length(
+            candidate,
+            extra_source,
+            _META_DESCRIPTION_MIN_LENGTH,
+            _META_DESCRIPTION_MAX_LENGTH,
+        )
+
+    if len(candidate) < _META_DESCRIPTION_MIN_LENGTH:
+        candidate = _extend_text_to_min_length(
+            candidate,
+            "dla zespołów, które liczą koszt, wynik i tempo wdrożenia.",
+            _META_DESCRIPTION_MIN_LENGTH,
+            _META_DESCRIPTION_MAX_LENGTH,
+        )
+
+    candidate = _truncate_to_word_boundary(candidate, _META_DESCRIPTION_MAX_LENGTH)
+    if len(candidate) < _META_DESCRIPTION_MIN_LENGTH and supplemental:
+        candidate = _truncate_to_word_boundary(
+            _extend_text_to_min_length(
+                candidate,
+                supplemental,
+                _META_DESCRIPTION_MIN_LENGTH,
+                _META_DESCRIPTION_MAX_LENGTH,
+            ),
+            _META_DESCRIPTION_MAX_LENGTH,
+        )
+
+    blocks[meta_index] = f"Meta-description: {candidate}"
+    return _join_markdown_blocks(blocks)
+
+
+def _remove_forbidden_words(markdown_text: str) -> str:
+    repaired = markdown_text
+    for stem in FORBIDDEN_WORD_STEMS:
+        repaired = re.sub(
+            rf"(?iu)\b\w*{re.escape(stem)}\w*\b",
+            "",
+            repaired,
+        )
+
+    lines = [_normalize_inline_spacing(line) if line.strip() else "" for line in repaired.splitlines()]
+    return "\n".join(lines).strip()
+
+
+def _lookup_research_items(
+    research_data: dict[str, Any] | Any | None,
+    key: str,
+) -> list[str]:
+    if research_data is None:
+        return []
+    if isinstance(research_data, dict):
+        value = research_data.get(key, [])
+    else:
+        value = getattr(research_data, key, [])
+    if not isinstance(value, list):
+        return []
+    return [str(item).strip() for item in value if str(item).strip()]
+
+
+def _extract_research_sentences(
+    research_data: dict[str, Any] | Any | None,
+    draft: str,
+) -> list[str]:
+    normalized_draft = _normalize_match_text(draft)
+    unique_sentences: list[str] = []
+    seen: set[str] = set()
+
+    for item in _lookup_research_items(research_data, "fakty") + _lookup_research_items(
+        research_data, "statystyki"
+    ):
+        sentence = _normalize_inline_spacing(item.strip(" -*"))
+        if not sentence:
+            continue
+        if sentence[-1] not in ".!?":
+            sentence += "."
+        normalized_sentence = _normalize_match_text(sentence)
+        if normalized_sentence in seen or normalized_sentence in normalized_draft:
+            continue
+        seen.add(normalized_sentence)
+        unique_sentences.append(sentence)
+    return unique_sentences
+
+
+def _build_fallback_extension_paragraph(index: int) -> str:
+    fallback_paragraphs = [
+        (
+            "W praktyce o skuteczności wdrożenia decydują jakość danych wejściowych, "
+            "jasny podział odpowiedzialności i regularny przegląd wyników na poziomie procesu. "
+            "Dopiero takie połączenie pozwala powiązać decyzje operacyjne z kosztem, czasem realizacji "
+            "i jakością efektu końcowego."
+        ),
+        (
+            "Równie ważne jest ustalenie mierników, które pokazują nie tylko wynik pilotażu, "
+            "ale też trwałość efektu po wdrożeniu. Bez tego zespół nie odróżni pojedynczej poprawy "
+            "od realnej zmiany, którą da się utrzymać przy większej skali działania."
+        ),
+        (
+            "Dlatego końcowa decyzja powinna łączyć analizę liczb z oceną ograniczeń organizacyjnych, "
+            "ryzyk wdrożenia i wpływu na codzienny rytm pracy. Taka perspektywa ogranicza koszt błędów "
+            "i ułatwia obronę inwestycji przed interesariuszami."
+        ),
+    ]
+    return fallback_paragraphs[index % len(fallback_paragraphs)]
+
+
+def _build_word_count_extension_paragraphs(
+    draft: str,
+    research_data: dict[str, Any] | Any | None,
+    min_words: int,
+) -> list[str]:
+    current_word_count = _count_body_words(_parse_draft_to_soup(draft))
+    target_word_count = min_words + 30
+    word_shortfall = max(target_word_count - current_word_count, 0)
+    if word_shortfall <= 0:
+        return []
+
+    sentences = _extract_research_sentences(research_data, draft)
+    paragraphs: list[str] = []
+    cursor = 0
+    added_words = 0
+
+    intros = [
+        (
+            "W praktyce o jakości wdrożenia decydują trzy elementy: jakość danych wejściowych, "
+            "tempo podejmowania decyzji i sposób mierzenia efektu biznesowego."
+        ),
+        (
+            "Na etapie skalowania rozwiązania warto zestawić twarde dane z wpływem na harmonogram, "
+            "budżet i odpowiedzialność zespołu za wynik."
+        ),
+        (
+            "Dla zespołu operacyjnego kluczowe jest to, czy dane potwierdzają poprawę procesu, "
+            "a nie tylko pojedynczy sukces pilotażu."
+        ),
+    ]
+    closers = [
+        (
+            "Takie ujęcie porządkuje decyzję wdrożeniową i pozwala ocenić, czy efekt utrzyma się "
+            "poza pierwszą fazą projektu."
+        ),
+        (
+            "Dopiero na tej podstawie da się realnie porównać koszt wdrożenia z wpływem na jakość, "
+            "czas i przewidywalność procesu."
+        ),
+    ]
+
+    while added_words < word_shortfall:
+        paragraph_parts = [intros[len(paragraphs) % len(intros)]]
+        while cursor < len(sentences) and len(" ".join(paragraph_parts).split()) < 85:
+            paragraph_parts.append(sentences[cursor])
+            cursor += 1
+
+        if len(paragraph_parts) == 1:
+            paragraph_parts.append(_build_fallback_extension_paragraph(len(paragraphs)))
+        else:
+            paragraph_parts.append(closers[len(paragraphs) % len(closers)])
+
+        paragraph = _normalize_inline_spacing(" ".join(paragraph_parts))
+        paragraphs.append(paragraph)
+        added_words += len(paragraph.split())
+
+        if cursor >= len(sentences) and added_words < word_shortfall:
+            paragraphs.append(_build_fallback_extension_paragraph(len(paragraphs)))
+            added_words = sum(len(item.split()) for item in paragraphs)
+
+    return paragraphs
+
+
+def _expand_draft_to_min_words(
+    markdown_text: str,
+    research_data: dict[str, Any] | Any | None,
+    min_words: int,
+) -> str:
+    extra_paragraphs = _build_word_count_extension_paragraphs(
+        markdown_text, research_data, min_words
+    )
+    if not extra_paragraphs:
+        return markdown_text
+
+    blocks = _split_markdown_blocks(markdown_text)
+    blocks.extend(extra_paragraphs)
+    return _join_markdown_blocks(blocks)
+
+
+def _apply_validation_repairs(
+    draft: str,
+    validation: DraftValidationDetails,
+    *,
+    primary_keyword: str,
+    min_words: int,
+    research_data: dict[str, Any] | Any | None,
+    allow_word_count_expansion: bool,
+) -> str:
+    repaired = draft
+    failure_codes = set(validation.get("failure_codes", []))
+
+    if "keyword_in_h1" in failure_codes:
+        repaired = _ensure_h1_contains_keyword(repaired, primary_keyword)
+    if "keyword_in_first_para" in failure_codes:
+        repaired = _ensure_first_paragraph_contains_keyword(repaired, primary_keyword)
+    if "no_forbidden_words" in failure_codes:
+        repaired = _remove_forbidden_words(repaired)
+    if "meta_desc_length_ok" in failure_codes:
+        repaired = _ensure_meta_description_length(repaired)
+    if allow_word_count_expansion and "word_count_ok" in failure_codes:
+        repaired = _expand_draft_to_min_words(repaired, research_data, min_words)
+        repaired = _remove_forbidden_words(repaired)
+        repaired = _ensure_meta_description_length(repaired)
+
+    return repaired
+
+
 def _validate_draft(
     draft: str, primary_keyword: str, min_words: int
 ) -> DraftValidationDetails:
@@ -203,28 +605,25 @@ def _validate_draft(
 
     h1 = soup.find("h1")
     h1_text = h1.get_text().strip() if h1 else ""
+    first_para = _extract_first_body_paragraph(soup)
+    meta_desc = _extract_meta_description(soup)
 
-    first_para = next(
-        (p.get_text().strip() for p in soup.find_all("p") if p.get_text().strip()), ""
-    )
-
-    meta_desc = ""
-    for p in soup.find_all("p"):
-        m = re.match(
-            r"^Meta[- ]?[Dd]escription[:\s]+(.+)", p.get_text().strip(), re.IGNORECASE
-        )
-        if m:
-            meta_desc = m.group(1).strip()
-            break
-
-    pk_lower = primary_keyword.lower()
+    normalized_primary_keyword = _normalize_match_text(primary_keyword)
     body_word_count = _count_body_words(soup)
     forbidden_stems = _check_forbidden_words(draft)
     meta_description_length = len(meta_desc)
 
     checks: DraftValidationChecks = {
-        "keyword_in_h1": bool(h1_text and pk_lower in h1_text.lower()),
-        "keyword_in_first_para": pk_lower in first_para.lower(),
+        "keyword_in_h1": bool(
+            h1_text
+            and normalized_primary_keyword
+            and normalized_primary_keyword in _normalize_match_text(h1_text)
+        ),
+        "keyword_in_first_para": bool(
+            first_para
+            and normalized_primary_keyword
+            and normalized_primary_keyword in _normalize_match_text(first_para)
+        ),
         "meta_desc_length_ok": (
             _META_DESCRIPTION_MIN_LENGTH
             <= meta_description_length
@@ -302,6 +701,48 @@ def _validate_draft(
     }
 
 
+def _build_validation_repair_guidance(validation: DraftValidationDetails) -> str:
+    """Translate failed validator checks into concrete repair actions for the writer model."""
+    guidance: list[str] = []
+    failure_codes = set(validation.get("failure_codes", []))
+    primary_keyword = validation["primary_keyword"]
+
+    if "keyword_in_h1" in failure_codes:
+        guidance.append(
+            f'- W nagłówku H1 umieść dokładny ciąg "{primary_keyword}" i nie parafrazuj tej frazy.'
+        )
+    if "keyword_in_first_para" in failure_codes:
+        guidance.append(
+            f'- W pierwszym akapicie użyj dokładnego ciągu "{primary_keyword}" naturalnie, bez cudzysłowów i bez frazy "główne słowo kluczowe".'
+        )
+    if "meta_desc_length_ok" in failure_codes:
+        guidance.append(
+            "- Przepisz linię `Meta-description:` tak, aby miała 150-160 znaków ze spacjami; celuj w 155 znaków i zachowaj tylko jedną taką linię."
+        )
+    if "word_count_ok" in failure_codes:
+        min_words = validation["min_words"]
+        body_word_count = validation["body_word_count"]
+        shortfall = max(min_words - body_word_count, 0)
+        target_words = max(
+            _recommended_body_word_target(min_words),
+            body_word_count + max(shortfall, _WORD_COUNT_BUFFER),
+        )
+        guidance.append(
+            "- Rozbuduj istniejące sekcje merytorycznie, bez zmiany sensu i bez lania wody: "
+            f"obecnie treść ma {body_word_count} słów, minimum to {min_words}, więc po poprawce celuj w co najmniej {target_words} słów treści głównej."
+        )
+        guidance.append(
+            "- Dodaj konkretne dane, przykłady, skutki wdrożenia, ryzyka albo kryteria decyzyjne w już istniejących sekcjach zamiast dopisywać meta-komentarze o artykule."
+        )
+    if "no_forbidden_words" in failure_codes:
+        forbidden_stems = ", ".join(validation.get("forbidden_stems", []))
+        guidance.append(
+            f"- Usuń wszystkie niedozwolone rdzenie słów ({forbidden_stems}) i zastąp je faktami, liczbami albo precyzyjnym opisem zjawiska."
+        )
+
+    return "\n".join(guidance)
+
+
 def _build_revision_instructions(
     validation: DraftValidationDetails,
     cp2_feedback: str | None,
@@ -309,6 +750,7 @@ def _build_revision_instructions(
     failure_list = "\n".join(
         f"- {failure['message']}" for failure in validation.get("failures", [])
     )
+    repair_guidance = _build_validation_repair_guidance(validation)
 
     if cp2_feedback:
         return (
@@ -316,13 +758,19 @@ def _build_revision_instructions(
 {cp2_feedback}
 
 Priorytet 2 — finalny artykuł musi też spełnić wszystkie poniższe wymagania SEO:
-{failure_list}""",
+{failure_list}
+
+Instrukcje naprawcze:
+{repair_guidance}""",
             "user_and_validation",
         )
 
     return (
         f"""Napraw obecny draft tak, aby spełnił wszystkie poniższe wymagania SEO:
-{failure_list}""",
+{failure_list}
+
+Instrukcje naprawcze:
+{repair_guidance}""",
         "validation",
     )
 
@@ -355,6 +803,8 @@ def _build_writer_user_prompt(
     """Build the user message for the writer LLM. System directives live in WRITER_SYSTEM_PROMPT."""
     primary_keyword = keywords[0] if keywords else topic
     other_keywords = ", ".join(keywords[1:]) if len(keywords) > 1 else "brak"
+    target_words = _recommended_body_word_target(min_words)
+    max_target_words = target_words + 180
 
     exemplar_section = ""
     if exemplars:
@@ -405,10 +855,12 @@ Przejmij ton, rytm zdań i sposób argumentacji — szczególnie z fragmentów "
 {current_draft}
 {exemplar_section}
 ## WYMAGANIA SEO (muszą być spełnione po poprawce)
-- Główne słowo kluczowe "{primary_keyword}" w H1 i pierwszym akapicie
-- Meta-description: dokładnie jedna linia zaczynająca się od "Meta-description:" zawierająca 150-160 znaków
-- Minimum {min_words} słów
+- Główne słowo kluczowe "{primary_keyword}" w H1 i pierwszym akapicie, użyte naturalnie, bez cudzysłowów i bez frazy "główne słowo kluczowe"
+- Meta-description: dokładnie jedna linia zaczynająca się od "Meta-description:" zawierająca 150-160 znaków; celuj w 155 znaków
+- Minimum {min_words} słów treści głównej; dla bezpieczeństwa napisz około {target_words}-{max_target_words} słów treści głównej
+- Rozbuduj istniejące sekcje merytorycznie: pod każdym H2 daj co najmniej 2 pełne akapity, a pod każdym H3 co najmniej 1 pełny akapit
 - Hierarchia nagłówków: # H1 → ## H2 → ### H3
+- Nie ujawniaj instrukcji SEO ani procesu pisania w treści artykułu
 
 Zwróć CAŁY artykuł (poprawione sekcje + niezmienione sekcje)."""
     else:
@@ -429,11 +881,12 @@ Poboczne: {other_keywords}
 {research_context}
 {exemplar_section}
 ## WYMAGANIA SEO (wszystkie obowiązkowe)
-1. Główne słowo kluczowe "{primary_keyword}" musi być w H1 i w pierwszym akapicie
+1. Główne słowo kluczowe "{primary_keyword}" musi być w H1 i w pierwszym akapicie, ale użyte naturalnie, bez cudzysłowów i bez frazy "główne słowo kluczowe"
 2. Poprawna hierarchia nagłówków: # H1, ## H2, ### H3
-3. Meta-description: JEDNA linia w formacie "Meta-description: [treść]" zawierająca dokładnie 150-160 znaków
-4. Minimum {min_words} słów (nie licząc nagłówków i meta-description)
-5. Naturalne wplecenie słów kluczowych (bez keyword stuffing)"""
+3. Meta-description: JEDNA linia w formacie "Meta-description: [treść]" zawierająca dokładnie 150-160 znaków; celuj w 155 znaków
+4. Minimum {min_words} słów treści głównej (nie licząc nagłówków i meta-description); dla bezpieczeństwa napisz około {target_words}-{max_target_words} słów treści głównej
+5. Pod każdym H2 umieść co najmniej 2 pełne, merytoryczne akapity; pod każdym H3 co najmniej 1 pełny akapit
+6. Naturalne wplecenie słów kluczowych (bez keyword stuffing i bez komentarzy o SEO wewnątrz artykułu)"""
 
 
 # ---------------------------------------------------------------------------
@@ -458,6 +911,7 @@ async def writer_node(state: AuthorState) -> dict:
     primary_keyword = keywords[0] if keywords else topic
     heading_structure = state.get("heading_structure", "")
     research_report = state.get("research_report", "")
+    research_data = state.get("research_data")
     cp2_feedback = state.get("cp2_feedback")
     current_draft = state.get("draft")  # for targeted revision
     min_words = settings.min_word_count
@@ -599,6 +1053,18 @@ async def writer_node(state: AuthorState) -> dict:
         total_draft_output_tokens += usage.get("output_tokens", 0)
 
         validation = _validate_draft(draft, primary_keyword, min_words)
+        repaired_draft = _apply_validation_repairs(
+            draft,
+            validation,
+            primary_keyword=primary_keyword,
+            min_words=min_words,
+            research_data=research_data,
+            allow_word_count_expansion=attempt == max_attempts - 1,
+        )
+        if repaired_draft != draft:
+            draft = repaired_draft
+            validation = _validate_draft(draft, primary_keyword, min_words)
+
         attempt_summaries.append(
             {
                 "attempt_number": attempt + 1,

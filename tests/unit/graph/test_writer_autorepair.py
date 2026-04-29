@@ -124,6 +124,11 @@ async def test_writer_autorepair_uses_previous_draft_and_failed_constraints(monk
     monkeypatch.setattr(writer, "_fetch_rag_exemplars", lambda topic, n=5: [])
     monkeypatch.setattr(writer, "build_context_block", lambda context: "")
     monkeypatch.setattr(writer, "_validate_draft", lambda *args: next(validation_reports))
+    monkeypatch.setattr(
+        writer,
+        "_apply_validation_repairs",
+        lambda draft, validation, **kwargs: draft,
+    )
     monkeypatch.setattr(writer, "estimate_cost_usd", lambda *args, **kwargs: 0.25)
 
     result = await writer.writer_node(
@@ -141,6 +146,9 @@ async def test_writer_autorepair_uses_previous_draft_and_failed_constraints(monk
     assert "PIERWSZY DRAFT" in second_prompt
     assert 'H1 musi zawierać główne słowo kluczowe "AI marketing".' in second_prompt
     assert "Meta-description musi mieć 150-160 znaków; obecnie ma 121." in second_prompt
+    assert "Instrukcje naprawcze:" in second_prompt
+    assert 'W nagłówku H1 umieść dokładny ciąg "AI marketing"' in second_prompt
+    assert "celuj w 155 znaków" in second_prompt
     assert result["draft_validated"] is True
     assert result["draft_validation_details"]["attempt_count"] == 2
     assert result["draft_validation_details"]["attempts"] == [
@@ -182,6 +190,11 @@ async def test_writer_autorepair_preserves_user_feedback_priority(monkeypatch):
     monkeypatch.setattr(writer, "_fetch_rag_exemplars", lambda topic, n=5: [])
     monkeypatch.setattr(writer, "build_context_block", lambda context: "")
     monkeypatch.setattr(writer, "_validate_draft", lambda *args: next(validation_reports))
+    monkeypatch.setattr(
+        writer,
+        "_apply_validation_repairs",
+        lambda draft, validation, **kwargs: draft,
+    )
     monkeypatch.setattr(writer, "estimate_cost_usd", lambda *args, **kwargs: 0.25)
 
     await writer.writer_node(
@@ -203,6 +216,7 @@ async def test_writer_autorepair_preserves_user_feedback_priority(monkeypatch):
     assert "Priorytet 1 — uwzględnij feedback użytkownika:" in second_prompt
     assert "Dodaj konkretny case study i mocniejszy wstęp." in second_prompt
     assert "Treść artykułu ma 640 słów; wymagane minimum to 800." in second_prompt
+    assert "co najmniej 920 słów treści głównej" in second_prompt
 
 
 @pytest.mark.asyncio

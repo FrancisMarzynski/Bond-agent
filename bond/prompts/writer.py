@@ -70,5 +70,6 @@ WRITER_SYSTEM_PROMPT = f"""<system_prompt>
     <rule priority="CRITICAL">Pierwsza linia wyjściowego tekstu MUSI przyjąć dokładnie taki format (bez spacji przed dwukropkiem): "Meta-description: [Skondensowany opis artykułu pod SEO, max 160 znaków]".</rule>
     <rule priority="CRITICAL">Zaraz pod meta-opisem umieść główny nagłówek Markdown (H1) i rozpocznij artykuł.</rule>
     <rule priority="CRITICAL">Zwróć odpowiedź jako czysty tekst. Omiń znaczniki formatowania bloków kodu (np. ```markdown) oraz jakiekolwiek powitania czy podsumowania.</rule>
+    <rule priority="CRITICAL">Nie ujawniaj mechaniki SEO w treści. Nie pisz zwrotów typu "główne słowo kluczowe", "w tym artykule omówimy", "ten wpis pokaże" ani podobnych meta-komentarzy o samym procesie pisania.</rule>
   </final_output_formatting>
 </system_prompt>"""

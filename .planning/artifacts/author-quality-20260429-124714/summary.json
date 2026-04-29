@@ -1,0 +1,101 @@
+{
+  "generated_at": "2026-04-29T10:53:31.281579+00:00",
+  "overall_status": "pass",
+  "cases": [
+    {
+      "case_id": "labeled-brief-e2e-shape",
+      "status": "pass",
+      "thread_id": "d886c6bf-7349-41b6-b2c6-b9bb4fb6cc43",
+      "duration_seconds": 92.3323929170001,
+      "normalized_topic": "AI w marketingu B2B dla firm przemysłowych",
+      "normalized_keywords": [
+        "AI w marketingu B2B",
+        "lead generation",
+        "automatyzacja marketingu"
+      ],
+      "normalized_context_dynamic": "Ton ekspercki.\nBez list wypunktowanych.\nDodaj 2 przykłady z polskiego rynku.",
+      "normalization_errors": [],
+      "checkpoint_id": "checkpoint_2",
+      "draft_validated": true,
+      "attempt_count": 3,
+      "first_attempt_passed": false,
+      "first_attempt_failed_codes": [
+        "word_count_ok"
+      ],
+      "final_failure_codes": [],
+      "final_failure_messages": [],
+      "draft_path": ".planning/artifacts/author-quality-20260429-124714/drafts/labeled-brief-e2e-shape.md",
+      "error": null
+    },
+    {
+      "case_id": "plain-topic-only",
+      "status": "pass",
+      "thread_id": "d5b76476-4b02-4969-9403-3d77ae1f6186",
+      "duration_seconds": 94.4064648330002,
+      "normalized_topic": "Jak cyfrowe bliźniaki wspierają utrzymanie ruchu w zakładach przemysłowych?",
+      "normalized_keywords": [],
+      "normalized_context_dynamic": null,
+      "normalization_errors": [],
+      "checkpoint_id": "checkpoint_2",
+      "draft_validated": true,
+      "attempt_count": 2,
+      "first_attempt_passed": false,
+      "first_attempt_failed_codes": [
+        "word_count_ok"
+      ],
+      "final_failure_codes": [],
+      "final_failure_messages": [],
+      "draft_path": ".planning/artifacts/author-quality-20260429-124714/drafts/plain-topic-only.md",
+      "error": null
+    },
+    {
+      "case_id": "explicit-keywords-api-fields",
+      "status": "pass",
+      "thread_id": "fd5a84dc-6c36-4e77-9ebc-79327cd6834f",
+      "duration_seconds": 85.43533829199987,
+      "normalized_topic": "Strategia content marketingowa dla firm BIM pozyskujących leady B2B",
+      "normalized_keywords": [
+        "content marketing BIM",
+        "lead generation B2B",
+        "BIM marketing"
+      ],
+      "normalized_context_dynamic": "Pisz konkretnie, po polsku, z naciskiem na proces wdrożenia i mierzalne efekty.",
+      "normalization_errors": [],
+      "checkpoint_id": "checkpoint_2",
+      "draft_validated": true,
+      "attempt_count": 3,
+      "first_attempt_passed": false,
+      "first_attempt_failed_codes": [
+        "word_count_ok"
+      ],
+      "final_failure_codes": [],
+      "final_failure_messages": [],
+      "draft_path": ".planning/artifacts/author-quality-20260429-124714/drafts/explicit-keywords-api-fields.md",
+      "error": null
+    },
+    {
+      "case_id": "style-heavy-brief",
+      "status": "pass",
+      "thread_id": "f5a15d87-918c-49aa-8b67-71b2b8fa6877",
+      "duration_seconds": 104.624605083,
+      "normalized_topic": "Jak firmy projektowe wdrażają AI bez utraty kontroli nad jakością",
+      "normalized_keywords": [
+        "AI w firmie projektowej",
+        "governance AI"
+      ],
+      "normalized_context_dynamic": "Ton krytyczny, bez obietnic sprzedażowych.\nPokaż ryzyka, proces wdrożenia i checklistę decyzyjną.",
+      "normalization_errors": [],
+      "checkpoint_id": "checkpoint_2",
+      "draft_validated": true,
+      "attempt_count": 3,
+      "first_attempt_passed": false,
+      "first_attempt_failed_codes": [
+        "word_count_ok"
+      ],
+      "final_failure_codes": [],
+      "final_failure_messages": [],
+      "draft_path": ".planning/artifacts/author-quality-20260429-124714/drafts/style-heavy-brief.md",
+      "error": null
+    }
+  ]
+}

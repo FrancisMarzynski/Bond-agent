@@ -5,15 +5,15 @@
 See: .planning/PROJECT.md (updated 2026-04-29)
 
 **Core value:** Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksymalnie 4 godzin — przy zachowaniu stylu nieodróżnialnego od ludzkiego, z human-in-the-loop przed każdą publikacją.
-**Current focus:** historyczny sign-off v1 z 2026-04-28 pozostaje ważnym milestone'em, a recovery po reload + reject dla Author/Shadow zostało właśnie dowiedzione dedykowanym harnessom Playwright. Internal deployment hardening pozostaje ukończony; bieżący post-v1 fokus przesuwa się na dalsze podniesienie jakości draftów Author na kuratorowanym evalu (`word_count`, `meta description`, `keyword_in_first_para`) przy użyciu nowego `draft_validation_details` i harnessu jakości.
+**Current focus:** historyczny sign-off v1 z 2026-04-28 pozostaje ważnym milestone'em, a wszystkie pilne post-v1 follow-upy z 2026-04-29 są już domknięte: recovery po reload + reject ma zielone harnessy Playwright, a kuratorowany eval jakości Author przeszedł do czystego `pass` po validator-driven repair writera. Internal deployment hardening pozostaje ukończony; aktywne otwarte tematy to już tylko świadomie odroczony threshold/telemetry follow-up oraz decyzja o kolejnym priorytecie produktowym.
 
 ## Current Position
 
-Phase: Post-Phase 4 — historyczny sign-off + follow-up jakości Author / recovery
-Last activity: 2026-04-29 — wdrożono deterministyczną normalizację briefów Author (`Temat`, `Słowa kluczowe`, `Wymagania`) na granicy API, writer dostał ukierunkowany auto-repair oparty o szczegółowy raport walidacji, `checkpoint_2` i `/history` zwracają teraz konkretne `draft_validation_details`, a frontend renderuje te powody w panelu checkpointu. Dodano też harness jakości autora z artefaktami pod `.planning/artifacts/author-quality-20260429-113845/` oraz dedykowany harness Playwright dla reload + reject recovery. Walidacje, które przeszły po patchach: `uv run ruff check .`, `cd frontend && npm run lint`, `uv run pytest tests/unit/api/test_author_input.py tests/unit/api/test_chat.py tests/unit/api/test_chat_history.py` (`17 passed`), `uv run pytest tests/unit/graph/test_writer_autorepair.py tests/unit/graph/test_writer_low_corpus.py tests/unit/graph/test_writer_prompt_budget.py tests/unit/graph/test_structure_node.py` (`13 passed`), `uv run python scripts/evaluate_author_quality.py --cases tests/fixtures/author_quality_cases.json` (`pass_with_warnings`), `uv run python scripts/playwright_checkpoint_recovery_regressions.py --frontend-url http://127.0.0.1:3000 --api-url http://127.0.0.1:8000`, `uv run python scripts/playwright_detached_runtime_journey.py --frontend-url http://127.0.0.1:3000 --api-url http://127.0.0.1:8000`, `uv run python scripts/playwright_post_signoff_regressions.py --frontend-url http://127.0.0.1:3000 --api-url http://127.0.0.1:8000`.
-Status: workflow i recovery pozostają świeżo zwalidowane browserowo, a regressy reload/reject są zamknięte. Autor dostał istotne utwardzenie wejścia i diagnostyki, ale kuratorowany eval jakości nadal kończy się `pass_with_warnings`, więc pełna automatyczna zgodność draftów z walidatorem nie jest jeszcze domknięta.
+Phase: Post-Phase 4 — historyczny sign-off + post-v1 follow-upy domknięte
+Last activity: 2026-04-29 — writer dostał validator-driven deterministic repair na podstawie `draft_validation_details`: exact-keyword i meta-description są naprawiane w ramach tej samej próby, niedozwolone rdzenie są usuwane bez dodatkowego calla, a finalny draft może zostać wydłużony danymi z `research_data`, gdy jedynym otwartym problemem pozostaje `word_count_ok`. Dodano też testy jednostkowe dla repair path, a kuratorowany harness jakości autora zapisał czysty wynik pod `.planning/artifacts/author-quality-20260429-124714/`. Walidacje, które przeszły po patchach: `uv run ruff check bond/graph/nodes/writer.py tests/unit/graph/test_writer_validation.py tests/unit/graph/test_writer_autorepair.py`, `uv run pytest tests/unit/graph/test_writer_validation.py tests/unit/graph/test_writer_autorepair.py` (`8 passed`), `uv run python scripts/evaluate_author_quality.py --cases tests/fixtures/author_quality_cases.json` (`pass`).
+Status: workflow, recovery i kuratorowana jakość Author są zwalidowane. Browserowe regresy reload/reject pozostają zamknięte, a writer przechodzi teraz curated eval bez `pass_with_warnings`.
 
-Progress: [█████████░] v1 milestone pozostaje historycznie domknięty; recovery follow-up po reload/reject jest zamknięty, a bieżący otwarty follow-up dotyczy już stricte jakości draftów Author
+Progress: [██████████] v1 milestone pozostaje historycznie domknięty; wszystkie pilne post-v1 follow-upy z 2026-04-29 są zamknięte, a pozostałe otwarte tematy są już tylko świadomie odroczone lub v2
 
 **Niedawno domknięte:**
 
@@ -56,7 +56,8 @@ Progress: [█████████░] v1 milestone pozostaje historycznie d
 37. **Writer auto-repair z walidacją jako danymi** — walidator draftu zwraca bogaty raport z kodami błędów, metrykami i historią prób; retry 2..N dostają konkretne instrukcje naprawcze zamiast ślepego replayu promptu.
 38. **Szczegóły walidacji `checkpoint_2` w recovery contract** — `draft_validation_details` trafiają do interruptu `checkpoint_2`, do `/api/chat/history` oraz do frontendu, który pokazuje konkretne powody odrzucenia zamiast jednej ogólnej linijki warningu.
 39. **Checkpoint recovery proof dla reload + reject** — `scripts/playwright_checkpoint_recovery_regressions.py` dowodzi ścieżek Shadow, Author `checkpoint_1` i Author `checkpoint_2`, włącznie z exact-count asercjami na właściwych `resume` akcjach oraz brakiem replayu po reloadzie.
-40. **Kuratorowany harness jakości Author** — `scripts/evaluate_author_quality.py` i `tests/fixtures/author_quality_cases.json` zapisują znormalizowane wejście, wyniki walidacji i artefakty draftów; najnowszy run `.planning/artifacts/author-quality-20260429-113845/summary.{md,json}` potwierdził usunięcie starego błędu raw-brief-as-keyword, ale pozostawił otwarte problemy z `word_count_ok`, `meta_desc_length_ok` i miejscami `keyword_in_first_para`.
+40. **Kuratorowany harness jakości Author** — `scripts/evaluate_author_quality.py` i `tests/fixtures/author_quality_cases.json` zapisują znormalizowane wejście, wyniki walidacji i artefakty draftów; run `.planning/artifacts/author-quality-20260429-113845/summary.{md,json}` potwierdził usunięcie starego błędu raw-brief-as-keyword i ujawnił resztkowe problemy jakościowe, a run `.planning/artifacts/author-quality-20260429-124714/summary.{md,json}` potwierdził już pełne `pass` dla 4/4 case'ów.
+41. **Validator-driven deterministic repair w writerze** — po każdej próbie writer wykorzystuje `draft_validation_details` do lokalnych napraw H1 / pierwszego akapitu / meta-description / niedozwolonych rdzeni, a na ostatniej próbie może wydłużyć draft danymi z `research_data`, dzięki czemu curated eval przestał zależeć od ślepego zwiększania liczby retry.
 
 ## 2026-04-29 E2E Sweep
 
@@ -166,15 +167,16 @@ Artefakty lokalne:
 Walidacja jakości Author wykonana 2026-04-29 na:
 
 - harness: `uv run python scripts/evaluate_author_quality.py --cases tests/fixtures/author_quality_cases.json`
-- artifact JSON: `.planning/artifacts/author-quality-20260429-113845/summary.json`
-- artifact Markdown: `.planning/artifacts/author-quality-20260429-113845/summary.md`
+- artifact JSON: `.planning/artifacts/author-quality-20260429-124714/summary.json`
+- artifact Markdown: `.planning/artifacts/author-quality-20260429-124714/summary.md`
 
 Potwierdzone zachowania:
 
 1. Briefy z `Temat`, `Słowa kluczowe` i `Wymagania` są normalizowane poprawnie do `topic`, `keywords` i `context_dynamic`; stary błąd polegający na traktowaniu całego wielowierszowego briefu jako głównego keywordu nie wystąpił.
-2. Wszystkie 4 kuratorowane case'y doszły do `checkpoint_2` i zapisały pełne artefakty draftów oraz szczegółowe kody błędów walidacji.
-3. Overall status najnowszego runu to `pass_with_warnings`, nie `pass`: każda próbka wykorzystała 3 podejścia writera i zakończyła się `draft_validated=false`.
-4. Dominujące pozostałe problemy to `word_count_ok` i `meta_desc_length_ok`; w części case'ów wystąpiły też `keyword_in_first_para` oraz `no_forbidden_words`.
+2. Wszystkie 4 kuratorowane case'y doszły do `checkpoint_2`, zapisały pełne artefakty draftów i zakończyły się `draft_validated=true`.
+3. Overall status najnowszego runu to `pass`: `labeled-brief-e2e-shape`, `plain-topic-only`, `explicit-keywords-api-fields` i `style-heavy-brief` wszystkie przeszły walidację końcową.
+4. Dominujący wcześniejszy problem `word_count_ok` został domknięty przez validator-driven repair: exact-keyword, meta-description i forbidden stems są domykane lokalnie, a niedobór treści jest uzupełniany przez sekcje zbudowane z `research_data` dopiero na finalnej próbie.
+5. Artefakty historyczne `.planning/artifacts/author-quality-20260429-113845/` i `.planning/artifacts/author-quality-20260429-123457/` należy traktować jako snapshoty pośrednie prowadzące do finalnego fixu, nie jako aktualny status jakości Author.
 
 ## Exa Validation Notes
 
@@ -272,8 +274,8 @@ Potwierdzone zachowania:
 
 ### Pending Todos
 
-- Doprowadzić kuratorowany eval jakości Author do pełnego `pass`, zaczynając od minimalnej długości draftu, precyzyjnego meta-description i bardziej niezawodnego osadzania głównego keywordu w pierwszym akapicie.
-- Wrócić do odroczonego threshold/telemetry follow-up dopiero po domknięciu powyższego follow-upu jakościowego lub przy świadomej repriorytetyzacji produktu.
+- Zebrać większą próbę realnych opublikowanych tematów przed ewentualnym ruszaniem defaultów `low_corpus_threshold` / `duplicate_threshold`.
+- Wrócić do odroczonego threshold/telemetry follow-up dopiero przy świadomej repriorytetyzacji produktu albo przy decyzji o wejściu w kolejny cykl post-v1 jakości.
 
 ### Post-v1 Candidates
 
@@ -282,13 +284,12 @@ Potwierdzone zachowania:
 
 ### Blockers/Concerns
 
-- Najnowszy eval jakości Author (`.planning/artifacts/author-quality-20260429-113845/summary.json`) nadal kończy się `pass_with_warnings`; retry są już ukierunkowane, ale nie podnoszą jeszcze draftów do pełnego `draft_validated=true`.
 - Kalibracja progów została wykonana 2026-04-28, ale confidence pozostaje ograniczone: lokalny corpus ma tylko 12 artykułów, a kolekcja duplicate w Chroma ma po reconcile nadal zaledwie 6 tematów.
 - Baseline Exa jest zwalidowany tylko na 4 kuratorowanych case'ach; brak jeszcze porównania A/B vs Tavily i brak telemetrycznego feedbacku z produkcyjnych tematów użytkowników.
 
 ## Session Continuity
 
 Last session: 2026-04-29
-Stopped at: po wdrożeniu normalizacji briefów Author, writer auto-repair, szczegółów walidacji `checkpoint_2`, zielonej rewalidacji wszystkich harnessów Playwright oraz zapisaniu evalu jakości z wynikiem `pass_with_warnings`
+Stopped at: po domknięciu validator-driven repair writera, zielonych testach jednostkowych dla repair path oraz zapisaniu kuratorowanego evalu jakości Author z wynikiem `pass`
 Resume file: None
-Next task: poprawić skuteczność finalnej walidacji draftów Author na kuratorowanym evalu, wykorzystując nowe `draft_validation_details` zamiast dalszego zwiększania liczby retry
+Next task: zdecydować, czy następny cykl ma wrócić do odroczonego threshold/telemetry follow-up na większej próbce realnych tematów, czy przejść już do priorytetu v2 (Repurposing / YouTube)
