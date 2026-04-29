@@ -5,13 +5,13 @@
 See: .planning/PROJECT.md (updated 2026-04-28)
 
 **Core value:** Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksymalnie 4 godzin — przy zachowaniu stylu nieodróżnialnego od ludzkiego, z human-in-the-loop przed każdą publikacją.
-**Current focus:** v1 formalnie signed off 2026-04-28 po domknięciu Shadow HITL, detached runtime, recovery sesji, responsive remediation, potwierdzeniu istniejącej ochrony SSRF dla URL ingest, formalnej live walidacji Exa dla kuratorowanych polskich zapytań researchowych, kalibracji progów `low_corpus_threshold` / `duplicate_threshold` oraz post-v1 integrity/session hardening (reconciliation SQLite↔Chroma, typed `mode` w `/history`, route-aware restore sesji, uczciwa klasyfikacja błędów HTTP streamu, zero-chunk file-ingest UX). Aktywny follow-up to internal deployment hardening w `.agents/plans/`; Plans 01-02 (backend contract + frontend gateway/auth) są już wdrożone i zwalidowane, a bezpośrednim następnym krokiem jest Plan 03 (deployment hardening/docs). Threshold/telemetry sampling pozostaje kandydatem odroczonym.
+**Current focus:** v1 formalnie signed off 2026-04-28 po domknięciu Shadow HITL, detached runtime, recovery sesji, responsive remediation, potwierdzeniu istniejącej ochrony SSRF dla URL ingest, formalnej live walidacji Exa dla kuratorowanych polskich zapytań researchowych, kalibracji progów `low_corpus_threshold` / `duplicate_threshold`, post-v1 integrity/session hardening oraz pełnym domknięciu internal deployment hardening z live Compose walidacją wspieranego shape'u (backend non-root z trwałym cache modeli, gateway/auth, same-origin proxy `/api/*` zachowujący SSE, healthchecks, internal compose override, kanoniczny runtime `standalone`, operator docs). Repo należy traktować jako `internal production ready`. Threshold/telemetry sampling pozostaje kandydatem odroczonym.
 
 ## Current Position
 
 Phase: Post-Phase 4 — v1 SIGNED OFF
-Last activity: 2026-04-28 — wykonano `internal-deployment-hardening-02-frontend-gateway-and-auth.md`: usunięto konkurencyjny rewrite z `next.config.ts`, dodano centralny gateway auth/proxy (`frontend/src/proxy.ts` + kompatybilny shim `frontend/src/middleware.ts` dla Next 15), publiczne `/healthz` i skrypt walidacyjny `frontend/scripts/test-proxy-auth.mjs`; walidacja `npm run build`, `npm run lint`, test proxy/auth oraz przeglądarkowy smoke test `/`, `/shadow` i uploadu pliku przez same-origin `/api/corpus/ingest/file` przeszły.
-Status: v1 formalnie signed off; brak otwartych blockerów dla Author, Shadow, recovery/HITL, layoutów mobile/tablet ani hardeningu `/api/corpus/ingest/url`, a internal deployment hardening jest w toku: Plans 01-02 są zamknięte, Plan 03 pozostaje do wdrożenia zanim repo będzie można opisywać jako „internal production ready”
+Last activity: 2026-04-28 — domknięto live Compose walidację `internal-deployment-hardening-03-deployment-hardening-and-docs.md` i całego workstreamu internal deployment hardening: backend `Dockerfile` działa jako non-root, trzyma cache modeli pod `/app/data/.cache` i wyłącza `hf-xet` przez `HF_HUB_DISABLE_XET=1`; `docker-compose.yml` ma healthchecki i `init: true`; `docker-compose.internal.yml` wystawia backend tylko na `127.0.0.1:8000` + sieć `bond-internal`; `frontend/Dockerfile` używa kanonicznego runtime `node .next/standalone/server.js`; a gateway został ustabilizowany przez rozdzielenie Basic Auth w `frontend/src/proxy.ts` i same-origin proxy `/api/*` w `frontend/src/app/api/[...path]/route.ts`, co zachowuje `JSON`, `SSE` i `FormData` bez bufferingu w `standalone`. Walidacje `docker compose -f docker-compose.yml -f docker-compose.internal.yml up --build`, `docker compose ... config`, `uv run ruff check .`, `cd frontend && npm run lint`, `cd frontend && npm run build`, `frontend/scripts/test-proxy-auth.mjs`, lokalny test assetów `standalone` oraz świeże przepływy Author i Shadow przez publiczny frontend z Basic Auth przeszły.
+Status: v1 formalnie signed off; brak otwartych blockerów dla Author, Shadow, recovery/HITL, layoutów mobile/tablet, SSRF hardeningu ani deploymentu wewnętrznego. Internal deployment hardening jest zakończony, a repo należy traktować jako „internal production ready”.
 
 Progress: [██████████] 100% dla v1 + post-v1 integrity/session hardening
 
@@ -42,7 +42,8 @@ Progress: [██████████] 100% dla v1 + post-v1 integrity/sessi
 23. **Polish-only UI/message sweep** — user-facing teksty w Shadow/Author/Corpus są już spójnie po polsku, włącznie z `shadow_annotate.reason`, SSRF/Drive warnings, fallbackami błędów i `ModeToggle` accessible label `Przełącz tryb`.
 24. **Post-v1 integrity/session hardening** — duplicate metadata ma jawny CLI diff/backfill (`scripts/reconcile_duplicate_metadata.py`), lokalny drift wyzerowano (`6` SQLite vs `6` Chroma, `missing=0`), `/api/chat/history` zwraca `mode`, zapisane sesje przywracają właściwą trasę `/` / `/shadow`, `!response.ok` kończy stream błędem zamiast recovery, a upload pliku nie pokazuje już sukcesu przy `chunks_added=0`.
 25. **Internal deployment hardening — Plan 01 backend contract** — `bond/config.py` ma już flagi/secrety internal auth, `bond/api/security.py` zamyka finalny kontrakt trusted header (`X-Bond-Internal-Proxy-Token`) i bypass health routes, `bond/api/main.py` dodaje middleware fail-closed z `X-Request-Id` oraz `/health`, `/health/live`, `/health/ready`, a `tests/unit/api/test_internal_security.py` waliduje 401/200, bypass probe routes i CORS expose headers.
-26. **Internal deployment hardening — Plan 02 frontend gateway/auth** — `frontend/src/proxy.ts` centralizuje Basic Auth challenge + rewrite `/api/*` z nagłówkiem `X-Bond-Internal-Proxy-Token`, `frontend/src/middleware.ts` aktywuje ten sam gateway na obecnym Next 15 bez rozgałęziania logiki, `frontend/src/app/healthz/route.ts` zostawia probe publiczny, a `frontend/scripts/test-proxy-auth.mjs` wraz z lokalną walidacją `curl`, SSE przez `/api/chat/stream`, wejścia do `/` i `/shadow` po auth oraz uploadu pliku przez same-origin `/api/corpus/ingest/file` potwierdza 401 na `/`, 200 na `/healthz` i poprawne proxy do backendu dla JSON/SSE/FormData.
+26. **Internal deployment hardening — Plan 02 frontend gateway/auth** — `frontend/src/proxy.ts` centralizuje Basic Auth challenge, `frontend/src/app/api/[...path]/route.ts` robi same-origin proxy `/api/*` z nagłówkiem `X-Bond-Internal-Proxy-Token`, `frontend/src/middleware.ts` aktywuje ten sam gateway na obecnym Next 15 bez rozgałęziania logiki, `frontend/src/app/healthz/route.ts` zostawia probe publiczny, a `frontend/scripts/test-proxy-auth.mjs` wraz z lokalną walidacją `curl`, SSE przez `/api/chat/stream`, wejścia do `/` i `/shadow` po auth oraz uploadu pliku przez same-origin `/api/corpus/ingest/file` potwierdza 401 na `/`, 200 na `/healthz` i poprawne proxy do backendu dla JSON/SSE/FormData.
+27. **Internal deployment hardening — Plan 03 deployment/docs** — backend kontener działa jako non-root, ma trwały cache modeli pod `/app/data/.cache` i `HF_HUB_DISABLE_XET=1`, `docker-compose.yml` dostał healthchecki i `init: true`, `docker-compose.internal.yml` ogranicza backend do loopbacka hosta oraz sieci `bond-internal`, `frontend/Dockerfile` zachowuje kanoniczny runtime `standalone` z `public` i `/.next/static` przy `server.js`, a `README.md` opisuje wspierany flow deploymentu i lokalny smoke test `standalone`; walidacja potwierdziła reprodukcję `404` na `/_next/static/*` bez kopiowania assetów i poprawne `200` po ich skopiowaniu, a produkcyjny `standalone` z auth/proxy przeszedł zarówno `test-proxy-auth`, jak i świeże end-to-end Author/Shadow. Workstream internal deployment hardening jest domknięty.
 
 ## Browser Validation Notes
 
@@ -106,6 +107,27 @@ Potwierdzone zachowania:
 3. Każde z 3 zapytań per case zwróciło 5 parsowalnych wyników (`overview`, `stats`, `case-study`), mimo że payload MCP pakuje je do pojedynczego bloku tekstowego.
 4. Deduplikowane wyniki na case: 12–15 unikalnych źródeł, 11–15 unikalnych domen, 8–11 domen `.pl`, 4–11 źródeł z datą publikacji od 2024 roku.
 
+## Internal Deployment Validation Notes
+
+Walidacja Plan 03 wykonana 2026-04-28 na:
+
+- repo/root: `docker compose -f docker-compose.yml -f docker-compose.internal.yml config`
+- frontend build: `cd frontend && npm run lint && npm run build`
+- backend lint: `uv run ruff check .`
+- lokalny runtime `standalone`: `node .next/standalone/server.js` z i bez skopiowanych `public` + `.next/static`
+- lokalny runtime auth/proxy: `uv run uvicorn ... --port 8100` + `node .next/standalone/server.js` na `3102` + `frontend/scripts/test-proxy-auth.mjs`
+
+Potwierdzone zachowania:
+
+1. `docker compose ... up --build` i `docker compose ... config` działają poprawnie; backend i frontend w profilu internal osiągają stan `healthy`, a backend publikuje tylko `127.0.0.1:8000`.
+2. `node .next/standalone/server.js` bez skopiowanych assetów reprodukuje błąd hydratacji: `/_next/static/*` zwraca `404`.
+3. Po skopiowaniu `public` do `.next/standalone/public` oraz `.next/static` do `.next/standalone/.next/static` ten sam asset zwraca `200`.
+4. Produkcyjny frontend `standalone` z `INTERNAL_AUTH_ENABLED=true` przechodzi `test-proxy-auth.mjs`: `401` na `/`, `200` na `/healthz`, poprawne proxy `JSON` oraz `SSE`.
+5. Świeży Author thread `bc700e33-2b20-4aa3-a3cf-0b691bf1d6f1` przeszedł przez publiczny frontend z Basic Auth do `session_status="completed"` po sekwencji `checkpoint_1` → `low_corpus` → `checkpoint_2`.
+6. Świeży Shadow thread `a5a3425b-8cdb-459a-bbf8-9926aa02331e` przeszedł przez publiczny frontend z Basic Auth do `session_status="completed"` po `shadow_checkpoint`; final history zwróciło `annotations=2`.
+7. Backend z `INTERNAL_AUTH_ENABLED=true` odpowiada `200` na `/health/ready` i `401` na bezpośredni `GET /api/corpus/status` bez trusted headera.
+8. Compose-level sign-off jest zamknięty na potrzeby repo i dokumentacji operatora; deployment wewnętrzny należy traktować jako wspierany i ukończony.
+
 ## Performance Metrics
 
 **Velocity:**
@@ -166,8 +188,7 @@ Potwierdzone zachowania:
 
 ### Pending Todos
 
-- Domknąć `internal-deployment-hardening-03-deployment-hardening-and-docs.md` wraz z walidacją deployment profile i opisem stabilnego flow uruchomienia (`standalone` frontend + proxy auth + trusted backend header).
-- Po wdrożeniu Planu 03 dopiero zaktualizować status repo na „internal production ready”, jeśli pełna walidacja deployment profile potwierdzi brak regresji.
+- Brak otwartych TODO dla internal deployment hardening; workstream jest zamknięty.
 
 ### Post-v1 Candidates
 
@@ -176,13 +197,12 @@ Potwierdzone zachowania:
 
 ### Blockers/Concerns
 
-- Internal deployment hardening jest nadal częściowo wdrożony; mimo domknięcia Plans 01-02, dopóki Plan 03 nie zostanie zaimplementowany i zwalidowany, repo nie powinno być opisywane jako „internal production ready”.
 - Kalibracja progów została wykonana 2026-04-28, ale confidence pozostaje ograniczone: lokalny corpus ma tylko 12 artykułów, a kolekcja duplicate w Chroma ma po reconcile nadal zaledwie 6 tematów.
 - Baseline Exa jest zwalidowany tylko na 4 kuratorowanych case'ach; brak jeszcze porównania A/B vs Tavily i brak telemetrycznego feedbacku z produkcyjnych tematów użytkowników
 
 ## Session Continuity
 
 Last session: 2026-04-28
-Stopped at: wdrożono i zwalidowano `internal-deployment-hardening-02-frontend-gateway-and-auth.md`
+Stopped at: domknięto live Compose walidację internal deployment hardening i potwierdzono kompletne Author/Shadow przez publiczny frontend
 Resume file: None
-Next task: wykonać `internal-deployment-hardening-03-deployment-hardening-and-docs.md`
+Next task: brak wymuszonego follow-upu operacyjnego; kolejny ruch zależy od priorytetu produktu (threshold/telemetry albo V2)

@@ -24,11 +24,11 @@ Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksym
 
 ### Active Post-v1 Work
 
-- [ ] **Internal deployment hardening.** To jest obecnie wybrany follow-up operacyjny po v1: repo ma dostać prosty gateway auth, backend trusted-proxy enforcement, health/readiness, non-root backend i wewnętrzny profil Compose. Wykonanie jest rozbite na 3 plany, z których dwa pierwsze są już zamknięte:
+- [x] **Internal deployment hardening.** Wszystkie 3 plany są domknięte w kodzie i docs: repo ma gateway auth, backend trusted-proxy enforcement, health/readiness, non-root backend z trwałym cache modeli, kanoniczny runtime Next `standalone` oraz wewnętrzny profil Compose. Shape został zwalidowany live na Compose, włącznie z Author i Shadow przez publiczny frontend. Repo należy traktować jako `internal production ready`.
   - `[x]` `.agents/plans/internal-deployment-hardening-01-security-contract-and-backend-baseline.md` — env contract (`internal_auth_enabled`, `internal_proxy_token`, credentials pod frontend auth), trusted header `X-Bond-Internal-Proxy-Token`, middleware fail-closed z `X-Request-Id`, `/health`, `/health/live`, `/health/ready`, testy kontraktowe backendu
-  - `[x]` `.agents/plans/internal-deployment-hardening-02-frontend-gateway-and-auth.md` — centralny gateway `Basic Auth` + rewrite `/api/*` z trusted headerem, publiczne `/healthz`, walidacja `build`/`lint`/`test-proxy-auth`, kompatybilność z aktualnym Next 15 przez cienki shim `src/middleware.ts` delegujący do `src/proxy.ts`
-  - `[ ]` `.agents/plans/internal-deployment-hardening-03-deployment-hardening-and-docs.md`
-- [ ] **Threshold/telemetry follow-up pozostaje odroczony.** Większa próbka opublikowanych tematów i telemetryczny feedback wracają dopiero po domknięciu deployment hardening lub gdy priorytet produktu zmieni się świadomie.
+  - `[x]` `.agents/plans/internal-deployment-hardening-02-frontend-gateway-and-auth.md` — centralny gateway `Basic Auth`, same-origin proxy `/api/*` przez `src/app/api/[...path]/route.ts` z trusted headerem, publiczne `/healthz`, walidacja `build`/`lint`/`test-proxy-auth`, kompatybilność z aktualnym Next 15 przez cienki shim `src/middleware.ts` delegujący do `src/proxy.ts`
+  - `[x]` `.agents/plans/internal-deployment-hardening-03-deployment-hardening-and-docs.md` — non-root backend `Dockerfile`, trwały cache modeli w `/app/data/.cache`, `HF_HUB_DISABLE_XET=1`, healthchecki + `init: true` w `docker-compose.yml`, `docker-compose.internal.yml` z backendem na loopbackie hosta i siecią `bond-internal`, `frontend/Dockerfile` z kanonicznym `node .next/standalone/server.js`, README z operator flow i lokalnym smoke testem `standalone`
+- [ ] **Threshold/telemetry follow-up pozostaje odroczony.** Większa próbka opublikowanych tematów i telemetryczny feedback wracają dopiero wtedy, gdy priorytet produktu świadomie wróci do tego tematu.
 
 ### Active
 
@@ -75,4 +75,4 @@ Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksym
 | Kaskadowy dobór modelu LLM | Mini dla research (koszt), Frontier dla draft (jakość); konfiguracja przez env vars | ✓ Good |
 
 ---
-*Last updated: 2026-04-28 after landing internal deployment hardening Plan 02 frontend gateway/auth and moving the active next task to Plan 03*
+*Last updated: 2026-04-28 after live Compose validation of internal deployment hardening, including fresh Author and Shadow runs through the authenticated standalone frontend*

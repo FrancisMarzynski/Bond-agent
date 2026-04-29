@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    init: true
     ports:
       - "8000:8000"
     env_file:
@@ -13,6 +14,18 @@ services:
     depends_on:
       chromadb:
         condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import json,sys,urllib.request; response=urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=5); payload=json.load(response); sys.exit(0 if response.status == 200 and payload.get('status') == 'ok' else 1)",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     networks:
       - bond-public
       - bond-internal
@@ -30,12 +43,26 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    init: true
     ports:
       - "3000:3000"
     environment:
       - API_URL=http://bond-api:8000
     depends_on:
-      - bond-api
+      bond-api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/healthz').then(async (response) => { const body = await response.text(); process.exit(response.status === 200 && body === 'ok' ? 0 : 1); }).catch(() => process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     networks:
       - bond-public
     restart: unless-stopped

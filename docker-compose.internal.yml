@@ -1,0 +1,21 @@
+services:
+  bond-api:
+    networks: !override
+      - bond-public
+      - bond-internal
+    ports: !override
+      - "127.0.0.1:8000:8000"
+    environment:
+      INTERNAL_AUTH_ENABLED: "true"
+      INTERNAL_PROXY_TOKEN: ${INTERNAL_PROXY_TOKEN:-}
+
+  bond-frontend:
+    networks: !override
+      - bond-public
+      - bond-internal
+    environment:
+      API_URL: http://bond-api:8000
+      INTERNAL_AUTH_ENABLED: "true"
+      INTERNAL_PROXY_TOKEN: ${INTERNAL_PROXY_TOKEN:-}
+      INTERNAL_BASIC_AUTH_USERNAME: ${INTERNAL_BASIC_AUTH_USERNAME:-}
+      INTERNAL_BASIC_AUTH_PASSWORD: ${INTERNAL_BASIC_AUTH_PASSWORD:-}

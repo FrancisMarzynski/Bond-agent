@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const API_URL = process.env.API_URL ?? "http://localhost:8000";
 const API_PREFIX = "/api/";
-const INTERNAL_PROXY_TOKEN_HEADER = "X-Bond-Internal-Proxy-Token";
 const BASIC_AUTH_CHALLENGE = 'Basic realm="Bond - dostep wewnetrzny", charset="UTF-8"';
 
 const PUBLIC_EXACT_PATHS = new Set([
@@ -55,16 +53,6 @@ function isPublicPath(pathname: string): boolean {
   }
 
   return PUBLIC_METADATA_ROUTE.test(normalizedPath);
-}
-
-function isApiPath(pathname: string): boolean {
-  const normalizedPath = normalizePathname(pathname);
-  return normalizedPath === "/api" || normalizedPath.startsWith(API_PREFIX);
-}
-
-function joinUrlPath(basePath: string, pathname: string): string {
-  const normalizedBase = basePath === "/" ? "" : basePath.replace(/\/+$/, "");
-  return `${normalizedBase}${pathname}`;
 }
 
 function constantTimeEqual(left: string, right: string): boolean {
@@ -138,27 +126,6 @@ function hasValidBasicAuth(request: NextRequest): boolean {
   );
 }
 
-function buildProxyResponseHeaders(request: NextRequest): Headers {
-  const headers = new Headers(request.headers);
-
-  headers.delete("authorization");
-  headers.delete(INTERNAL_PROXY_TOKEN_HEADER);
-
-  const proxyToken = process.env.INTERNAL_PROXY_TOKEN ?? "";
-  if (proxyToken) {
-    headers.set(INTERNAL_PROXY_TOKEN_HEADER, proxyToken);
-  }
-
-  return headers;
-}
-
-function buildProxyTarget(request: NextRequest): URL {
-  const target = new URL(API_URL);
-  target.pathname = joinUrlPath(target.pathname, request.nextUrl.pathname);
-  target.search = request.nextUrl.search;
-  return target;
-}
-
 function unauthorizedResponse(): NextResponse {
   return new NextResponse("Wymagane uwierzytelnienie.", {
     status: 401,
@@ -181,12 +148,8 @@ export function proxy(request: NextRequest) {
     return unauthorizedResponse();
   }
 
-  if (isApiPath(pathname)) {
-    return NextResponse.rewrite(buildProxyTarget(request), {
-      request: {
-        headers: buildProxyResponseHeaders(request),
-      },
-    });
+  if (pathname === "/api" || pathname.startsWith(API_PREFIX)) {
+    return NextResponse.next();
   }
 
   return NextResponse.next();

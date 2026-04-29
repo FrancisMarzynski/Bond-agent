@@ -150,6 +150,68 @@ Backend dostępny pod `http://localhost:8000/docs`, frontend pod `http://localho
 
 ---
 
+## Wdrożenie wewnętrzne (Docker Compose)
+
+Wspierany shape wdrożeniowy to:
+
+- publiczny frontend Next.js na porcie `3000`
+- backend FastAPI wystawiony tylko na loopback hosta (`127.0.0.1:8000`) i dodatkowo chroniony trusted headerem proxy
+- ChromaDB dostępne wyłącznie wewnątrz sieci Compose
+
+### Wymagane zmienne środowiskowe
+
+Poza standardowym `OPENAI_API_KEY` ustaw w `.env`:
+
+- `INTERNAL_PROXY_TOKEN` — współdzielony sekret między frontendowym proxy i backendem
+- `INTERNAL_BASIC_AUTH_USERNAME`
+- `INTERNAL_BASIC_AUTH_PASSWORD`
+
+W `docker-compose.internal.yml` auth jest wymuszony przez `INTERNAL_AUTH_ENABLED=true`, więc brak powyższych sekretów kończy się fail-closed zamiast cichego otwarcia aplikacji.
+
+### Start profilu internal
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.internal.yml up --build
+```
+
+Publiczne i probe'owalne surface'y:
+
+- UI: `http://localhost:3000/`
+- frontend probe: `http://localhost:3000/healthz`
+- backend readiness/liveness z hosta: `http://127.0.0.1:8000/health`, `http://127.0.0.1:8000/health/live`, `http://127.0.0.1:8000/health/ready`
+
+Chronione surface'y:
+
+- wszystkie route'y aplikacji poza `/_next/*`, metadanymi statycznymi, `favicon.ico` i `/healthz` wymagają Basic Auth na froncie
+- backendowe `/api/*` oraz inne nie-health route'y zwracają `401`, jeśli ominiesz frontend i nie dostarczysz `X-Bond-Internal-Proxy-Token`
+
+### Dev vs internal
+
+Lokalny development i deployment wewnętrzny nie są tym samym flow:
+
+- w dev uruchamiasz `uvicorn --reload` oraz `next dev`; frontend rozmawia z backendem bezpośrednio przez `http://localhost:8000`, żeby nie wpadać w buffering/problemy SSE po stronie dev proxy
+- w profilu internal frontend działa jako produkcyjny `standalone`, a cały ruch przeglądarki do `/api/*` idzie same-origin przez gateway Basic Auth oraz node'owy route handler proxy z trusted headerem do backendu; ten shape zachowuje poprawnie `JSON`, `SSE` i `FormData` bez problemów z bufferingiem w `standalone`
+
+### Lokalny smoke test `standalone`
+
+`next build` nie kopiuje `public/` ani `.next/static/` do `.next/standalone` automatycznie. Jeśli chcesz lokalnie uruchomić dokładnie ten sam runtime co w obrazie kontenerowym, wykonaj:
+
+```bash
+cd frontend
+npm run build
+rm -rf .next/standalone/public .next/standalone/.next/static
+mkdir -p .next/standalone/.next
+cp -R public .next/standalone/public
+cp -R .next/static .next/standalone/.next/static
+PORT=3000 HOSTNAME=0.0.0.0 node .next/standalone/server.js
+```
+
+Pominięcie kopiowania assetów kończy się `404` dla `/_next/static/*` i brakiem hydratacji UI.
+
+Na tym samym shape wdrożeniowym zostały też potwierdzone pełne przepływy HITL przez publiczny frontend z Basic Auth: świeży Author doszedł do `completed` po `checkpoint_1`, `low_corpus` i `checkpoint_2`, a świeży Shadow po `shadow_checkpoint`.
+
+---
+
 ## Jak korzystać z aplikacji
 
 Ta sekcja uzupełnia wcześniejsze części `Instalacja`, `Uruchamianie` i `Konfiguracja`. Jeśli chcesz przejść od zera do pierwszego użycia interfejsu, wykonaj poniższy workflow.
@@ -432,7 +494,7 @@ W UI pojawia się jako standardowy panel ostrzeżenia z akcjami kontynuacji lub 
 
 ### Brak modelu `paraphrase-multilingual-MiniLM-L12-v2` przy starcie
 
-ChromaDB pobiera model z HuggingFace przy pierwszym uruchomieniu (ok. 500 MB). W środowisku bez internetu uruchom `setup_db.py` z dostępem do sieci wcześniej — model jest cache'owany lokalnie.
+ChromaDB pobiera model z HuggingFace przy pierwszym uruchomieniu (ok. 500 MB). W środowisku bez internetu uruchom `setup_db.py` z dostępem do sieci wcześniej — model jest cache'owany lokalnie. W obrazie Dockera cache trafia do `/app/data/.cache`, więc przetrwa restart kontenera, o ile zachowasz volume `bond-data`.
 
 ```bash
 uv run python setup_db.py  # pobiera i zapisuje model
