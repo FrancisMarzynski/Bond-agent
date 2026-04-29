@@ -6,6 +6,9 @@ from bond.schemas import StreamEvent
 
 logger = logging.getLogger(__name__)
 
+_OPEN_THINKING_TAG = "<thinking>"
+_CLOSE_THINKING_TAG = "</thinking>"
+
 # Business nodes we surface to the frontend — internal LangGraph bookkeeping nodes
 # (__start__, __end__, router functions) are intentionally excluded.
 _KNOWN_NODES = frozenset({
@@ -83,6 +86,59 @@ _NODE_LABELS: dict[str, dict[str, str]] = {
 }
 
 
+class _WriterTokenSanitizer:
+    """Incrementally strip <thinking>...</thinking> blocks from writer tokens."""
+
+    def __init__(self) -> None:
+        self._buffer = ""
+        self._inside_thinking = False
+
+    def reset(self) -> None:
+        self._buffer = ""
+        self._inside_thinking = False
+
+    def feed(self, text: str) -> Iterator[str]:
+        if not text:
+            return
+
+        self._buffer += text
+
+        while self._buffer:
+            if self._inside_thinking:
+                close_index = self._buffer.find(_CLOSE_THINKING_TAG)
+                if close_index != -1:
+                    self._buffer = self._buffer[
+                        close_index + len(_CLOSE_THINKING_TAG) :
+                    ]
+                    self._inside_thinking = False
+                    continue
+
+                suffix_length = _matching_tag_suffix_length(
+                    self._buffer, _CLOSE_THINKING_TAG
+                )
+                self._buffer = self._buffer[-suffix_length:] if suffix_length else ""
+                return
+
+            open_index = self._buffer.find(_OPEN_THINKING_TAG)
+            if open_index != -1:
+                visible_text = self._buffer[:open_index]
+                if visible_text:
+                    yield visible_text
+
+                self._buffer = self._buffer[open_index + len(_OPEN_THINKING_TAG) :]
+                self._inside_thinking = True
+                continue
+
+            suffix_length = _matching_tag_suffix_length(self._buffer, _OPEN_THINKING_TAG)
+            visible_end = len(self._buffer) - suffix_length
+            visible_text = self._buffer[:visible_end]
+            if visible_text:
+                yield visible_text
+
+            self._buffer = self._buffer[visible_end:]
+            return
+
+
 async def parse_stream_events(events: AsyncIterator[Any]) -> AsyncIterator[str]:
     """
     Parses LangGraph astream_events (v2) and yields raw JSON StreamEvent strings.
@@ -100,6 +156,9 @@ async def parse_stream_events(events: AsyncIterator[Any]) -> AsyncIterator[str]:
     this generator (e.g. model API errors, rate-limit errors).  The generator
     performs best-effort cleanup of ``events`` in its finally block.
     """
+    active_node: str | None = None
+    writer_token_sanitizer = _WriterTokenSanitizer()
+
     try:
         async for event in events:
             kind = event.get("event")
@@ -107,6 +166,9 @@ async def parse_stream_events(events: AsyncIterator[Any]) -> AsyncIterator[str]:
             if kind == "on_chain_start":
                 node_name = _extract_node_name(event)
                 if node_name:
+                    active_node = node_name
+                    if node_name == "writer":
+                        writer_token_sanitizer.reset()
                     label = _NODE_LABELS.get(node_name, {}).get("start", node_name)
                     yield StreamEvent(
                         type="node_start",
@@ -130,12 +192,25 @@ async def parse_stream_events(events: AsyncIterator[Any]) -> AsyncIterator[str]:
                         type="node_end",
                         data=json.dumps({"node": node_name, "label": label}),
                     ).model_dump_json()
+                    if node_name == active_node:
+                        active_node = None
+                    if node_name == "writer":
+                        writer_token_sanitizer.reset()
 
             elif kind == "on_chat_model_stream":
                 chunk = event.get("data", {}).get("chunk")
                 if chunk is not None:
                     for text in _iter_token_texts(chunk):
-                        yield StreamEvent(type="token", data=text).model_dump_json()
+                        token_texts = (
+                            writer_token_sanitizer.feed(text)
+                            if active_node == "writer"
+                            else (text,)
+                        )
+                        for token_text in token_texts:
+                            if token_text:
+                                yield StreamEvent(
+                                    type="token", data=token_text
+                                ).model_dump_json()
 
     finally:
         # Best-effort cleanup: close the astream_events async iterator so that
@@ -167,6 +242,14 @@ def _extract_node_name(event: dict) -> str | None:
         node_name = event.get("name", "")
 
     return node_name if node_name in _KNOWN_NODES else None
+
+
+def _matching_tag_suffix_length(text: str, tag: str) -> int:
+    max_length = min(len(text), len(tag) - 1)
+    for suffix_length in range(max_length, 0, -1):
+        if text.endswith(tag[:suffix_length]):
+            return suffix_length
+    return 0
 
 
 def _iter_token_texts(chunk: Any) -> Iterator[str]:

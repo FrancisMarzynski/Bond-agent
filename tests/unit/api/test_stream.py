@@ -10,6 +10,10 @@ async def mock_event_stream(events: list[dict[str, Any]]) -> AsyncIterator[dict[
         yield event
 
 
+def token_payloads(results: list[dict[str, Any]]) -> list[str]:
+    return [event["data"] for event in results if event["type"] == "token"]
+
+
 @pytest.mark.asyncio
 async def test_parse_stream_events_on_chain_start_with_langgraph_node():
     events = [
@@ -146,6 +150,102 @@ async def test_parse_stream_events_on_chat_model_stream_list_content():
     assert len(results) == 2
     assert results[0] == {"type": "token", "data": "Block 1 "}
     assert results[1] == {"type": "token", "data": "Block 2"}
+
+
+@pytest.mark.asyncio
+async def test_parse_stream_events_strips_thinking_tags_from_writer_token_stream():
+    events = [
+        {
+            "event": "on_chain_start",
+            "metadata": {"langgraph_node": "writer"},
+            "name": "writer",
+        },
+        {
+            "event": "on_chat_model_stream",
+            "data": {
+                "chunk": MockAIMessageChunk(
+                    content="<thinking>Plan roboczy</thinking>Widoczny draft"
+                )
+            },
+        },
+        {
+            "event": "on_chain_end",
+            "metadata": {"langgraph_node": "writer"},
+            "name": "writer",
+        },
+    ]
+
+    stream = mock_event_stream(events)
+    results = [json.loads(r) async for r in parse_stream_events(stream)]
+
+    assert token_payloads(results) == ["Widoczny draft"]
+
+
+@pytest.mark.asyncio
+async def test_parse_stream_events_strips_split_thinking_tags_from_writer_token_stream():
+    events = [
+        {
+            "event": "on_chain_start",
+            "metadata": {"langgraph_node": "writer"},
+            "name": "writer",
+        },
+        {
+            "event": "on_chat_model_stream",
+            "data": {"chunk": MockAIMessageChunk(content="<thin")},
+        },
+        {
+            "event": "on_chat_model_stream",
+            "data": {"chunk": MockAIMessageChunk(content="king>Sekretny plan")},
+        },
+        {
+            "event": "on_chat_model_stream",
+            "data": {"chunk": MockAIMessageChunk(content="</think")},
+        },
+        {
+            "event": "on_chat_model_stream",
+            "data": {"chunk": MockAIMessageChunk(content="ing>Widoczny")},
+        },
+        {
+            "event": "on_chat_model_stream",
+            "data": {"chunk": MockAIMessageChunk(content=" draft")},
+        },
+        {
+            "event": "on_chain_end",
+            "metadata": {"langgraph_node": "writer"},
+            "name": "writer",
+        },
+    ]
+
+    stream = mock_event_stream(events)
+    results = [json.loads(r) async for r in parse_stream_events(stream)]
+
+    assert "".join(token_payloads(results)) == "Widoczny draft"
+
+
+@pytest.mark.asyncio
+async def test_parse_stream_events_keeps_non_writer_token_streams_untouched():
+    token_text = "<thinking>To nie powinno być filtrowane poza writerem</thinking>"
+    events = [
+        {
+            "event": "on_chain_start",
+            "metadata": {"langgraph_node": "researcher"},
+            "name": "researcher",
+        },
+        {
+            "event": "on_chat_model_stream",
+            "data": {"chunk": MockAIMessageChunk(content=token_text)},
+        },
+        {
+            "event": "on_chain_end",
+            "metadata": {"langgraph_node": "researcher"},
+            "name": "researcher",
+        },
+    ]
+
+    stream = mock_event_stream(events)
+    results = [json.loads(r) async for r in parse_stream_events(stream)]
+
+    assert token_payloads(results) == [token_text]
 
 
 @pytest.mark.asyncio

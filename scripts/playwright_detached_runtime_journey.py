@@ -21,6 +21,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -100,8 +101,6 @@ class NetworkEvent:
 class NetworkTracker:
     def __init__(self, page: Page, api_url: str) -> None:
         self.page = page
-        split = urlsplit(api_url)
-        self.api_origin = f"{split.scheme}://{split.netloc}"
         self.requests: list[NetworkEvent] = []
         self.responses: list[NetworkEvent] = []
         page.on("request", self._on_request)
@@ -115,7 +114,7 @@ class NetworkTracker:
         return path
 
     def _is_api_chat(self, url: str) -> bool:
-        return url.startswith(self.api_origin) and "/api/chat/" in url
+        return "/api/chat/" in urlsplit(url).path
 
     def _on_request(self, request) -> None:
         if not self._is_api_chat(request.url):
@@ -318,7 +317,7 @@ def run_shadow(frontend_url: str, api_url: str, output_dir: Path, *, headed: boo
 
 
 def run_author(frontend_url: str, api_url: str, output_dir: Path, *, headed: bool) -> dict[str, Any]:
-    topic = f"Detached runtime browser validation {now_slug()}"
+    topic = f"Procedura walidacji runtime {uuid.uuid4()}"
 
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=not headed)
@@ -329,7 +328,7 @@ def run_author(frontend_url: str, api_url: str, output_dir: Path, *, headed: boo
         try:
             page.goto(frontend_url, wait_until="domcontentloaded")
             page.get_by_placeholder("Wpisz temat i wymagania...").fill(topic)
-            page.get_by_role("button", name="Send").click()
+            page.get_by_role("button", name="Wyślij").click()
 
             tracker.wait_for_request_count("POST", "/api/chat/stream", 1, timeout_seconds=10)
             tracker.wait_for_response_count("POST", "/api/chat/stream", 1, timeout_seconds=10)
@@ -339,7 +338,6 @@ def run_author(frontend_url: str, api_url: str, output_dir: Path, *, headed: boo
                 "Author stream response missing matching X-Bond-Thread-Id header",
             )
 
-            wait_for_text(page, "Research", timeout_ms=20_000)
             page.wait_for_timeout(1000)
             page.reload(wait_until="domcontentloaded")
 

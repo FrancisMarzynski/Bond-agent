@@ -6,6 +6,7 @@ import type {
   StageStatus,
 } from "@/store/chatStore";
 import type { Annotation } from "@/store/shadowStore";
+import type { AuthorDraftOverride } from "@/lib/draftPersistence";
 
 export type SessionMode = "author" | "shadow";
 export type SessionStatus = "idle" | "running" | "paused" | "completed" | "error";
@@ -55,6 +56,8 @@ export interface SessionHydrationSnapshot {
 interface BuildSessionHydrationOptions {
   mode?: HydrationMode;
   clearRecoveredPause?: boolean;
+  threadId?: string;
+  authorDraftOverride?: AuthorDraftOverride | null;
 }
 
 export interface SessionHydrationResult {
@@ -123,11 +126,26 @@ export function buildSessionHydration(
     hitlPause = current.chat.hitlPause;
   }
 
+  const draftWorkspaceStage = stage === "writing" || stage === "done";
+  const authorDraftOverride = options.authorDraftOverride;
+  const shouldUseAuthorDraftOverride =
+    normalizeSessionMode(history.mode) === "author" &&
+    history.session_status !== "running" &&
+    draftWorkspaceStage &&
+    Boolean(options.threadId) &&
+    authorDraftOverride?.threadId === options.threadId;
+
+  const historyDraft =
+    history.draft || !preserveVisibleContent ? history.draft : current.chat.draft;
+  const draft =
+    shouldUseAuthorDraftOverride && authorDraftOverride
+      ? authorDraftOverride.draft
+      : historyDraft;
+
   return {
     chat: {
       messages: Array.isArray(history.messages) ? history.messages : current.chat.messages,
-      draft:
-        history.draft || !preserveVisibleContent ? history.draft : current.chat.draft,
+      draft,
       hitlPause,
       stage,
       stageStatus,

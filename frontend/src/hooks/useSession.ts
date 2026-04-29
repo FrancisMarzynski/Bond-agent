@@ -5,6 +5,11 @@ import { useChatStore, type ChatMessage } from "@/store/chatStore";
 import { useShadowStore } from "@/store/shadowStore";
 import { API_URL } from "@/config";
 import {
+    clearAuthorDraftOverride,
+    readAuthorDraftOverride,
+    type AuthorDraftOverride,
+} from "@/lib/draftPersistence";
+import {
     buildSessionHydration,
     type HydrationMode,
     normalizeSessionMode,
@@ -116,7 +121,12 @@ function syncStoredSessionMode(threadId: string, mode: SessionMode): void {
 
 function hydrateSessionStores(
     history: SessionHistoryResponse,
-    options: { mode?: HydrationMode; clearRecoveredPause?: boolean } = {}
+    options: {
+        mode?: HydrationMode;
+        clearRecoveredPause?: boolean;
+        threadId?: string;
+        authorDraftOverride?: AuthorDraftOverride | null;
+    } = {}
 ): SessionHistoryResponse {
     const current = getSessionSnapshot();
     const hydration = buildSessionHydration(history, current, options);
@@ -148,6 +158,7 @@ export async function loadSessionHistory(
 
     if (!res.ok) {
         if (res.status === 404) {
+            clearAuthorDraftOverride(id);
             throw new SessionHistoryNotFoundError(id);
         }
         throw new Error(`Nie udało się pobrać historii sesji (${res.status}).`);
@@ -159,9 +170,14 @@ export async function loadSessionHistory(
         ...rawData,
         mode: resolvedMode,
     };
+    const authorDraftOverride = readAuthorDraftOverride(id);
     useChatStore.getState().setMode(resolvedMode);
     syncStoredSessionMode(id, resolvedMode);
-    return hydrateSessionStores(data, options);
+    return hydrateSessionStores(data, {
+        ...options,
+        threadId: id,
+        authorDraftOverride,
+    });
 }
 
 export function useSession() {

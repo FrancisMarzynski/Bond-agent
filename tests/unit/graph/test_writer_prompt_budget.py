@@ -71,6 +71,10 @@ def _payload_text(payload) -> str:
     return "\n".join(str(getattr(message, "content", message)) for message in payload)
 
 
+def test_writer_system_prompt_does_not_require_visible_thinking_tags():
+    assert "&lt;thinking&gt;" not in writer.WRITER_SYSTEM_PROMPT
+
+
 class FakeCollection:
     def __init__(self, count_value: int):
         self._count_value = count_value

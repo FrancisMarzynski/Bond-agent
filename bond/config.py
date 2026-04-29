@@ -28,7 +28,10 @@ class Settings(BaseSettings):
     openai_max_retries: int = 3
 
     # Phase 3: Streaming API and Frontend
-    cors_origins: list[str] = ["http://localhost:3000"]
+    cors_origins: list[str] = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
 
     # Docker / ChromaDB HTTP client
     chroma_host: str = ""

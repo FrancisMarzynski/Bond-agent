@@ -36,8 +36,8 @@ _forbidden_display = (
 # ---------------------------------------------------------------------------
 # Injected as SystemMessage on every Writer node call (fresh draft + revision).
 # Temperature for this node: 0.5–0.7 (human-like flow, see COMMUNICATION_STYLE.md §3).
-# Output contains <thinking>...</thinking> blocks — stripped by _strip_thinking_tags()
-# in writer_node before validation and storage.
+# Output should contain only the final article body. Any planning remains internal,
+# while writer_node still keeps cleanup as defense-in-depth.
 
 WRITER_SYSTEM_PROMPT = f"""<system_prompt>
   <agent_identity>
@@ -53,7 +53,7 @@ WRITER_SYSTEM_PROMPT = f"""<system_prompt>
   </style_and_tone>
 
   <workflow_and_reasoning>
-    <instruction>Zanim wygenerujesz ostateczny tekst, przeprowadź krótki proces myślowy w tagach &lt;thinking&gt;. Zaplanuj tam strukturę nagłówków (H2, H3), rozmieszczenie słów kluczowych oraz upewnij się, w jaki sposób zastąpisz zakazane słowa twardymi danymi.</instruction>
+    <instruction>Zanim wygenerujesz ostateczny tekst, zaplanuj wewnętrznie strukturę nagłówków (H2, H3), rozmieszczenie słów kluczowych oraz sposób zastąpienia zakazanych słów twardymi danymi. Nie ujawniaj tego planu ani procesu rozumowania w odpowiedzi.</instruction>
   </workflow_and_reasoning>
 
   <content_guidelines>
@@ -66,7 +66,7 @@ WRITER_SYSTEM_PROMPT = f"""<system_prompt>
   </content_guidelines>
 
   <final_output_formatting>
-    <rule priority="CRITICAL">Wygeneruj finalny tekst natychmiast po zamknięciu tagu &lt;/thinking&gt;.</rule>
+    <rule priority="CRITICAL">Pierwsza linia odpowiedzi ma być pierwszą linią finalnego tekstu. Nie dodawaj planu, komentarzy technicznych ani wstępu.</rule>
     <rule priority="CRITICAL">Pierwsza linia wyjściowego tekstu MUSI przyjąć dokładnie taki format (bez spacji przed dwukropkiem): "Meta-description: [Skondensowany opis artykułu pod SEO, max 160 znaków]".</rule>
     <rule priority="CRITICAL">Zaraz pod meta-opisem umieść główny nagłówek Markdown (H1) i rozpocznij artykuł.</rule>
     <rule priority="CRITICAL">Zwróć odpowiedź jako czysty tekst. Omiń znaczniki formatowania bloków kodu (np. ```markdown) oraz jakiekolwiek powitania czy podsumowania.</rule>

@@ -5,15 +5,15 @@
 See: .planning/PROJECT.md (updated 2026-04-29)
 
 **Core value:** Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksymalnie 4 godzin — przy zachowaniu stylu nieodróżnialnego od ludzkiego, z human-in-the-loop przed każdą publikacją.
-**Current focus:** historyczny sign-off v1 z 2026-04-28 pozostaje ważnym milestone'em, ale kompleksowy sweep E2E z 2026-04-29 otworzył pilny follow-up: domknięcie regresji UX/stanu wykrytych po sign-offie. Internal deployment hardening pozostaje ukończony; threshold/telemetry sampling schodzi niżej niż bieżąca remediacja E2E.
+**Current focus:** historyczny sign-off v1 z 2026-04-28 pozostaje ważnym milestone'em, a follow-up regresyjny wykryty w sweepie E2E z 2026-04-29 został domknięty i ponownie zwalidowany. Internal deployment hardening pozostaje ukończony; bieżący fokus wraca do odroczonego threshold/telemetry sampling.
 
 ## Current Position
 
-Phase: Post-Phase 4 — historyczny sign-off + aktywna remediacja E2E
-Last activity: 2026-04-29 — wykonano pełny sweep E2E przez corpus/Author/Shadow/recovery/responsive z artefaktami pod `e2e-screenshots/2026-04-29/`. Zamknięto 5 regresji ujawnionych w live testach: stale validation banner w corpus text, fałszywie „udane” ścieżki zero-ingest dla link/Drive, brak widocznej struktury na `checkpoint_1`, brak widocznego `validation_warning` na `checkpoint_2`, oraz wyciek workspace'u Shadow do Author przy przełączaniu trybu. Potwierdzono też history restore / reload dla Shadow oraz ponownie zwalidowano CP1/CP2 po patchach. Sweep zostawił 3 otwarte follow-upy: ręczne zmiany draftu Author nadal giną po reloadzie / restore historii, tokeny `<thinking>` nadal przeciekają do renderowanego draftu, a obserwowalna walidacja `Pobierz .md` / browser-only uploadu pliku wymaga ponownego domknięcia innym harnesssem.
-Status: milestone v1 z 2026-04-28 pozostaje w historii projektu, ale bieżący branch nie powinien być traktowany jako świeży, czysty kandydat sign-off dopóki otwarte regresje z 2026-04-29 nie zostaną usunięte i ponownie zwalidowane. Internal deployment hardening jako workstream pozostaje zakończony.
+Phase: Post-Phase 4 — historyczny sign-off + świeża rewalidacja E2E
+Last activity: 2026-04-29 — domknięto pozostałe regresje po sweepie E2E: ręczne edycje draftu Author są teraz utrwalane tab-local w `sessionStorage` i przeżywają reload / restore z sidebaru, writer przestał emitować widoczne tokeny `<thinking>` dzięki zmianie promptu i backendowemu sanitizerowi SSE, `Pobierz .md` zostało utwardzone i zwalidowane realnym downloadem w Playwright, a browser-only upload pliku został potwierdzony przez hidden `input[type=file]`. Po patchach przeszły: `uv run pytest` (`86 passed`), frontend `npm run lint` i `npm run build`, odświeżony harness detached runtime oraz nowy harness regresyjny post-signoff.
+Status: milestone v1 z 2026-04-28 pozostaje w historii projektu, a bieżący branch po remediacji z 2026-04-29 znowu może być traktowany jako świeżo rewalidowany kandydat sign-off. Internal deployment hardening jako workstream pozostaje zakończony.
 
-Progress: [█████████░] v1 milestone domknięty historycznie; bieżąca rewalidacja produktu wymaga jeszcze zamknięcia regresji wykrytych po sign-offie
+Progress: [██████████] v1 milestone domknięty historycznie; follow-up regresyjny po sign-offie został usunięty i ponownie zwalidowany
 
 **Niedawno domknięte:**
 
@@ -48,6 +48,10 @@ Progress: [█████████░] v1 milestone domknięty historycznie;
 29. **Honest zero-ingest UX dla URL / Drive** — frontend pokazuje warning jako błąd, jeśli backend zwraca `articles_ingested=0` lub `total_chunks=0`, zamiast udawać sukces.
 30. **Author checkpoint visibility remediation** — `checkpoint_1` renderuje już `heading_structure`, a `checkpoint_2` pokazuje backendowe `validation_warning`.
 31. **Mode switch workspace isolation** — aktywne przełączenie `Autor/Cień` czyści bieżący workspace, więc poprawiony tekst z Shadow nie przecieka już do edytora Author.
+32. **Tab-local Author draft persistence** — ręczne edycje po `checkpoint_2` są trzymane w `sessionStorage` per `thread_id`, wygrywają z historią tylko w bezpiecznych stanach Author i nie przeciekają do Shadow ani innego wątku.
+33. **Writer stream hygiene** — prompt writera nie żąda już widocznych bloków rozumowania, a `bond/api/stream.py` sanitizuje tokeny `<thinking>...</thinking>` na granicy SSE, także przy tagach rozciętych między chunkami.
+34. **Post-signoff browser regression harness** — `scripts/playwright_post_signoff_regressions.py` potwierdza reload/sidebar restore ręcznych edycji, zachowanie `approve_save`, czyszczenie starego override’u przed świeżym writerem, realny download `draft.md` i upload `upload-sample.txt` przez hidden file input.
+35. **Local 127.0.0.1 validation alignment** — dev-defaulty frontendu i backendowe CORS obejmują teraz `127.0.0.1:3000` / `127.0.0.1:8000`, więc browser harnessy działają na dokładnych adresach z planów i operator workflows.
 
 ## 2026-04-29 E2E Sweep
 
@@ -81,6 +85,21 @@ Potwierdzone zachowania:
 5. Odpowiedzi `/api/chat/stream` i `/api/chat/resume` wystawiają `X-Bond-Thread-Id`, więc recovery działa także wtedy, gdy body urwie się przed pierwszym eventem `thread_id`.
 6. Dłuższe sesje Author po reloadzie nie gubią checkpointu przez zbyt krótki polling — recovery trwa do trwałego stanu `paused` / `completed` / `error`.
 
+Rewalidacja post-signoff wykonana 2026-04-29 na:
+
+- frontend: `http://127.0.0.1:3000`
+- backend: `http://127.0.0.1:8000`
+- harness runtime/recovery: `uv run python scripts/playwright_detached_runtime_journey.py --frontend-url http://127.0.0.1:3000 --api-url http://127.0.0.1:8000`
+- harness regresyjny: `uv run python scripts/playwright_post_signoff_regressions.py --frontend-url http://127.0.0.1:3000 --api-url http://127.0.0.1:8000`
+
+Potwierdzone zachowania:
+
+1. Detached runtime nadal przechodzi pełny flow Shadow i Author bez replayu committed `POST`, z dokładnie `1x POST /api/chat/stream` dla obu trybów oraz `1x` / `2x POST /api/chat/resume` zgodnie z oczekiwanym flow.
+2. Manualna edycja draftu Author przeżywa reload w tym samym tabie oraz restore tej samej sesji z sidebaru; lokalny override wygrywa z historią serwera tylko dla właściwego `thread_id`.
+3. `checkpoint_2` save path zachowuje lokalnie edytowany draft, a reject path czyści stary sentinel przed świeżym writerem i nie dopuszcza jego przecieku do zregenerowanego draftu.
+4. `Pobierz .md` generuje realny plik `draft.md`, a zawartość pobranego pliku jest identyczna z widocznym draftem w edytorze.
+5. Upload `e2e-fixtures/upload-sample.txt` przez hidden `input[type=file]` jest obserwowalny w Playwright i kończy się `chunks_added=1`.
+
 Walidacja responsive wykonana 2026-04-28 na:
 
 - frontend: `http://localhost:3000`
@@ -109,6 +128,17 @@ Artefakty lokalne:
 - `e2e-screenshots/responsive/04-home-mobile-drawer.png`
 - `e2e-screenshots/responsive/05-shadow-mobile.png`
 - `e2e-screenshots/responsive/06-shadow-tablet.png`
+- `/tmp/bond-playwright-detached-runtime-20260429-085130/summary.json`
+- `/tmp/bond-playwright-post-signoff-20260429-090851/summary.json`
+- `/tmp/bond-playwright-post-signoff-20260429-090851/downloads/draft.md`
+- `/tmp/bond-playwright-post-signoff-20260429-090851/author-01-checkpoint-2.png`
+- `/tmp/bond-playwright-post-signoff-20260429-090851/author-02-manual-edit.png`
+- `/tmp/bond-playwright-post-signoff-20260429-090851/author-03-reload-restored.png`
+- `/tmp/bond-playwright-post-signoff-20260429-090851/author-04-sidebar-restored.png`
+- `/tmp/bond-playwright-post-signoff-20260429-090851/author-05-completed.png`
+- `/tmp/bond-playwright-post-signoff-20260429-090851/author-06-rerun-checkpoint-2.png`
+- `/tmp/bond-playwright-post-signoff-20260429-090851/author-07-rerun-cleared.png`
+- `/tmp/bond-playwright-post-signoff-20260429-090851/corpus-01-upload-success.png`
 
 ## Exa Validation Notes
 
@@ -206,10 +236,7 @@ Potwierdzone zachowania:
 
 ### Pending Todos
 
-- Naprawić utratę ręcznych edycji draftu Author po reloadzie / restore historii sesji.
-- Usunąć przeciek tokenów `<thinking>` do draftu i renderera Markdown.
-- Domknąć obserwowalną walidację `Pobierz .md` oraz browser-only harness dla uploadu pliku po `input[type=file]`.
-- Dopiero po powyższej rewalidacji wrócić do odroczonych tematów threshold/telemetry.
+- Wrócić do odroczonego threshold/telemetry follow-up z większą próbką opublikowanych tematów i jawnie ustalonym planem zbierania feedbacku.
 
 ### Post-v1 Candidates
 
@@ -218,15 +245,12 @@ Potwierdzone zachowania:
 
 ### Blockers/Concerns
 
-- Ręczne edycje draftu Author nie są trwałe względem reloadu / history restore; to realna regresja workflow po CP2.
-- Tokeny `<thinking>` nadal trafiają do strumienia i renderują się w UI, co psuje draft oraz generuje błędy w konsoli React.
-- Browser-only walidacja uploadu pliku pozostaje niejednoznaczna: backend ingest jest poprawny, ale agent-browser zawieszał się po ustawieniu pliku w natywnym input.
 - Kalibracja progów została wykonana 2026-04-28, ale confidence pozostaje ograniczone: lokalny corpus ma tylko 12 artykułów, a kolekcja duplicate w Chroma ma po reconcile nadal zaledwie 6 tematów.
 - Baseline Exa jest zwalidowany tylko na 4 kuratorowanych case'ach; brak jeszcze porównania A/B vs Tavily i brak telemetrycznego feedbacku z produkcyjnych tematów użytkowników
 
 ## Session Continuity
 
 Last session: 2026-04-29
-Stopped at: po pełnym sweepie E2E zamknięto część regresji UI, potwierdzono CP1/CP2 po patchach i backendowy file ingest, ale zostały 3 otwarte follow-upy produktowe
+Stopped at: po domknięciu regresji z 2026-04-29 i zielonej rewalidacji `pytest` + frontend `lint/build` + obu harnessów Playwright
 Resume file: None
-Next task: naprawić trwałość ręcznych edycji Author po reloadzie, usunąć przeciek `<thinking>` do draftu oraz ponownie zwalidować download `.md` i browser-only upload pliku
+Next task: wrócić do odroczonego threshold/telemetry follow-up z większą próbką danych i bez cofania świeżo zwalidowanego stanu produktu

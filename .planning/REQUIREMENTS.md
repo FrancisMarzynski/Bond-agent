@@ -2,7 +2,7 @@
 
 **Defined:** 2026-02-20
 **Core Value:** Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksymalnie 4 godzin — przy zachowaniu stylu nieodróżnialnego od ludzkiego, z human-in-the-loop przed każdą publikacją.
-**Status:** v1 signed off historycznie na 2026-04-28; kompleksowy sweep E2E z 2026-04-29 utrzymał wszystkie 39 wymagań v1 jako zaimplementowane, ale otworzył follow-up regresyjny w UX/stanie (manual persistence Author, leak `<thinking>`, końcowa walidacja download/upload harness), więc bieżącego brancha nie należy traktować jako świeżo rewalidowanego sign-off candidate.
+**Status:** v1 signed off historycznie na 2026-04-28; follow-up regresyjny otwarty po sweepie E2E z 2026-04-29 został zamknięty i ponownie zwalidowany (`pytest`, frontend `lint/build`, detached-runtime harness, post-signoff harness), więc bieżący branch znowu może być traktowany jako świeżo rewalidowany sign-off candidate.
 
 ---
 

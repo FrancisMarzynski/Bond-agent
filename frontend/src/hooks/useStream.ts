@@ -3,6 +3,7 @@ import { useEffect, useCallback } from "react";
 import { z } from "zod";
 
 import { API_URL } from "@/config";
+import { clearAuthorDraftOverride } from "@/lib/draftPersistence";
 import { loadSessionHistory, SessionHistoryNotFoundError } from "@/hooks/useSession";
 import { SSEParser } from "@/lib/sse";
 import {
@@ -323,7 +324,11 @@ async function consumeStream(
               if (result.success) {
                 activeNode = result.data.node;
                 if (result.data.node === "writer") {
-                  useChatStore.getState().setDraft("");
+                  const store = useChatStore.getState();
+                  if (store.threadId) {
+                    clearAuthorDraftOverride(store.threadId);
+                  }
+                  store.setDraft("");
                 }
               }
               break;
