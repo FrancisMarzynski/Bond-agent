@@ -1,0 +1,3 @@
+To jest testowy plik TXT używany w rygorystycznym teście end-to-end aplikacji Bond.
+Zawiera kilka zdań o stylu, korekcie, strukturze tekstu i procesie redakcyjnym.
+Plik powinien zostać poprawnie zaindeksowany przez ścieżkę uploadu pliku.

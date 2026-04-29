@@ -2,18 +2,18 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-28)
+See: .planning/PROJECT.md (updated 2026-04-29)
 
 **Core value:** Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksymalnie 4 godzin — przy zachowaniu stylu nieodróżnialnego od ludzkiego, z human-in-the-loop przed każdą publikacją.
-**Current focus:** v1 formalnie signed off 2026-04-28 po domknięciu Shadow HITL, detached runtime, recovery sesji, responsive remediation, potwierdzeniu istniejącej ochrony SSRF dla URL ingest, formalnej live walidacji Exa dla kuratorowanych polskich zapytań researchowych, kalibracji progów `low_corpus_threshold` / `duplicate_threshold`, post-v1 integrity/session hardening oraz pełnym domknięciu internal deployment hardening z live Compose walidacją wspieranego shape'u (backend non-root z trwałym cache modeli, gateway/auth, same-origin proxy `/api/*` zachowujący SSE, healthchecks, internal compose override, kanoniczny runtime `standalone`, operator docs). Repo należy traktować jako `internal production ready`. Threshold/telemetry sampling pozostaje kandydatem odroczonym.
+**Current focus:** historyczny sign-off v1 z 2026-04-28 pozostaje ważnym milestone'em, ale kompleksowy sweep E2E z 2026-04-29 otworzył pilny follow-up: domknięcie regresji UX/stanu wykrytych po sign-offie. Internal deployment hardening pozostaje ukończony; threshold/telemetry sampling schodzi niżej niż bieżąca remediacja E2E.
 
 ## Current Position
 
-Phase: Post-Phase 4 — v1 SIGNED OFF
-Last activity: 2026-04-28 — domknięto live Compose walidację `internal-deployment-hardening-03-deployment-hardening-and-docs.md` i całego workstreamu internal deployment hardening: backend `Dockerfile` działa jako non-root, trzyma cache modeli pod `/app/data/.cache` i wyłącza `hf-xet` przez `HF_HUB_DISABLE_XET=1`; `docker-compose.yml` ma healthchecki i `init: true`; `docker-compose.internal.yml` wystawia backend tylko na `127.0.0.1:8000` + sieć `bond-internal`; `frontend/Dockerfile` używa kanonicznego runtime `node .next/standalone/server.js`; a gateway został ustabilizowany przez rozdzielenie Basic Auth w `frontend/src/proxy.ts` i same-origin proxy `/api/*` w `frontend/src/app/api/[...path]/route.ts`, co zachowuje `JSON`, `SSE` i `FormData` bez bufferingu w `standalone`. Walidacje `docker compose -f docker-compose.yml -f docker-compose.internal.yml up --build`, `docker compose ... config`, `uv run ruff check .`, `cd frontend && npm run lint`, `cd frontend && npm run build`, `frontend/scripts/test-proxy-auth.mjs`, lokalny test assetów `standalone` oraz świeże przepływy Author i Shadow przez publiczny frontend z Basic Auth przeszły.
-Status: v1 formalnie signed off; brak otwartych blockerów dla Author, Shadow, recovery/HITL, layoutów mobile/tablet, SSRF hardeningu ani deploymentu wewnętrznego. Internal deployment hardening jest zakończony, a repo należy traktować jako „internal production ready”.
+Phase: Post-Phase 4 — historyczny sign-off + aktywna remediacja E2E
+Last activity: 2026-04-29 — wykonano pełny sweep E2E przez corpus/Author/Shadow/recovery/responsive z artefaktami pod `e2e-screenshots/2026-04-29/`. Zamknięto 5 regresji ujawnionych w live testach: stale validation banner w corpus text, fałszywie „udane” ścieżki zero-ingest dla link/Drive, brak widocznej struktury na `checkpoint_1`, brak widocznego `validation_warning` na `checkpoint_2`, oraz wyciek workspace'u Shadow do Author przy przełączaniu trybu. Potwierdzono też history restore / reload dla Shadow oraz ponownie zwalidowano CP1/CP2 po patchach. Sweep zostawił 3 otwarte follow-upy: ręczne zmiany draftu Author nadal giną po reloadzie / restore historii, tokeny `<thinking>` nadal przeciekają do renderowanego draftu, a obserwowalna walidacja `Pobierz .md` / browser-only uploadu pliku wymaga ponownego domknięcia innym harnesssem.
+Status: milestone v1 z 2026-04-28 pozostaje w historii projektu, ale bieżący branch nie powinien być traktowany jako świeży, czysty kandydat sign-off dopóki otwarte regresje z 2026-04-29 nie zostaną usunięte i ponownie zwalidowane. Internal deployment hardening jako workstream pozostaje zakończony.
 
-Progress: [██████████] 100% dla v1 + post-v1 integrity/session hardening
+Progress: [█████████░] v1 milestone domknięty historycznie; bieżąca rewalidacja produktu wymaga jeszcze zamknięcia regresji wykrytych po sign-offie
 
 **Niedawno domknięte:**
 
@@ -44,6 +44,24 @@ Progress: [██████████] 100% dla v1 + post-v1 integrity/sessi
 25. **Internal deployment hardening — Plan 01 backend contract** — `bond/config.py` ma już flagi/secrety internal auth, `bond/api/security.py` zamyka finalny kontrakt trusted header (`X-Bond-Internal-Proxy-Token`) i bypass health routes, `bond/api/main.py` dodaje middleware fail-closed z `X-Request-Id` oraz `/health`, `/health/live`, `/health/ready`, a `tests/unit/api/test_internal_security.py` waliduje 401/200, bypass probe routes i CORS expose headers.
 26. **Internal deployment hardening — Plan 02 frontend gateway/auth** — `frontend/src/proxy.ts` centralizuje Basic Auth challenge, `frontend/src/app/api/[...path]/route.ts` robi same-origin proxy `/api/*` z nagłówkiem `X-Bond-Internal-Proxy-Token`, `frontend/src/middleware.ts` aktywuje ten sam gateway na obecnym Next 15 bez rozgałęziania logiki, `frontend/src/app/healthz/route.ts` zostawia probe publiczny, a `frontend/scripts/test-proxy-auth.mjs` wraz z lokalną walidacją `curl`, SSE przez `/api/chat/stream`, wejścia do `/` i `/shadow` po auth oraz uploadu pliku przez same-origin `/api/corpus/ingest/file` potwierdza 401 na `/`, 200 na `/healthz` i poprawne proxy do backendu dla JSON/SSE/FormData.
 27. **Internal deployment hardening — Plan 03 deployment/docs** — backend kontener działa jako non-root, ma trwały cache modeli pod `/app/data/.cache` i `HF_HUB_DISABLE_XET=1`, `docker-compose.yml` dostał healthchecki i `init: true`, `docker-compose.internal.yml` ogranicza backend do loopbacka hosta oraz sieci `bond-internal`, `frontend/Dockerfile` zachowuje kanoniczny runtime `standalone` z `public` i `/.next/static` przy `server.js`, a `README.md` opisuje wspierany flow deploymentu i lokalny smoke test `standalone`; walidacja potwierdziła reprodukcję `404` na `/_next/static/*` bez kopiowania assetów i poprawne `200` po ich skopiowaniu, a produkcyjny `standalone` z auth/proxy przeszedł zarówno `test-proxy-auth`, jak i świeże end-to-end Author/Shadow. Workstream internal deployment hardening jest domknięty.
+28. **Corpus validation UX cleanup** — błędy walidacji w `CorpusAddForm` znikają po edycji pola zamiast wisieć do następnego submitu.
+29. **Honest zero-ingest UX dla URL / Drive** — frontend pokazuje warning jako błąd, jeśli backend zwraca `articles_ingested=0` lub `total_chunks=0`, zamiast udawać sukces.
+30. **Author checkpoint visibility remediation** — `checkpoint_1` renderuje już `heading_structure`, a `checkpoint_2` pokazuje backendowe `validation_warning`.
+31. **Mode switch workspace isolation** — aktywne przełączenie `Autor/Cień` czyści bieżący workspace, więc poprawiony tekst z Shadow nie przecieka już do edytora Author.
+
+## 2026-04-29 E2E Sweep
+
+Zakres walidacji:
+
+1. Corpus: text, URL, Drive, file backend fallback, SSRF block, zero-ingest warnings, DB/Chroma side effects.
+2. Author: streaming, CP1 reject/approve, CP2 reject/save, duplicate warning, low-corpus abort, reload/history restore.
+3. Shadow: annotation focus, manual corrected-text edit, `Zastosuj`, reject loop, approve, reset, history restore, full reload hydration.
+4. Responsive: mobile drawer, mobile/tablet/desktop layouts dla Author i Shadow.
+
+Artefakty lokalne:
+
+1. `e2e-screenshots/2026-04-29/`
+2. `e2e-fixtures/upload-sample.txt`
 
 ## Browser Validation Notes
 
@@ -188,7 +206,10 @@ Potwierdzone zachowania:
 
 ### Pending Todos
 
-- Brak otwartych TODO dla internal deployment hardening; workstream jest zamknięty.
+- Naprawić utratę ręcznych edycji draftu Author po reloadzie / restore historii sesji.
+- Usunąć przeciek tokenów `<thinking>` do draftu i renderera Markdown.
+- Domknąć obserwowalną walidację `Pobierz .md` oraz browser-only harness dla uploadu pliku po `input[type=file]`.
+- Dopiero po powyższej rewalidacji wrócić do odroczonych tematów threshold/telemetry.
 
 ### Post-v1 Candidates
 
@@ -197,12 +218,15 @@ Potwierdzone zachowania:
 
 ### Blockers/Concerns
 
+- Ręczne edycje draftu Author nie są trwałe względem reloadu / history restore; to realna regresja workflow po CP2.
+- Tokeny `<thinking>` nadal trafiają do strumienia i renderują się w UI, co psuje draft oraz generuje błędy w konsoli React.
+- Browser-only walidacja uploadu pliku pozostaje niejednoznaczna: backend ingest jest poprawny, ale agent-browser zawieszał się po ustawieniu pliku w natywnym input.
 - Kalibracja progów została wykonana 2026-04-28, ale confidence pozostaje ograniczone: lokalny corpus ma tylko 12 artykułów, a kolekcja duplicate w Chroma ma po reconcile nadal zaledwie 6 tematów.
 - Baseline Exa jest zwalidowany tylko na 4 kuratorowanych case'ach; brak jeszcze porównania A/B vs Tavily i brak telemetrycznego feedbacku z produkcyjnych tematów użytkowników
 
 ## Session Continuity
 
-Last session: 2026-04-28
-Stopped at: domknięto live Compose walidację internal deployment hardening i potwierdzono kompletne Author/Shadow przez publiczny frontend
+Last session: 2026-04-29
+Stopped at: po pełnym sweepie E2E zamknięto część regresji UI, potwierdzono CP1/CP2 po patchach i backendowy file ingest, ale zostały 3 otwarte follow-upy produktowe
 Resume file: None
-Next task: brak wymuszonego follow-upu operacyjnego; kolejny ruch zależy od priorytetu produktu (threshold/telemetry albo V2)
+Next task: naprawić trwałość ręcznych edycji Author po reloadzie, usunąć przeciek `<thinking>` do draftu oraz ponownie zwalidować download `.md` i browser-only upload pliku

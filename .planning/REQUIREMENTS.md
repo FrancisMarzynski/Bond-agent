@@ -2,7 +2,7 @@
 
 **Defined:** 2026-02-20
 **Core Value:** Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksymalnie 4 godzin — przy zachowaniu stylu nieodróżnialnego od ludzkiego, z human-in-the-loop przed każdą publikacją.
-**Status:** v1 signed off — wszystkie 39 wymagań v1 oznaczone jako complete i zwalidowane do 2026-04-28.
+**Status:** v1 signed off historycznie na 2026-04-28; kompleksowy sweep E2E z 2026-04-29 utrzymał wszystkie 39 wymagań v1 jako zaimplementowane, ale otworzył follow-up regresyjny w UX/stanie (manual persistence Author, leak `<thinking>`, końcowa walidacja download/upload harness), więc bieżącego brancha nie należy traktować jako świeżo rewalidowanego sign-off candidate.
 
 ---
 
@@ -155,4 +155,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 ---
 
 *Requirements defined: 2026-02-20*
-*Last updated: 2026-04-28 — REC-01/02/03 pozostają domknięte, a post-v1 integrity/session hardening dodało reconcile duplicate metadata, `mode` w `/history`, mode-aware restore sesji i poprawny UX dla file-ingest z `chunks_added=0`*
+*Last updated: 2026-04-29 — wymagania v1 pozostają mapped complete; dodatkowy sweep E2E zamknął CP1 structure visibility, CP2 validation-warning visibility i mode-switch leak, ale odsłonił otwarte follow-upy regresyjne poza samym mappingiem wymagań*

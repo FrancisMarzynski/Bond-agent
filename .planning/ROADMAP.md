@@ -4,7 +4,7 @@
 
 Bond is built in four sequential phases, each unlocking the next. Phase 1 populates the RAG style corpus and proves retrieval quality — this is a hard prerequisite because no style-mimicry node has value without a validated corpus. Phase 2 implements the full Author mode pipeline end-to-end in Python, with HITL checkpoints proven in isolation before any streaming surface is added. Phase 3 wires the proven backend to a browser via FastAPI SSE and a Next.js frontend, completing the user-facing Author mode flow. Phase 4 adds Shadow mode as a second branch on the same LangGraph graph, reusing all shared infrastructure from earlier phases. YouTube and social repurposing are v2 and not covered here.
 
-**Current status:** v1 signed off on 2026-04-28 after Shadow HITL closure, detached runtime validation, responsive remediation, confirmation of URL ingest SSRF protection already present in code, baseline live Exa validation for curated Polish research queries, post-v1 threshold calibration on local repo data (defaults retained), post-v1 integrity/session hardening including duplicate-store reconciliation, mode-aware session restore, honest HTTP stream failures, and zero-chunk file-ingest UX, plus full closure of internal deployment hardening Plans 01-03 and live Compose validation of the supported internal shape (trusted proxy contract, frontend gateway/auth, same-origin `/api/*` proxy preserving SSE, non-root backend, compose healthchecks/internal profile, canonical Next `standalone` runtime, operator README). Repo should now be treated as internal production ready.
+**Current status:** v1 was signed off on 2026-04-28 after Shadow HITL closure, detached runtime validation, responsive remediation, confirmation of URL ingest SSRF protection already present in code, baseline live Exa validation for curated Polish research queries, post-v1 threshold calibration on local repo data (defaults retained), post-v1 integrity/session hardening including duplicate-store reconciliation, mode-aware session restore, honest HTTP stream failures, and zero-chunk file-ingest UX, plus full closure of internal deployment hardening Plans 01-03 and live Compose validation of the supported internal shape (trusted proxy contract, frontend gateway/auth, same-origin `/api/*` proxy preserving SSE, non-root backend, compose healthchecks/internal profile, canonical Next `standalone` runtime, operator README). A comprehensive E2E sweep on 2026-04-29 then found new post-sign-off regressions; some were fixed immediately (CP1 structure visibility, CP2 validation warning visibility, mode-switch leak, corpus validation UX), but the branch should not be treated as freshly revalidated until the remaining regressions are closed.
 
 ## Phases
 
@@ -135,7 +135,7 @@ Plans:
 **Execution Order:**
 Phases execute in numeric order: 1 → 2 → 3 → 4
 
-**Overall milestone:** v1 sign-off reached on 2026-04-28.
+**Overall milestone:** v1 sign-off reached historically on 2026-04-28; current branch is under follow-up E2E remediation after the 2026-04-29 sweep.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|

@@ -6,7 +6,7 @@ import { useSession } from "@/hooks/useSession";
 import { Badge } from "@/components/ui/badge";
 
 export function ModeToggle() {
-    const { persistMode } = useSession();
+    const { persistMode, newSession } = useSession();
     const router = useRouter();
     const pathname = usePathname();
 
@@ -18,6 +18,14 @@ export function ModeToggle() {
     }, [isShadow]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleToggle = (checked: boolean) => {
+        if (checked === isShadow) {
+            return;
+        }
+
+        // Tryby Author i Shadow nie współdzielą aktywnego workspace'u.
+        // Przełączenie czyści bieżący stan widoku, a stare sesje zostają
+        // dostępne z historii po lewej stronie.
+        newSession();
         persistMode(checked ? "shadow" : "author");
         router.push(checked ? "/shadow" : "/");
     };

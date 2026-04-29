@@ -12,7 +12,8 @@ Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksym
 
 ### Validated
 
-- [x] **v1 signed off — 2026-04-28.** Author i Shadow przeszły end-to-end walidację po domknięciu detached runtime, recovery sesji oraz responsive remediation.
+- [x] **v1 signed off historycznie — 2026-04-28.** Author i Shadow przeszły end-to-end walidację po domknięciu detached runtime, recovery sesji oraz responsive remediation.
+- [ ] **Fresh sign-off candidate po sweepie 2026-04-29.** Nowy, szeroki E2E sweep zamknął część regresji (`checkpoint_1` structure visibility, `checkpoint_2` validation warning, mode-switch leak, corpus validation UX), ale pozostawił otwarte follow-upy w trwałości ręcznych edycji Author, przecieku `<thinking>` i końcowej walidacji download/upload harness.
 - [x] **Post-v1 Exa baseline — 2026-04-28.** Formalna live walidacja Exa dla 4 kuratorowanych polskich case'ów researchowych zakończona powodzeniem; artefakty: `.planning/artifacts/exa-polish-20260428-142434/summary.{md,json}`.
 - [x] **Post-v1 threshold calibration — 2026-04-28.** Dodano harness `scripts/calibrate_thresholds.py` + `bond/validation/threshold_calibration.py`, przeanalizowano lokalne `articles.db` / `bond_metadata.db` / Chroma i zapisano artefakty `.planning/artifacts/threshold-calibration-20260428-175144/summary.{md,json}`; defaulty `low_corpus_threshold=10` i `duplicate_threshold=0.85` pozostawiono bez zmian, bo próba nie uzasadnia ich przesunięcia.
 - [x] **Post-v1 integrity/session hardening — 2026-04-28.** Dodano `bond/validation/duplicate_metadata_reconciliation.py` + `scripts/reconcile_duplicate_metadata.py`, wyzerowano lokalny drift duplicate metadata (`6` rekordów SQLite vs `6` rekordów Chroma, `missing=0`), rozszerzono `/api/chat/history` o `mode`, utrwalono `mode` w sesjach frontendu, zakończono zwykłe HTTP 4xx/5xx błędem zamiast recovery i poprawiono UX file-ingest dla `chunks_added=0`.
@@ -28,7 +29,8 @@ Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksym
   - `[x]` `.agents/plans/internal-deployment-hardening-01-security-contract-and-backend-baseline.md` — env contract (`internal_auth_enabled`, `internal_proxy_token`, credentials pod frontend auth), trusted header `X-Bond-Internal-Proxy-Token`, middleware fail-closed z `X-Request-Id`, `/health`, `/health/live`, `/health/ready`, testy kontraktowe backendu
   - `[x]` `.agents/plans/internal-deployment-hardening-02-frontend-gateway-and-auth.md` — centralny gateway `Basic Auth`, same-origin proxy `/api/*` przez `src/app/api/[...path]/route.ts` z trusted headerem, publiczne `/healthz`, walidacja `build`/`lint`/`test-proxy-auth`, kompatybilność z aktualnym Next 15 przez cienki shim `src/middleware.ts` delegujący do `src/proxy.ts`
   - `[x]` `.agents/plans/internal-deployment-hardening-03-deployment-hardening-and-docs.md` — non-root backend `Dockerfile`, trwały cache modeli w `/app/data/.cache`, `HF_HUB_DISABLE_XET=1`, healthchecki + `init: true` w `docker-compose.yml`, `docker-compose.internal.yml` z backendem na loopbackie hosta i siecią `bond-internal`, `frontend/Dockerfile` z kanonicznym `node .next/standalone/server.js`, README z operator flow i lokalnym smoke testem `standalone`
-- [ ] **Threshold/telemetry follow-up pozostaje odroczony.** Większa próbka opublikowanych tematów i telemetryczny feedback wracają dopiero wtedy, gdy priorytet produktu świadomie wróci do tego tematu.
+- [ ] **E2E regression remediation po sweepie 2026-04-29.** Najpierw trzeba domknąć manual persistence Author po reloadzie/history restore, usunąć `<thinking>` z draftu/renderera i ponownie zwalidować `Pobierz .md` oraz browser-only upload pliku.
+- [ ] **Threshold/telemetry follow-up pozostaje odroczony.** Większa próbka opublikowanych tematów i telemetryczny feedback wracają dopiero wtedy, gdy priorytet produktu świadomie wróci do tego tematu i nie będzie konkurował z pilniejszą remediacją E2E.
 
 ### Active
 
@@ -75,4 +77,4 @@ Skrócenie procesu tworzenia gotowego do publikacji draftu z 1–2 dni do maksym
 | Kaskadowy dobór modelu LLM | Mini dla research (koszt), Frontier dla draft (jakość); konfiguracja przez env vars | ✓ Good |
 
 ---
-*Last updated: 2026-04-28 after live Compose validation of internal deployment hardening, including fresh Author and Shadow runs through the authenticated standalone frontend*
+*Last updated: 2026-04-29 after a comprehensive E2E sweep reopened a small set of post-sign-off regressions and closed their first remediation batch*

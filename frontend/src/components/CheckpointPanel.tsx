@@ -15,11 +15,13 @@ export function CheckpointPanel() {
   const [showFeedbackField, setShowFeedbackField] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [researchOpen, setResearchOpen] = useState(true);
+  const [structureOpen, setStructureOpen] = useState(true);
 
   if (!hitlPause || isStreaming) return null;
 
   const isDuplicateCheck = hitlPause.checkpoint_id === "duplicate_check";
   const isLowCorpus = hitlPause.checkpoint_id === "low_corpus";
+  const isCheckpoint1 = hitlPause.checkpoint_id === "checkpoint_1";
   const isCheckpoint2 = hitlPause.checkpoint_id === "cp2" ||
     hitlPause.checkpoint_id === "checkpoint_2";
   const iterationsRemaining = hitlPause.iterations_remaining;
@@ -144,8 +146,9 @@ export function CheckpointPanel() {
     );
   }
 
-  const isCheckpoint1 = hitlPause.checkpoint_id === "checkpoint_1";
   const researchReport = hitlPause.research_report;
+  const headingStructure = hitlPause.heading_structure;
+  const validationWarning = hitlPause.validation_warning;
 
   // --- Standard checkpoint UI (cp1 / cp2) ---
   return (
@@ -171,6 +174,38 @@ export function CheckpointPanel() {
               {researchReport}
             </pre>
           )}
+        </div>
+      )}
+
+      {isCheckpoint1 && headingStructure && (
+        <div className="flex flex-col gap-1.5">
+          <button
+            type="button"
+            onClick={() => setStructureOpen((o) => !o)}
+            className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors w-full text-left"
+          >
+            {structureOpen ? (
+              <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+            ) : (
+              <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+            )}
+            <ScrollText className="h-3.5 w-3.5 shrink-0" />
+            Proponowana struktura
+          </button>
+          {structureOpen && (
+            <pre className="text-xs text-muted-foreground whitespace-pre-wrap break-words font-sans leading-relaxed max-h-60 overflow-y-auto rounded border border-border/50 bg-background/60 p-2.5">
+              {headingStructure}
+            </pre>
+          )}
+        </div>
+      )}
+
+      {isCheckpoint2 && validationWarning && (
+        <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/5 px-3 py-2">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+          <div className="min-w-0 text-xs text-muted-foreground whitespace-pre-wrap">
+            {validationWarning}
+          </div>
         </div>
       )}
 

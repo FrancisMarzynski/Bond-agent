@@ -31,6 +31,13 @@ interface FileIngestResponse {
   warnings: string[];
 }
 
+interface BatchIngestResponse {
+  articles_ingested: number;
+  total_chunks: number;
+  source_type: string;
+  warnings: string[];
+}
+
 function getHttpFallbackError(status: number): string {
   return `Błąd serwera (HTTP ${status})`;
 }
@@ -150,6 +157,12 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
     resetState();
   }
 
+  function clearErrorOnEdit() {
+    if (error) {
+      setError(null);
+    }
+  }
+
   async function handleTextSubmit(e: FormEvent) {
     e.preventDefault();
     if (!textContent.trim()) {
@@ -206,7 +219,14 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
         const detail = await res.json().catch(() => null);
         throw new Error(detail?.detail ?? getHttpFallbackError(res.status));
       }
-      await res.json();
+      const data = (await res.json()) as BatchIngestResponse;
+      if (data.articles_ingested === 0 || data.total_chunks === 0) {
+        setJustSucceeded(false);
+        setSuccessMsg("");
+        setError(data.warnings[0] ?? "Nie udało się pobrać artykułu z podanego adresu.");
+        return;
+      }
+
       setLinkUrl("");
       setSuccessMsg("Artykuł pobrany i dodany");
       setJustSucceeded(true);
@@ -279,7 +299,14 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
         const detail = await res.json().catch(() => null);
         throw new Error(detail?.detail ?? getHttpFallbackError(res.status));
       }
-      const data = await res.json();
+      const data = (await res.json()) as BatchIngestResponse;
+      if (data.articles_ingested === 0 || data.total_chunks === 0) {
+        setJustSucceeded(false);
+        setSuccessMsg("");
+        setError(data.warnings[0] ?? "Nie udało się zaindeksować folderu Google Drive.");
+        return;
+      }
+
       setDriveFolder("");
       setSuccessMsg(
         `Zaindeksowano ${data.articles_ingested} ${getPolishCountForm(data.articles_ingested, "plik", "pliki", "plików")} · ` +
@@ -401,13 +428,19 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
               type="text"
               placeholder="Tytuł (opcjonalnie)"
               value={textTitle}
-              onChange={(e) => setTextTitle(e.target.value)}
+              onChange={(e) => {
+                setTextTitle(e.target.value);
+                clearErrorOnEdit();
+              }}
               className="w-full text-xs bg-background border rounded px-2 py-1.5 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
             <textarea
               placeholder="Wklej treść artykułu…"
               value={textContent}
-              onChange={(e) => setTextContent(e.target.value)}
+              onChange={(e) => {
+                setTextContent(e.target.value);
+                clearErrorOnEdit();
+              }}
               rows={5}
               className="w-full text-xs bg-background border rounded px-2 py-1.5 placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring"
             />
@@ -427,7 +460,10 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
               type="url"
               placeholder="https://example.com/artykul"
               value={linkUrl}
-              onChange={(e) => setLinkUrl(e.target.value)}
+              onChange={(e) => {
+                setLinkUrl(e.target.value);
+                clearErrorOnEdit();
+              }}
               className="w-full text-xs bg-background border rounded px-2 py-1.5 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
             <p className="text-xs text-muted-foreground">
@@ -497,7 +533,10 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
                 type="text"
                 placeholder="Tytuł (opcjonalnie)"
                 value={fileTitle}
-                onChange={(e) => setFileTitle(e.target.value)}
+                onChange={(e) => {
+                  setFileTitle(e.target.value);
+                  clearErrorOnEdit();
+                }}
                 className="w-full text-xs bg-background border rounded px-2 py-1.5 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
               />
             )}
@@ -523,7 +562,10 @@ export function CorpusAddForm({ onSuccess, onClose }: CorpusAddFormProps) {
               type="text"
               placeholder="ID folderu Google Drive"
               value={driveFolder}
-              onChange={(e) => setDriveFolder(e.target.value)}
+              onChange={(e) => {
+                setDriveFolder(e.target.value);
+                clearErrorOnEdit();
+              }}
               className="w-full text-xs bg-background border rounded px-2 py-1.5 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring font-mono"
             />
             <p className="text-xs text-muted-foreground leading-snug">
